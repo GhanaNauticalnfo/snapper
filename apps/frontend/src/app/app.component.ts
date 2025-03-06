@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { ButtonComponent } from "../test/button.component";
 
 @Component({
-  imports: [ RouterModule],
+  imports: [RouterModule, ButtonComponent],
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
