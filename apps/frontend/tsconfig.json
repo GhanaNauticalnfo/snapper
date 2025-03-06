@@ -8,6 +8,10 @@
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
+    ,
+    "types": [
+      "maplibre-gl"
+    ]
   },
   "files": [],
   "include": [],
