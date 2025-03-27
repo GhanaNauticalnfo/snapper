@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snapper-frontend
+  namespace: test
+  labels:
+    app: snapper-frontend
+    env: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snapper-frontend
+      env: test
+  template:
+    metadata:
+      labels:
+        app: snapper-frontend
+        env: test
+    spec:
+      containers:
+      - name: snapper-frontend
+        image: ghananauticalinfo/snapper-frontend:test-develop
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: snapper-frontend-service
+  namespace: test
+spec:
+  selector:
+    app: snapper-frontend
+    env: test
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: snapper-frontend-ingress
+  namespace: test
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - test-snapper.ghananautical.info
+    secretName: test-snapper-tls
+  rules:
+  - host: test-snapper.ghananautical.info
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: snapper-frontend-service
+            port:
+              number: 80
