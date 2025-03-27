@@ -56,11 +56,14 @@ jobs:
           # For production, compare the HEAD to the previous commit on main
           # For test environments, compare against main
           if [ "${{ inputs.environment }}" == "prod" ]; then
+            git fetch origin ${{ inputs.compare_branch }}
             AFFECTED_ARGS="--base=origin/${{ inputs.compare_branch }}~1 --head=HEAD"
           else
-            git fetch origin ${{ inputs.compare_branch }}:${{ inputs.compare_branch }}
-            AFFECTED_ARGS="--base=${{ inputs.compare_branch }} --head=HEAD"
+            git fetch origin ${{ inputs.compare_branch }}
+            AFFECTED_ARGS="--base=origin/${{ inputs.compare_branch }} --head=HEAD"
           fi
+          
+          echo "Using comparison: ${AFFECTED_ARGS}"
           
           # Check if app is in the list of affected projects
           AFFECTED_APPS=$(npx nx print-affected --type=app ${AFFECTED_ARGS} --select=projects)
