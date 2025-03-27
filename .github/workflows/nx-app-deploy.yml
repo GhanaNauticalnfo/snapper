@@ -1,0 +1,173 @@
+# File: .github/workflows/nx-app-deploy.yml
+name: Nx App Deployment
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
+        description: 'The name of the app to deploy (e.g., frontend)'
+      environment:
+        required: true
+        type: string
+        description: 'The deployment environment (prod or test)'
+      image_name:
+        required: true
+        type: string
+        description: 'The Docker image name (e.g., snapper-frontend)'
+      domain_name:
+        required: true
+        type: string
+        description: 'The domain name for the app (e.g., snapper.ghananautical.info)'
+      branch_name:
+        required: false
+        type: string
+        description: 'Branch name for test deployments'
+        default: ''
+      compare_branch:
+        required: false
+        type: string
+        description: 'Branch to compare against for affected detection'
+        default: 'main'
+
+jobs:
+  check-affected:
+    runs-on: ubuntu-latest
+    outputs:
+      is_affected: ${{ steps.check.outputs.is_affected }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history for Nx affected commands
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Check if app is affected
+        id: check
+        run: |
+          # For production, compare the HEAD to the previous commit on main
+          # For test environments, compare against main
+          if [ "${{ inputs.environment }}" == "prod" ]; then
+            AFFECTED_ARGS="--base=origin/${{ inputs.compare_branch }}~1 --head=HEAD"
+          else
+            git fetch origin ${{ inputs.compare_branch }}:${{ inputs.compare_branch }}
+            AFFECTED_ARGS="--base=${{ inputs.compare_branch }} --head=HEAD"
+          fi
+          
+          # Check if app is in the list of affected projects
+          AFFECTED_APPS=$(npx nx affected ${AFFECTED_ARGS})
+          echo "Affected apps: $AFFECTED_APPS"
+          
+          if echo "$AFFECTED_APPS" | grep -q "${{ inputs.app_name }}"; then
+            echo "${{ inputs.app_name }} app is affected!"
+            echo "is_affected=true" >> $GITHUB_OUTPUT
+          else
+            echo "${{ inputs.app_name }} app is not affected"
+            echo "is_affected=false" >> $GITHUB_OUTPUT
+          fi
+          
+  build-and-push:
+    needs: check-affected
+    # Skip if not affected by changes and not production with manual trigger
+    if: |
+      needs.check-affected.outputs.is_affected == 'true' ||
+      (inputs.environment == 'prod' && github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Set Docker tags
+        id: docker_tags
+        run: |
+          if [ "${{ inputs.environment }}" == "prod" ]; then
+            echo "tags=ghananauticalinfo/${{ inputs.image_name }}:latest,ghananauticalinfo/${{ inputs.image_name }}:prod-${{ github.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "tags=ghananauticalinfo/${{ inputs.image_name }}:test-${{ inputs.branch_name }},ghananauticalinfo/${{ inputs.image_name }}:test-${{ inputs.branch_name }}-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./apps/${{ inputs.app_name }}/Dockerfile
+          push: true
+          tags: ${{ steps.docker_tags.outputs.tags }}
+          build-args: |
+            ENVIRONMENT=${{ inputs.environment }}
+          
+  deploy:
+    needs: [check-affected, build-and-push]
+    # Only run if build was executed
+    if: |
+      needs.check-affected.outputs.is_affected == 'true' ||
+      (inputs.environment == 'prod' && github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          
+      - name: Save DigitalOcean kubeconfig
+        run: |
+          echo "Available Kubernetes clusters:"
+          doctl kubernetes cluster list
+          
+          # Get the cluster ID instead of relying on exact name match
+          CLUSTER_NAME="${{ inputs.environment == 'prod' && secrets.PROD_CLUSTER_NAME || secrets.TEST_CLUSTER_NAME }}"
+          CLUSTER_ID=$(doctl kubernetes cluster list --format ID,Name --no-header | grep ${CLUSTER_NAME} | awk '{print $1}')
+          
+          if [ -z "$CLUSTER_ID" ]
+          then
+            echo "Could not find cluster with name containing ${CLUSTER_NAME}"
+            echo "Please check the cluster name secret and available clusters listed above"
+            exit 1
+          else
+            echo "Found cluster ID: $CLUSTER_ID"
+            doctl kubernetes cluster kubeconfig save $CLUSTER_ID
+          fi
+      
+      - name: Deploy to Kubernetes
+        run: |
+          # Create directory structure if it doesn't exist
+          mkdir -p k8s/${{ inputs.environment }}
+          
+          # Copy the deployment file to the expected location
+          cp apps/${{ inputs.app_name }}/kubernetes/${{ inputs.environment }}.yaml k8s/${{ inputs.environment }}/deployment.yaml
+          
+          # Apply Kubernetes manifests
+          kubectl apply -f k8s/${{ inputs.environment }}/deployment.yaml
+          
+          # Set the image name based on environment
+          if [ "${{ inputs.environment }}" == "prod" ]; then
+            IMAGE_TAG="prod-${{ github.sha }}"
+          else
+            IMAGE_TAG="test-${{ inputs.branch_name }}-${{ github.sha }}"
+          fi
+          
+          # Update the container image
+          kubectl set image deployment/${{ inputs.image_name }} ${{ inputs.image_name }}=ghananauticalinfo/${{ inputs.image_name }}:${IMAGE_TAG} -n ${{ inputs.environment }}
+          
+          # Wait for rollout to complete
+          kubectl rollout status deployment/${{ inputs.image_name }} -n ${{ inputs.environment }}
