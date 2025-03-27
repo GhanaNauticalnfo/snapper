@@ -1,6 +1,6 @@
 // map.component.ts
-import { Component, ElementRef, OnDestroy, ViewChild, AfterViewInit, Input } from '@angular/core';
-import { Map, NavigationControl, ScaleControl } from 'maplibre-gl';
+import { Component, ElementRef, OnDestroy, ViewChild, AfterViewInit, input, effect } from '@angular/core';
+import { Map, NavigationControl, ScaleControl,GeolocateControl } from 'maplibre-gl';
 
 @Component({
   selector: 'app-map',
@@ -19,10 +19,22 @@ import { Map, NavigationControl, ScaleControl } from 'maplibre-gl';
 export class MapComponent implements AfterViewInit, OnDestroy {
   @ViewChild('mapContainer') private mapContainer!: ElementRef;
   
-  @Input() initialCenter: [number, number] = [0, 0];
-  @Input() initialZoom = 2;
+  // Convert @Input properties to signals
+  initialCenter = input<[number, number]>([30, 90]);
+  initialZoom = input<number>(3);
   
   private map?: Map;
+
+  constructor() {
+    // Use effect to react to input signal changes if needed
+    effect(() => {
+      // This will run when initialCenter or initialZoom signals change
+      if (this.map) {
+        this.map.setCenter(this.initialCenter());
+        this.map.setZoom(this.initialZoom());
+      }
+    });
+  }
 
   ngAfterViewInit(): void {
     this.initializeMap();
@@ -53,17 +65,26 @@ export class MapComponent implements AfterViewInit, OnDestroy {
             type: 'raster',
             source: 'osm-tiles',
             minzoom: 0,
-            maxzoom: 19
+            maxzoom: 18
           }
         ]
       },
-      center: this.initialCenter,
-      zoom: this.initialZoom
+      center: this.initialCenter(),
+      zoom: this.initialZoom()
     });
 
     // Add navigation controls (zoom in/out, rotation)
     this.map.addControl(new NavigationControl(), 'top-right');
     
+    this.map.addControl(
+      new GeolocateControl({
+          positionOptions: {
+              enableHighAccuracy: true
+          },
+          trackUserLocation: true
+      })
+  );
+
     // Add scale control
     this.map.addControl(new ScaleControl({
       maxWidth: 100,

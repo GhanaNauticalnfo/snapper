@@ -1,6 +1,4 @@
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
-import { ButtonComponent } from "../test/button.component";
 import { MapComponent } from '../map/map.component';
 
 /*
@@ -17,18 +15,18 @@ import { MapComponent } from '../map/map.component';
   imports: [MapComponent],
   template: `
     <div class="container">
-      <h1>MapLibre OSM Example</h1>
+      <h1>MapLibre OSM Example123</h1>
       <div class="map-wrapper">
         <app-map 
           [initialCenter]="[0, 51.5]" 
-          [initialZoom]="10">
+          [initialZoom]="8">
         </app-map>
       </div>
     </div>
   `,
   styles: [`
     .container {
-      padding: 20px;
+      padding: 0px;
     }
     .map-wrapper {
       width: 100%;
