@@ -63,7 +63,7 @@ jobs:
           fi
           
           # Check if app is in the list of affected projects
-          AFFECTED_APPS=$(npx nx affected ${AFFECTED_ARGS})
+          AFFECTED_APPS=$(npx nx print-affected --type=app ${AFFECTED_ARGS} --select=projects)
           echo "Affected apps: $AFFECTED_APPS"
           
           if echo "$AFFECTED_APPS" | grep -q "${{ inputs.app_name }}"; then
