@@ -65,11 +65,37 @@ jobs:
           
           echo "Using comparison: ${AFFECTED_ARGS}"
           
-          # Check if app is in the list of affected projects
-          AFFECTED_APPS=$(npx nx print-affected --type=app ${AFFECTED_ARGS} --select=projects)
+          # List branches for debugging
+          echo "Available branches:"
+          git branch -a
+          
+          # Check Git history for debugging
+          echo "Recent commits:"
+          git log --oneline -n 5
+          
+          # Debug Nx workspace
+          echo "Nx workspace projects:"
+          npx nx show projects
+          
+          # Try running the command with verbose output
+          echo "Running affected command with verbose output:"
+          npx nx print-affected --type=app ${AFFECTED_ARGS} --select=projects --verbose
+          
+          # Run with fallback logic in case the command fails
+          echo "Running with fallback logic:"
+          AFFECTED_APPS=$(npx nx print-affected --type=app ${AFFECTED_ARGS} --select=projects || echo "ALL_AFFECTED")
           echo "Affected apps: $AFFECTED_APPS"
           
-          if echo "$AFFECTED_APPS" | grep -q "${{ inputs.app_name }}"; then
+          # If the command failed or found nothing but we're in manual mode, consider it affected
+          if [ "$AFFECTED_APPS" == "ALL_AFFECTED" ] || [ -z "$AFFECTED_APPS" ]; then
+            if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+              echo "Manual trigger, considering ${{ inputs.app_name }} affected"
+              echo "is_affected=true" >> $GITHUB_OUTPUT
+            else
+              echo "No affected apps found, treating as not affected"
+              echo "is_affected=false" >> $GITHUB_OUTPUT
+            fi
+          elif echo "$AFFECTED_APPS" | grep -q "${{ inputs.app_name }}"; then
             echo "${{ inputs.app_name }} app is affected!"
             echo "is_affected=true" >> $GITHUB_OUTPUT
           else
