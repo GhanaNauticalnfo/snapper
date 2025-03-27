@@ -65,25 +65,13 @@ jobs:
           
           echo "Using comparison: ${AFFECTED_ARGS}"
           
-          # List branches for debugging
-          echo "Available branches:"
-          git branch -a
-          
-          # Check Git history for debugging
-          echo "Recent commits:"
-          git log --oneline -n 5
-          
-          # Debug Nx workspace
-          echo "Nx workspace projects:"
-          npx nx show projects
-          
-          # Try running the command with verbose output
+          # Use the new nx show projects --affected command
           echo "Running affected command with verbose output:"
-          npx nx print-affected --type=app ${AFFECTED_ARGS} --select=projects --verbose
+          npx nx show projects --affected ${AFFECTED_ARGS}
           
           # Run with fallback logic in case the command fails
           echo "Running with fallback logic:"
-          AFFECTED_APPS=$(npx nx print-affected --type=app ${AFFECTED_ARGS} --select=projects || echo "ALL_AFFECTED")
+          AFFECTED_APPS=$(npx nx show projects --affected ${AFFECTED_ARGS} || echo "ALL_AFFECTED")
           echo "Affected apps: $AFFECTED_APPS"
           
           # If the command failed or found nothing but we're in manual mode, consider it affected
