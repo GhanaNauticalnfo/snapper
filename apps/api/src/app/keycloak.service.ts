@@ -9,7 +9,7 @@ export class KeycloakService {
     this.keycloakConfig = {
       authServerUrl: 'http://localhost:8080',
       realm: 'nx-project',
-      clientId: 'backend-service',
+      clientId: 'api-service',
       secret: 'your-client-secret',
     };
   }

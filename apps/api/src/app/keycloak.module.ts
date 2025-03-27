@@ -1,4 +1,4 @@
-// apps/backend/src/app/keycloak/keycloak.module.ts
+// apps/api/src/app/keycloak/keycloak.module.ts
 import { Module } from '@nestjs/common';
 import { KeycloakConnectModule, AuthGuard, RoleGuard } from 'nest-keycloak-connect';
 import { APP_GUARD } from '@nestjs/core';
