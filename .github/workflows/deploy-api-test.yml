@@ -1,0 +1,34 @@
+# File: .github/workflows/deploy-snapper-frontend-test.yml
+name: Deploy Snapper Admin to Test
+
+on:
+  push:
+    branches: [ develop, feature/*, bugfix/* ]
+    paths:
+      - 'apps/api/**'
+      - 'libs/**'  # Include changes to shared libraries
+      - 'package.json'
+      - 'package-lock.json'
+      - 'nx.json'
+      - '.github/workflows/deploy-api-test.yml'
+
+jobs:
+  extract-branch:
+    runs-on: ubuntu-latest
+    outputs:
+      branch_name: ${{ steps.extract.outputs.branch_name }}
+    steps:
+      - id: extract
+        run: echo "branch_name=$(echo ${GITHUB_REF#refs/heads/} | sed 's/\//-/g')" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: [extract-branch]
+    uses: ./.github/workflows/nx-app-deploy.yml
+    with:
+      app_name: api
+      environment: test
+      image_name: snapper-api
+      domain_name: snapper-test-api.ghananautical.info
+      branch_name: ${{ needs.extract-branch.outputs.branch_name }}
+      compare_branch: main
+    secrets: inherit
