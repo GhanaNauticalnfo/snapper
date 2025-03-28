@@ -28,7 +28,7 @@ jobs:
       app_name: frontend
       environment: test
       image_name: snapper-frontend
-      domain_name: snappertest.ghananautical.info
+      domain_name: snapper-test.ghananautical.info
       branch_name: ${{ needs.extract-branch.outputs.branch_name }}
       compare_branch: main
     secrets: inherit

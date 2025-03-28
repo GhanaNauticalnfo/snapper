@@ -50,10 +50,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - testsnapper.ghananautical.info
+    - snapper-test.ghananautical.info
     secretName: test-snapper-tls
   rules:
-  - host: testsnapper.ghananautical.info
+  - host: snapper-test.ghananautical.info
     http:
       paths:
       - path: /
