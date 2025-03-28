@@ -53,24 +53,41 @@ jobs:
       - name: Check if app is affected
         id: check
         run: |
-          # For production, compare the HEAD to the previous commit on main
-          # For test environments, compare against main
-          if [ "${{ inputs.environment }}" == "prod" ]; then
-            git fetch origin ${{ inputs.compare_branch }}
-            AFFECTED_ARGS="--base=origin/${{ inputs.compare_branch }}~1 --head=HEAD"
+          # Get the current branch
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          echo "Current branch: $CURRENT_BRANCH"
+          
+          # Determine the base branch to compare against
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # For pull requests, use the PR base branch
+            BASE_BRANCH="${{ github.base_ref }}"
+          elif [ "$CURRENT_BRANCH" == "main" ]; then
+            # For main branch, compare with previous commit
+            BASE_BRANCH="HEAD~1"
+          elif [ "${{ inputs.environment }}" == "prod" ]; then
+            # For production builds, use the compare_branch parameter (usually main)
+            BASE_BRANCH="${{ inputs.compare_branch }}"
           else
-            git fetch origin ${{ inputs.compare_branch }}
-            AFFECTED_ARGS="--base=origin/${{ inputs.compare_branch }} --head=HEAD"
+            # For other branches (develop, feature/*, etc.), compare against their tracking branch or main
+            TRACKING_BRANCH=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || echo "origin/${{ inputs.compare_branch }}")
+            BASE_BRANCH="${TRACKING_BRANCH#origin/}"
           fi
           
+          echo "Using base branch for comparison: $BASE_BRANCH"
+          
+          # Fetch the base branch
+          git fetch origin $BASE_BRANCH
+          
+          # Set up the affected args
+          AFFECTED_ARGS="--base=origin/$BASE_BRANCH --head=HEAD"
           echo "Using comparison: ${AFFECTED_ARGS}"
           
-          # Use the new nx show projects --affected command
-          echo "Running affected command with verbose output:"
+          # Use the nx show projects --affected command
+          echo "Running affected command:"
           npx nx show projects --affected ${AFFECTED_ARGS}
           
           # Run with fallback logic in case the command fails
-          echo "Running with fallback logic:"
+          echo "Determining affected apps:"
           AFFECTED_APPS=$(npx nx show projects --affected ${AFFECTED_ARGS} || echo "ALL_AFFECTED")
           echo "Affected apps: $AFFECTED_APPS"
           
