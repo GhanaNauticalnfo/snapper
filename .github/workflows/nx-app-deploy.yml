@@ -78,12 +78,10 @@ jobs:
           # Make sure we have the latest from remote
           git fetch origin
           
-          # Check if app is affected using direct nx affected command
-          echo "Running nx affected command to check if ${{ inputs.app_name }} is affected:"
-          npx nx affected -t build --base=$NX_BASE --head=$NX_HEAD --projects=${{ inputs.app_name }} --dry-run
-          
-          # Store the exit code
-          AFFECTED_EXIT_CODE=$?
+          # Try to get affected projects list
+          echo "Getting list of affected projects:"
+          AFFECTED_PROJECTS=$(npx nx show projects --affected --base=$NX_BASE --head=$NX_HEAD || echo "")
+          echo "Affected projects: $AFFECTED_PROJECTS"
           
           # Log various Git diffs to help with debugging
           echo "Git diff for app directory:"
@@ -95,16 +93,21 @@ jobs:
           echo "Git diff for root configuration files:"
           git diff --name-only $NX_BASE $NX_HEAD -- package.json nx.json tsconfig*.json
           
-          if [ $AFFECTED_EXIT_CODE -eq 0 ]; then
-            # Nx found the app in the affected projects
-            echo "${{ inputs.app_name }} is affected by changes!"
+          # Check if our app is in the affected list or if git shows changes
+          if echo "$AFFECTED_PROJECTS" | grep -q "${{ inputs.app_name }}"; then
+            # App found in affected projects
+            echo "${{ inputs.app_name }} is in the affected projects list!"
+            echo "is_affected=true" >> $GITHUB_OUTPUT
+          elif [ -n "$(git diff --name-only $NX_BASE $NX_HEAD -- apps/${{ inputs.app_name }}/ libs/ package.json nx.json tsconfig*.json)" ]; then
+            # Git shows relevant changes
+            echo "${{ inputs.app_name }} has changes according to git diff!"
             echo "is_affected=true" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             # Manual trigger - force affected
             echo "Manual trigger, considering ${{ inputs.app_name }} affected"
             echo "is_affected=true" >> $GITHUB_OUTPUT
           else
-            # Nx didn't find the app in affected projects
+            # Not affected
             echo "${{ inputs.app_name }} is not affected by changes"
             echo "is_affected=false" >> $GITHUB_OUTPUT
           fi
