@@ -1,5 +1,5 @@
 # File: .github/workflows/deploy-snapper-frontend-test.yml
-name: Deploy Snapper Frontend to Test
+name: Deploy Snapper Admin to Test
 
 on:
   push:
