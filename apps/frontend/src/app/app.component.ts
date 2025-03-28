@@ -15,7 +15,7 @@ import { MapComponent } from '../map/map.component';
   imports: [MapComponent],
   template: `
     <div class="container">
-      <h1>MapLibre OSM Example123</h1>
+      <h1>MapLibre OSM Example123 werwer</h1>
       <div class="map-wrapper">
         <app-map 
           [initialCenter]="[0, 51.5]" 
