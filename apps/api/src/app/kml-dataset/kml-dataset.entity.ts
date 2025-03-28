@@ -12,11 +12,11 @@ export class KmlDataset {
   @UpdateDateColumn()
   last_updated: Date;
 
-  @Column('text')
-  kml: string;
+  @Column('text', { nullable: true })
+  kml?: string;
 
-  @Column('varchar', { length: 255 })
-  name: string;
+  @Column('varchar', { length: 255, nullable: true })
+  name?: string;
 
   @Column('boolean', { default: true })
   enabled: boolean;

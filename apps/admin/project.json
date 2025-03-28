@@ -26,7 +26,8 @@
           }
         ],
         "styles": [
-          "apps/admin/src/styles.css"
+          "node_modules/primeicons/primeicons.css",
+          "apps/admin/src/styles.scss"
         ],
         "scripts": []
       },
@@ -72,7 +73,8 @@
       },
       "options": {
         "port": 4201,
-        "open": true
+        "open": true,
+        "proxyConfig": "apps/admin/proxy.conf.json"
       },
       "defaultConfiguration": "development"
     },

@@ -1,4 +1,5 @@
 // apps/admin/src/app/auth/keycloak-auth.service.ts
+/*
 import { Injectable, signal, computed } from '@angular/core';
 import { KeycloakService } from 'keycloak-angular';
 import { KeycloakProfile } from 'keycloak-js';
@@ -57,3 +58,4 @@ export class KeycloakAuthService {
     return this.init();
   }
 }
+  */

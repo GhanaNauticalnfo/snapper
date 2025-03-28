@@ -1,12 +1,33 @@
+// apps/admin/src/app/app.component.ts
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
+import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
 
 @Component({
-  imports: [ RouterModule],
   selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.css',
+  standalone: true,
+  imports: [RouterOutlet, SidebarComponent],
+  template: `
+    <div class="app-container">
+      <app-sidebar></app-sidebar>
+      <main class="content-area">
+        <router-outlet></router-outlet>
+      </main>
+    </div>
+  `,
+  styles: [`
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+    }
+    
+    .content-area {
+      flex: 1;
+      padding: 20px;
+      background-color: #f9f9f9;
+      overflow-y: auto;
+    }
+  `]
 })
-export class AppComponent {
-  title = 'admin';
-}
+export class AppComponent {}
