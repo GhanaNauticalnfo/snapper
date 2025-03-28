@@ -1,4 +1,3 @@
-// apps/admin/src/app/app.routes.ts
 import { Route } from '@angular/router';
 
 export const routes: Route[] = [
@@ -15,7 +14,29 @@ export const routes: Route[] = [
   {
     path: 'kml',
     loadComponent: () => import('./features/kml/kml.component')
-      .then(m => m.KmlComponent)
+      .then(m => m.KmlComponent),
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./features/kml/components/kml-list.component')
+          .then(m => m.KmlListComponent)
+      },
+      {
+        path: 'new',
+        loadComponent: () => import('./features/kml/components/kml-form.component')
+          .then(m => m.KmlFormComponent)
+      },
+      {
+        path: ':id',
+        loadComponent: () => import('./features/kml/components/kml-detail.component')
+          .then(m => m.KmlDetailComponent)
+      },
+      {
+        path: ':id/edit',
+        loadComponent: () => import('./features/kml/components/kml-form.component')
+          .then(m => m.KmlFormComponent)
+      }
+    ]
   }
 ];
 
