@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: snapper-postgres
+  namespace: test
+spec:
+  serviceName: snapper-postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snapper-postgres
+      env: test
+  template:
+    metadata:
+      labels:
+        app: snapper-postgres
+        env: test
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:14
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: snapper-postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: snapper-postgres-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_DB
+          value: snapper_db
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: snapper-postgres-service
+  namespace: test
+spec:
+  selector:
+    app: snapper-postgres
+    env: test
+  ports:
+  - port: 5432
+    targetPort: 5432
+  clusterIP: None

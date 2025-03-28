@@ -2,7 +2,13 @@
   "name": "@snapper/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "start:dev": "nest start --watch",
+    "db:up": "docker compose -f docker/local/docker-compose.yml up -d",
+    "db:down": "docker compose -f docker/local/docker-compose.yml down",
+    "db:logs": "docker compose -f docker/local/docker-compose.yml logs -f",
+    "db:restart": "npm run db:down && npm run db:up"
+  },
   "private": true,
   "devDependencies": {
     "@angular-devkit/build-angular": "~19.1.0",
@@ -63,9 +69,11 @@
     "@angular/platform-browser-dynamic": "~19.1.0",
     "@angular/router": "~19.1.0",
     "@nestjs/common": "^10.0.2",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^10.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.0.2",
+    "@nestjs/typeorm": "^11.0.0",
     "@primeng/themes": "^19.0.9",
     "@tailwindcss/postcss": "^4.0.10",
     "@types/geojson": "^7946.0.16",
@@ -75,12 +83,14 @@
     "maplibre-gl": "^5.2.0",
     "nest-keycloak-connect": "^1.10.1",
     "passport-jwt": "^4.0.1",
+    "pg": "^8.14.1",
     "postcss": "^8.5.3",
     "primeng": "^19.0.9",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "tailwindcss": "^4.0.10",
     "tailwindcss-primeui": "^0.5.1",
+    "typeorm": "^0.3.21",
     "zone.js": "~0.15.0"
   }
 }

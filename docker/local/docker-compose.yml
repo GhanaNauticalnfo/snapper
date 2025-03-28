@@ -1,0 +1,23 @@
+services:
+  snapper-postgres:
+    image: postgres:17
+    container_name: snapper-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-snapper_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-snapper_password}
+      POSTGRES_DB: ${DATABASE_NAME:-snapper_db}
+    volumes:
+      - snapper-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - snapper-network
+
+networks:
+  snapper-network:
+    driver: bridge
+
+volumes:
+  snapper-postgres-data:
+    driver: local
