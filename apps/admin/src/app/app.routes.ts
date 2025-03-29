@@ -14,29 +14,7 @@ export const routes: Route[] = [
   {
     path: 'kml',
     loadComponent: () => import('./features/kml/kml.component')
-      .then(m => m.KmlComponent),
-    children: [
-      {
-        path: '',
-        loadComponent: () => import('./features/kml/components/kml-list.component')
-          .then(m => m.KmlListComponent)
-      },
-      {
-        path: 'new',
-        loadComponent: () => import('./features/kml/components/kml-form.component')
-          .then(m => m.KmlFormComponent)
-      },
-      {
-        path: ':id',
-        loadComponent: () => import('./features/kml/components/kml-detail.component')
-          .then(m => m.KmlDetailComponent)
-      },
-      {
-        path: ':id/edit',
-        loadComponent: () => import('./features/kml/components/kml-form.component')
-          .then(m => m.KmlFormComponent)
-      }
-    ]
+      .then(m => m.KmlComponent)
   }
 ];
 
