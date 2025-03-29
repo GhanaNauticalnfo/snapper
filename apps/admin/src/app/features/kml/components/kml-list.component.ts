@@ -1,5 +1,5 @@
 // features/kml/components/kml-list.component.ts
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -138,14 +138,15 @@ interface KmlFormData {
 
     <!-- View Dialog -->
     <p-dialog 
-  [visible]="viewDialogVisible()" 
-  (onHide)="closeViewDialog()"
-  [style]="{width: '80vw'}" 
-  [modal]="true" 
-  [draggable]="false" 
-  [resizable]="false"
-  header="View KML Dataset"
->
+      [(visible)]="viewDialogVisible"
+      [style]="{width: '80vw'}" 
+      [modal]="true" 
+      [draggable]="false" 
+      [resizable]="false"
+      [closeOnEscape]="true"
+      [closable]="true"
+      header="View KML Dataset"
+    >
       @if (selectedDataset()) {
         <div class="view-dialog-content">
           <div class="grid">
@@ -214,16 +215,16 @@ interface KmlFormData {
     </p-dialog>
 
     <!-- Edit/Create Dialog -->
-    // Second dialog (form dialog)
-<p-dialog 
-  [visible]="formDialogVisible()" 
-  (onHide)="closeFormDialog()"
-  [style]="{width: '70vw'}" 
-  [modal]="true" 
-  [draggable]="false" 
-  [resizable]="false"
-  [header]="isEditMode() ? 'Edit KML Dataset' : 'Create New KML Dataset'"
->
+    <p-dialog 
+      [(visible)]="formDialogVisible"
+      [style]="{width: '70vw'}" 
+      [modal]="true" 
+      [draggable]="false" 
+      [resizable]="false"
+      [closeOnEscape]="true"
+      [closable]="true"
+      [header]="isEditMode() ? 'Edit KML Dataset' : 'Create New KML Dataset'"
+    >
       <div class="form-container">
         <div class="form-group">
           <label for="name" class="form-label">Name <span class="required-asterisk">*</span></label>
@@ -434,9 +435,11 @@ export class KmlListComponent implements OnInit {
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
   
-  // Dialog control signals
-  viewDialogVisible = signal<boolean>(false);
-  formDialogVisible = signal<boolean>(false);
+  // Dialog control properties (now using regular properties for two-way binding)
+  viewDialogVisible = false;
+  formDialogVisible = false;
+  
+  // Other signals
   isEditMode = signal<boolean>(false);
   selectedDataset = signal<KmlDataset | null>(null);
   
@@ -477,11 +480,11 @@ export class KmlListComponent implements OnInit {
   // View dialog methods
   openViewDialog(dataset: KmlDataset): void {
     this.selectedDataset.set(dataset);
-    this.viewDialogVisible.set(true);
+    this.viewDialogVisible = true;
   }
   
   closeViewDialog(): void {
-    this.viewDialogVisible.set(false);
+    this.viewDialogVisible = false;
     this.selectedDataset.set(null);
   }
   
@@ -493,7 +496,7 @@ export class KmlListComponent implements OnInit {
       enabled: true,
       kml: ''
     });
-    this.formDialogVisible.set(true);
+    this.formDialogVisible = true;
   }
   
   openEditDialog(dataset: KmlDataset | null): void {
@@ -506,16 +509,17 @@ export class KmlListComponent implements OnInit {
       kml: dataset.kml || ''
     });
     this.selectedDataset.set(dataset);
-    this.formDialogVisible.set(true);
+    this.formDialogVisible = true;
     
     // Close view dialog if it's open
-    if (this.viewDialogVisible()) {
-      this.viewDialogVisible.set(false);
+    if (this.viewDialogVisible) {
+      this.viewDialogVisible = false;
     }
   }
   
   closeFormDialog(): void {
-    this.formDialogVisible.set(false);
+    this.formDialogVisible = false;
+    // Use a small timeout to ensure UI updates before clearing selection
     setTimeout(() => {
       this.selectedDataset.set(null);
     }, 200);
