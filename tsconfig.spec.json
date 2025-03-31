@@ -1,0 +1,18 @@
+// tsconfig.spec.json (WORKSPACE ROOT)
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+      // Output directory doesn't strictly matter for test compilation context usually
+      // "outDir": "../../dist/out-tsc",
+      "module": "commonjs",
+      "types": ["jest", "node"]
+    },
+    // Keep include minimal - project tsconfig.spec.json files handle specifics
+    "include": [
+      // Include global test setup files if you have any at the root
+       "src/**/*.spec.ts", // Keep if you have root level tests
+       "src/**/*.test.ts", // Keep if you have root level tests
+       "src/**/*.d.ts" // Keep if you have root level declarations
+    ]
+    // You might even have an empty "include": [] here if all tests are within projects
+  }

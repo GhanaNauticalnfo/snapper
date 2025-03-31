@@ -1,37 +1,48 @@
-// src/app/config/database.config.ts
+// apps/api/src/config/database.config.ts
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { KmlDataset } from '../app/kml-dataset/kml-dataset.entity';
+import { dataSourceOptions } from './typeorm.config'; // Import shared options
 
+// This function now simply adapts the shared options for NestJS TypeOrmModule
 export const getDatabaseConfig = (): TypeOrmModuleOptions => {
-  const env = process.env.NODE_ENV || 'development';
-  
-  console.log('Loading database config...');
-  console.log('__dirname:', __dirname);
-  console.log('KmlDataset entity loaded:', !!KmlDataset);
-  
-  const baseConfig = {
-    type: 'postgres' as const,
-    entities: [KmlDataset], // Directly reference the entity class
-    synchronize: env !== 'production',
-    logging: true, // Enable for debugging
+  console.log('Loading database config for NestJS...');
+
+  // Start with the shared options
+  const config: TypeOrmModuleOptions = {
+    ...dataSourceOptions,
+
+    // --- NestJS TypeOrmModule Specific Options ---
+
+    // Let NestJS handle entity discovery based on the glob pattern
+    // You could potentially use autoLoadEntities with the glob in entities,
+    // but providing the entities array directly from dataSourceOptions is robust.
+    // autoLoadEntities: true,
+
+    // IMPORTANT: Remove synchronize! Rely on migrations exclusively.
+       // >>> KEY CHANGE HERE <<<
+    // Enable synchronize ONLY in development for rapid iteration.
+    // Disable it strictly for production (and ideally staging/test).
+    synchronize: process.env.NODE_ENV === 'development', // Use true for dev, false otherwise
+
+    // synchronize: false, // Explicitly false or just remove it
+
+    // Keep logging configuration specific to NestJS runtime if needed
+    logging: process.env.NODE_ENV !== 'production', // Example: log in dev, not prod
   };
-  
-  if (process.env.DATABASE_URL) {
-    console.log('Using DATABASE_URL connection');
-    return {
-      ...baseConfig,
-      url: process.env.DATABASE_URL,
-      ssl: env === 'production' ? { rejectUnauthorized: false } : false,
-    };
+
+  if (config.synchronize) {
+    console.warn(
+      '*** TypeORM synchronize is ENABLED. Schema changes will be applied automatically. DO NOT USE IN PRODUCTION! ***'
+    );
+  } else {
+    console.log(
+      'TypeORM synchronize is DISABLED. Using migrations for schema changes.'
+    );
   }
   
-  console.log('Using individual connection parameters');
-  return {
-    ...baseConfig,
-    host: process.env.DATABASE_HOST || 'localhost',
-    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-    username: process.env.DATABASE_USER || 'snapper_user',
-    password: process.env.DATABASE_PASSWORD || 'snapper_password',
-    database: process.env.DATABASE_NAME || 'snapper_db',
-  };
+  console.log(
+    'Database config loaded. Using entities from glob:',
+    dataSourceOptions.entities
+  );
+
+  return config;
 };
