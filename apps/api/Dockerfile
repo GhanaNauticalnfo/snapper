@@ -1,3 +1,5 @@
+#apps/api/Dockerfile
+
 # Stage 1: Build the NestJS application
 FROM node:18 AS build
 WORKDIR /app

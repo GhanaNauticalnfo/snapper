@@ -32,6 +32,46 @@
           "buildTarget": "api:build:production"
         }
       }
+    },
+    "typeorm": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "typeorm-ts-node-commonjs"
+      }
+    },
+    "migration:generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nx run api:typeorm -- migration:generate apps/api/src/migrations/InitialSchema -d apps/api/src/config/typeorm.config.ts"
+      },
+      "configurations": {
+        "custom": {
+          "command": "nx run api:typeorm -- migration:generate apps/api/src/migrations/{args.name} -d apps/api/src/config/typeorm.config.ts"
+        }
+      }
+    },
+    "migration:create": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nx run api:typeorm -- migration:create apps/api/src/migrations/EmptyMigration"
+      },
+      "configurations": {
+        "custom": {
+          "command": "nx run api:typeorm -- migration:create apps/api/src/migrations/{args.name}"
+        }
+      }
+    },
+    "migration:run": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nx run api:typeorm -- migration:run -d apps/api/src/config/typeorm.config.ts"
+      }
+    },
+    "migration:revert": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nx run api:typeorm -- migration:revert -d apps/api/src/config/typeorm.config.ts"
+      }
     }
   },
   "tags": []

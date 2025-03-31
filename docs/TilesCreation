@@ -1,0 +1,18 @@
+
+## Command to create a PostgreSQL table from a GeoJSON file
+>  ogr2ogr \
+    -f "PostgreSQL" \
+    PG:"host=localhost port=5433 dbname=gisdb user=user password=password" \
+    volta_test_sat_data.geojson \
+    -nln public.volta_river_depths \
+    -lco GEOMETRY_NAME=geom \
+    -lco FID=fid \
+    -nlt MULTIPOLYGON \
+    -t_srs EPSG:4326 \
+    -sql "SELECT fid, \"group\" AS group_code, Description FROM test" \
+    -dialect OGRSQL \
+    -skipfailures \
+    --config PG_USE_COPY YES \
+    -makevalid \
+    -progress \
+    -overwrite

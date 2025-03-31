@@ -7,7 +7,16 @@
     "db:up": "docker compose -f docker/local/docker-compose.yml up -d",
     "db:down": "docker compose -f docker/local/docker-compose.yml down",
     "db:logs": "docker compose -f docker/local/docker-compose.yml logs -f",
-    "db:restart": "npm run db:down && npm run db:up"
+    "db:restart": "npm run db:down && npm run db:up",
+
+    "typeorm:api:direct": "ts-node -r tsconfig-paths/register -P apps/api/tsconfig.app.json ./node_modules/typeorm/cli.js --dataSource apps/api/src/config/typeorm.config.ts",
+
+    "migration:generate": "npm run typeorm:api:direct -- migration:generate",
+    "migration:run": "npm run typeorm:api:direct -- migration:run",
+    "migration:revert": "npm run typeorm:api:direct -- migration:revert",
+
+    "typeorm": "npm run typeorm:api:direct --"
+
   },
   "private": true,
   "devDependencies": {
@@ -53,7 +62,8 @@
     "nx": "20.4.6",
     "prettier": "^2.6.2",
     "ts-jest": "^29.1.0",
-    "ts-node": "10.9.1",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.2.0",
     "tslib": "^2.3.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.19.0",
