@@ -6,6 +6,8 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { providePrimeNG } from 'primeng/config';
 import { provideKeycloakAngular } from './keycloak.config';
 import { routes } from './app.routes';
+import { MessageService } from 'primeng/api'; // Import MessageService
+
 import Aura from '@primeng/themes/aura';
 
 export const appConfig: ApplicationConfig = {
@@ -16,6 +18,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(),
     //provideHttpClient(withInterceptors([includeBearerTokenInterceptor])),
     provideAnimationsAsync(),
+    MessageService, // Provide MessageService globally
     providePrimeNG({
         theme: {
             preset: Aura

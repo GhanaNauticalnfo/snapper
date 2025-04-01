@@ -15,6 +15,11 @@ export const routes: Route[] = [
     path: 'kml',
     loadComponent: () => import('./features/kml/kml.component')
       .then(m => m.KmlComponent)
+  },
+  {
+    path: 'volta-depth',
+    loadComponent: () => import('./features/volta-depth/volta-depth.component')
+      .then(m => m.VoltaDepthComponent)
   }
 ];
 

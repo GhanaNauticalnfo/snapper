@@ -112,6 +112,7 @@ export class SidebarComponent {
   navigationItems = [
     { icon: 'pi pi-home', route: '/home', label: 'Home' },
     { icon: 'pi pi-map', route: '/kml', label: 'KML' },
+    { icon: 'pi pi-map', route: '/volta-depth', label: 'Depths' },
     // Add more navigation items as needed
   ];
 }
