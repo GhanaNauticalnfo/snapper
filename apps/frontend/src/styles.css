@@ -1,20 +1,27 @@
+/* FILENAME: ./apps/frontend/src/styles.css */
+/* Tailwind directives - these are the correct way to include Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* You can add global styles to this file, and also import other style files */
-@import "tailwindcss";
-@import "tailwindcss-primeui";
+/* Remove this line - it's not needed and likely causing issues */
+/* @import 'tailwindcss'; */ /* <<< REMOVE THIS LINE */
+
+/* Keep your other imports */
+@import 'tailwindcss-primeui'; /* Assuming this is installed and configured correctly */
 @import 'maplibre-gl/dist/maplibre-gl.css';
 
-
-
 body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-      sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-  
-  code {
-    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-      monospace;
-  }
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}

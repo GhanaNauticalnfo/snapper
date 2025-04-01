@@ -8,6 +8,10 @@ import { SidebarComponent } from './shared/components/sidebar/sidebar.component'
   standalone: true,
   imports: [RouterOutlet, SidebarComponent],
   template: `
+  <div class="flex flex-col p-4 border">
+    <h1 class="text-red-600 text-4xl">Test Nx Angular Tailwind v4</h1>
+    <span>Running nx monorepo with angular 19 and tailwind v4</span>
+  </div>
     <div class="app-container">
       <app-sidebar></app-sidebar>
       <main class="content-area">
