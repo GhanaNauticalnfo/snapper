@@ -12,3 +12,7 @@ nx test api
 
 # Or, run only tests matching a specific pattern (e.g., volta-depth)
 nx test api --testFile=volta-depth
+
+
+
+find . -type f -not -path "*/\.*/*" -not -path "*/dist/*" -not -path "*/node_modules/*" -not -path "*/example-standalone/*"
