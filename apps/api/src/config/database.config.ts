@@ -29,6 +29,8 @@ export const getDatabaseConfig = (): TypeOrmModuleOptions => {
     logging: process.env.NODE_ENV !== 'production', // Example: log in dev, not prod
   };
 
+  
+
   if (config.synchronize) {
     console.warn(
       '*** TypeORM synchronize is ENABLED. Schema changes will be applied automatically. DO NOT USE IN PRODUCTION! ***'

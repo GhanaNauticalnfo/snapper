@@ -12,6 +12,11 @@ export const routes: Route[] = [
       .then(m => m.HomeComponent)
   },
   {
+    path: 'home2',
+    loadComponent: () => import('./features/home2/home.component')
+      .then(m => m.Home2Component)
+  },
+  {
     path: 'kml',
     loadComponent: () => import('./features/kml/kml.component')
       .then(m => m.KmlComponent)

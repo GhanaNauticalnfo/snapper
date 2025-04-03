@@ -7,8 +7,7 @@ import { providePrimeNG } from 'primeng/config';
 import { provideKeycloakAngular } from './keycloak.config';
 import { routes } from './app.routes';
 import { MessageService } from 'primeng/api'; // Import MessageService
-
-import Aura from '@primeng/themes/aura';
+import Noir from '../themes/app-theme';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -19,10 +18,6 @@ export const appConfig: ApplicationConfig = {
     //provideHttpClient(withInterceptors([includeBearerTokenInterceptor])),
     provideAnimationsAsync(),
     MessageService, // Provide MessageService globally
-    providePrimeNG({
-        theme: {
-            preset: Aura
-        }
-    })
+    providePrimeNG({ theme: Noir, ripple: false })
   ]
 };

@@ -1,13 +1,13 @@
 // apps/admin/src/app/shared/components/sidebar/sidebar.component.ts
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { NgFor, NgClass } from '@angular/common';
+import { NgFor} from '@angular/common';
 import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, NgFor, NgClass, TooltipModule],
+  imports: [RouterLink, RouterLinkActive, NgFor, TooltipModule],
   template: `
     <div class="sidebar">
       <div class="logo-container">
@@ -111,6 +111,7 @@ import { TooltipModule } from 'primeng/tooltip';
 export class SidebarComponent {
   navigationItems = [
     { icon: 'pi pi-home', route: '/home', label: 'Home' },
+    { icon: 'pi pi-home', route: '/home2', label: 'Home2' },
     { icon: 'pi pi-map', route: '/kml', label: 'KML' },
     { icon: 'pi pi-map', route: '/volta-depth', label: 'Depths' },
     // Add more navigation items as needed
