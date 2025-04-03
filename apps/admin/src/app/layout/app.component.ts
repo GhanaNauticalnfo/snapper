@@ -1,6 +1,6 @@
 // apps/admin/src/app/app.component.ts
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../shared/components/sidebar/sidebar.component';
 
 @Component({
@@ -8,16 +8,7 @@ import { SidebarComponent } from '../shared/components/sidebar/sidebar.component
   standalone: true,
   imports: [RouterOutlet, SidebarComponent],
   template: `
-  <div class="flex flex-col p-4 border">
-    <h1 class="text-red-600 text-4xl">Test Nx Angular Tailwind v4</h1>
-    <span>Running nx monorepo with angular 19 and tailwind v4</span>
-  </div>
-    <div class="app-container">
-      <app-sidebar></app-sidebar>
-      <main class="content-area">
-        <router-outlet></router-outlet>
-      </main>
-    </div>
+    <router-outlet></router-outlet>
   `,
   styles: [`
     .app-container {
@@ -34,4 +25,15 @@ import { SidebarComponent } from '../shared/components/sidebar/sidebar.component
     }
   `]
 })
-export class AppComponent {}
+export class AppComponent {
+  constructor(private router: Router) {
+    this.router.events.subscribe(event => {
+      console.log('Router Event:', event);
+      
+      if (event instanceof NavigationEnd) {
+        console.log('Current URL:', event.url);
+        console.log('Current route components:', this.router.routerState.snapshot.root);
+      }
+    });
+  }
+}

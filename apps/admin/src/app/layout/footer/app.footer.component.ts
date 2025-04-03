@@ -14,5 +14,5 @@ import { Component } from '@angular/core';
 })
 export class AppFooterComponent {
 //    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    version = require('package.json') && require('package.json').version;
+    version = '0.1'// require('package.json') && require('package.json').version;
 }

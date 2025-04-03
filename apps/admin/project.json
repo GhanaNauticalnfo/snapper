@@ -23,11 +23,16 @@
           {
             "glob": "**/*",
             "input": "apps/admin/public"
+          },
+          {
+            "glob": "**/*",
+            "input": "apps/admin/src/assets",
+            "output": "/assets"
           }
         ],
         "styles": [
-          "node_modules/primeicons/primeicons.css",
-          "apps/admin/src/styles.css"
+          "apps/admin/src/assets/styles/global.scss",
+          "node_modules/primeicons/primeicons.css"
         ],
         "scripts": []
       },

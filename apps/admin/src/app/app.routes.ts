@@ -1,11 +1,17 @@
 import { Route } from '@angular/router';
+import { AppMainComponent } from './layout/app.main.component';
+import { KmlComponent } from './features/kml/kml.component';
 
 export const routes: Route[] = [
   {
-    path: '',
+    path: 'app',
     redirectTo: 'home',
     pathMatch: 'full'
   },
+  {
+  path: '',
+  component: AppMainComponent,
+  children: [
   {
     path: 'home',
     loadComponent: () => import('./features/home/home.component')
@@ -17,14 +23,14 @@ export const routes: Route[] = [
       .then(m => m.Home2Component)
   },
   {
-    path: 'kml',
-    loadComponent: () => import('./features/kml/kml.component')
-      .then(m => m.KmlComponent)
+    path: 'kml', component: KmlComponent,
   },
   {
     path: 'volta-depth',
     loadComponent: () => import('./features/volta-depth/volta-depth.component')
       .then(m => m.VoltaDepthComponent)
+  }
+]
   }
 ];
 

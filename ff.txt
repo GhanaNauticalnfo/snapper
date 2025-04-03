@@ -226,7 +226,8 @@ CONTENTS:
     "baseUrl": ".",
     "paths": {
       "@snapper/shared": ["libs/shared/src/index.ts"]
-    }
+    },
+    "resolveJsonModule": true,                           /* (UPDATED) Enable importing .json files. */
   },
   "exclude": ["node_modules", "tmp"]
 }
@@ -1242,20 +1243,20 @@ CONTENTS:
           {
             "glob": "**/*",
             "input": "apps/admin/public"
+          },
+          {
+            "glob": "**/*",
+            "input": "apps/admin/src/assets",
+            "output": "/assets"
           }
         ],
         "styles": [
+          "apps/admin/src/assets/styles/global.scss",
           "node_modules/primeicons/primeicons.css",
-          "apps/admin/src/styles.css"
+          
         ],
         "scripts": []
-      },
-      "configurations": {
-        "production": {
-          "budgets": [
-            {
-              "type": "initial",
-              "maximumWarning": "[... content truncated ...]
+    [... content truncated ...]
 
 ----------------------------------------
 
@@ -1577,10 +1578,13 @@ CONTENTS:
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>admin</title>
+    <title>Snapper</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400|Roboto:500|Roboto:600|Roboto:700'" />
+
     <script>
       (function () {
           const APP_CONFIG_KEY = 'appConfigState';
@@ -1604,24 +1608,41 @@ CONTENTS:
 
 ----------------------------------------
 
-FILENAME: ./apps/admin/src/app/app.component.html
-CONTENTS:
-
-<router-outlet></router-outlet>
-
-----------------------------------------
-
 FILENAME: ./apps/admin/src/app/auth/keycloak-auth.service.ts
 FILENAME: ./apps/admin/src/app/auth/auth.guard.ts
 FILENAME: ./apps/admin/src/app/auth/auth-role.guard.ts
 FILENAME: ./apps/admin/src/app/app.routes.ts
 FILENAME: ./apps/admin/src/app/login.component.ts
+FILENAME: ./apps/admin/src/app/layout/footer/app.footer.component.ts
+FILENAME: ./apps/admin/src/app/layout/app.main.component.ts
+FILENAME: ./apps/admin/src/app/layout/app.component.ts
+FILENAME: ./apps/admin/src/app/layout/news/app.news.component.ts
+FILENAME: ./apps/admin/src/app/layout/news/app.news.component.html
+CONTENTS:
+<div *ngIf="isNewsActive" class="layout-news">
+    <div class="layout-news-container">
+        <div class="layout-news-content">
+            <span class="layout-news-text">{{ announcement?.content }}</span>
+            <a *ngIf="announcement?.linkHref" class="layout-news-link" [href]="announcement?.linkHref" target="_blank" rel="noopener noreferrer">{{ announcement.linkText }}</a>
+        </div>
+        <a tabindex="0" class="layout-news-close" (click)="hideNews()">
+            <span class="pi pi-times"></span>
+        </a>
+    </div>
+</div>
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/app/layout/menu/app.menu.component.ts
+FILENAME: ./apps/admin/src/app/layout/menu/app.menuitem.component.ts
+FILENAME: ./apps/admin/src/app/layout/topbar/app.topbar.component.ts
 FILENAME: ./apps/admin/src/app/features/home/home.component.ts
 FILENAME: ./apps/admin/src/app/features/kml/models/kml-dataset.model.ts
 FILENAME: ./apps/admin/src/app/features/kml/components/kml-form.component.ts
 FILENAME: ./apps/admin/src/app/features/kml/components/kml-list.component.ts
 FILENAME: ./apps/admin/src/app/features/kml/kml.component.ts
 FILENAME: ./apps/admin/src/app/features/kml/services/kml-dataset.service.ts
+FILENAME: ./apps/admin/src/app/features/home2/home.component.ts
 FILENAME: ./apps/admin/src/app/features/volta-depth/models/tile-info.model.ts
 FILENAME: ./apps/admin/src/app/features/volta-depth/models/upload-response.model.ts
 FILENAME: ./apps/admin/src/app/features/volta-depth/models/tile-definition.model.ts
@@ -1638,7 +1659,6 @@ CONTENTS:
 ----------------------------------------
 
 FILENAME: ./apps/admin/src/app/shared/components/sidebar/sidebar.component.ts
-FILENAME: ./apps/admin/src/app/app.component.ts
 FILENAME: ./apps/admin/src/app/forbidden/forbidden.component.ts
 FILENAME: ./apps/admin/src/app/forbidden/forbidden.component.html
 CONTENTS:
@@ -1658,11 +1678,9 @@ CONTENTS:
 
 ----------------------------------------
 
-FILENAME: ./apps/admin/src/app/app.component.css
-CONTENTS:
-
-----------------------------------------
-
+FILENAME: ./apps/admin/src/app/service/appconfigservice.ts
+FILENAME: ./apps/admin/src/app/domain/appconfig.ts
+FILENAME: ./apps/admin/src/app/domain/appstate.ts
 FILENAME: ./apps/admin/src/main.ts
 FILENAME: ./apps/admin/src/styles.css
 CONTENTS:
@@ -1696,6 +1714,1066 @@ CONTENTS:
     </script>
   </body>
 </html>
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_code.scss
+CONTENTS:
+code[class*="language-"],
+pre[class*="language-"] {
+    background: none;
+    font-family: ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,Liberation Mono,monospace;
+    text-align: start;
+    white-space: pre;
+    word-spacing: normal;
+    word-break: normal;
+    word-wrap: normal;
+    line-height: 1.5;
+    -moz-tab-size: 4;
+    -o-tab-size: 4;
+    tab-size: 4;
+    -webkit-hyphens: none;
+    -moz-hyphens: none;
+    -ms-hyphens: none;
+    hyphens: none;
+}
+
+div.code-toolbar > .toolbar {
+    display: none;
+}
+
+
+pre[class*="language-"] {
+    position: relative;
+    background: transparent;
+    margin: 0;
+    padding: 0;
+    max-height: 40rem;
+    overflow: auto;
+    color-scheme: dark;
+
+    &:before, &:after {
+        display: none !important;
+    }
+
+    code {
+        border-left: 1rem solid transparent;
+        box-shadow: none;
+        margin: 0;
+        font-size: 14px;
+        border-radius: 10px;
+        color: #ffffff;
+        max-height: inherit;
+        height: inherit;
+        padding: 0 1rem;
+    [... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_doc.scss
+CONTENTS:
+@mixin mark() {
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    font-style: normal;
+    background: var(--mark-background);
+    color: var(--mark-text);
+}
+
+.mark {
+    @include mark();
+}
+
+.doc-tabmenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    margin-bottom: 2rem;
+    overflow: auto;
+    position: relative;
+
+    &:after {
+        display: block;
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        border-bottom: 1px solid var(--border-color);
+        content: '';
+    }
+
+    li {
+        position: relative;
+        z-index: 1;
+
+        button {
+            background-color: transparent;
+            border: 0 none;
+            display: block;
+            padding-block: 0 1rem;
+            padding-inline: 2rem;
+            text-align: center;
+            color: var(--text-color);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin: 0;
+            transit[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/landing/_variables.scss
+CONTENTS:
+$landingBreakpointMD: 767px;
+$landingBreakpointLG: 991px;
+$landingBreakpointXL: 1199px;
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/landing/_themes.scss
+CONTENTS:
+.landing-themes {
+    .table-container {
+        width: 1250px;
+        box-shadow: var(--home-card-shadow);
+    }
+}
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/landing/_getstarted.scss
+CONTENTS:
+.landing-getstarted {
+    .download-icon {
+        color: var(--home-highlight-color);
+    }
+
+    .download-box {
+        span {
+            color: var(--home-primary-text-color);
+        }
+    }
+}
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/landing/_main.scss
+CONTENTS:
+.landing {
+    scroll-behavior: smooth;
+    padding-top: 4rem;
+    background-color: var(--ground-background);
+
+    .box {
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background-color: var(--card-background);
+        position: relative;
+        z-index: 0;
+
+        &::before,
+        &::after {
+            content: "";
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: 2px solid var(--home-box-ring-color);
+            transition: all .5s;
+            animation: clippath 3s infinite linear;
+            border-radius: 10px;
+            opacity: 0;
+            z-index: -1;
+        }
+
+        &::after {
+            animation: clippath 3s infinite -1.5s linear;
+        }
+
+        &:hover {
+            &::before,
+            &::after {
+                opacity: 1;
+            }
+        }
+    }
+
+    .linkbox {
+        transition: background-color .2s, border-color .2s, outline-col[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/landing/_features.scss
+CONTENTS:
+.landing-features {
+    .box {
+        box-shadow: var(--home-card-shadow);
+    }
+    .features-container{
+        max-width: 1250px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+}
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/landing/_templates.scss
+CONTENTS:
+.landing-templates {
+    overflow: hidden;
+
+    .templates {
+        transform: rotateX(55deg) rotateY(0deg) rotateZ(-45deg);
+        position: relative;
+        z-index: 1;
+
+        .template-block {
+            width: 504px;
+            height: 257px;
+            background-size: cover;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: var(--home-templates-block-shadow);
+            border-left: 5px solid var(--border-color);
+            border-bottom: 7px solid var(--border-color);
+            position: relative;
+            z-index: 1;
+            transition: 1.5s;
+            opacity:0;
+            visibility: hidden;
+
+            &.block-1 {
+                animation: animated-block-1 2s ease-in-out alternate infinite;
+            }
+
+            &.block-2 {
+                animation: animated-block-2 2s 0.2s ease-in-out alternate infinite;
+            }
+
+            &.block-middle {
+                transform: scale(0.9);
+            }
+
+            &.block-3 {
+        [... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/landing/_blocks.scss
+CONTENTS:
+.landing-blocks {
+    * {
+        box-sizing: content-box;
+    }
+
+    .prime-blocks {
+        transform: rotateX(55deg) rotateY(0deg) rotateZ(-45deg);
+        margin: -12rem 0;
+
+        &.blocks-animation {
+            .prime-block {
+                .block-sidebar,
+                .block-header,
+                .block-sidebar-list,
+                .block-content {
+                    opacity: 1;
+                    visibility: visible;
+                    transform: scale(1);
+                }
+            }
+        }
+
+        .prime-block {
+            background: var(--ground-surface);
+            box-shadow:var(--home-blocks-block-shadow);
+            border-left: 5px solid var(--border-color);
+            border-bottom: 7px solid var(--border-color);
+            border-radius: 10px;
+            height: 300px;
+            width: 600px;
+            position: relative;
+            z-index: 1;
+            margin: 15px;
+            transition: opacity 1.3s, transform 1.3s;
+
+            .block-sidebar,
+         [... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/landing/_landing.scss
+CONTENTS:
+$landingBreakpointMD: 767px;
+$landingBreakpointLG: 991px;
+$landingBreakpointXL: 1199px;
+
+@import '../_mixins';
+@import './_main';
+@import './_hero';
+@import './_users';
+@import './_getstarted';
+@import './_themes';
+@import './_blocks';
+@import './_templates';
+@import './_features';
+@import './_footer';
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/landing/_users.scss
+CONTENTS:
+.landing-users {
+    .fade-right {
+        background: linear-gradient(to left, var(--ground-background), transparent);
+    }
+    .fade-left {
+        background: linear-gradient(to right, var(--ground-background), transparent);
+    }
+    .section-detail {
+        max-width: 1250px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+    .users-container {
+        max-width: 1250px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+
+        .marquee-wrapper {
+            user-select: none;
+            gap: 3rem;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .marquee {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 3rem;
+            min-width: 100%;
+            animation: scroll 30s linear infinite;
+
+            > div {
+                max-width: clamp(10rem, 1rem[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/landing/_footer.scss
+CONTENTS:
+.landing-footer {
+    a {
+        @include focus-visible();
+    }
+}
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/landing/_hero.scss
+CONTENTS:
+.landing-hero {
+    .p-tabmenu .p-tabmenu-nav .p-tabmenuitem .p-menuitem-link {
+        background: transparent;
+    }
+
+    .box {
+        box-shadow: var(--home-card-shadow);
+    }
+
+  
+}
+
+@media screen and (min-width: 1660px) {
+    .landing-hero {
+        width: 1504px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+}
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_responsive.scss
+CONTENTS:
+@media screen and (min-width: 1920px) {
+    .layout-content {
+        max-width: 1728px;
+        margin: 0 auto;
+    }
+
+    .layout-topbar-inner,
+    .layout-footer {
+        max-width: 1728px;
+        margin: 0 auto;
+    }
+
+}
+
+@media screen and (max-width: 1199px) {
+    .layout-topbar-inner {
+        padding-left: 2rem;
+        padding-right: 2rem;
+
+        .menu-button {
+            display: block;
+        }
+
+        .layout-topbar-logo-container {
+            width: auto;
+            margin-right: 0;
+        }
+
+        .DocSearch-Button {
+            width: 2rem;
+            height: 2rem;
+            overflow: hidden;
+            padding: 0;
+            justify-content: center;
+            align-items: center;
+
+            .DocSearch-Search-Icon {
+                width: 1rem;
+                height: 1rem;
+            }
+
+            .DocSearch-Button-Placeholder,
+            .DocSearch-Button-Keys {
+                display: none;
+            }
+        }
+    }
+
+    .layout-sidebar {
+        top: 0;
+        i[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/layout.scss
+CONTENTS:
+@charset 'UTF-8';
+
+@import './variables/_variables';
+@import './_mixins';
+@import './_core';
+@import './_glow';
+@import './_topbar';
+@import './_sidebar';
+@import './_content';
+@import './_news';
+@import './_footer';
+@import './_config';
+@import './_code';
+@import './_doc';
+@import './_responsive';
+@import './landing/_landing';
+@import './templates';
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_glow.scss
+CONTENTS:
+.landing, .layout-wrapper {
+    background-blend-mode: var(--glow-blend);
+    background-image: var(--glow-image);
+    background-position: top;
+    background-repeat: no-repeat;
+    background-size: auto 20rem;
+}
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_content.scss
+CONTENTS:
+.layout-content {
+    padding: 6rem 4rem 0 4rem;
+    display: flex;
+
+    .layout-content-slot {
+        flex: 1 1 auto;
+        width: 1%;
+        padding-top: .5rem;
+    }
+}
+
+.card {
+    background: var(--card-background);
+    border: var(--card-border);
+    padding: 2rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/variables/landing/_light.scss
+CONTENTS:
+.landing.layout-light {
+    --home-highlight-color:#3B82F6;
+    --home-highlight-darker-color:#2563eb;
+    --home-highlight-fore-color:#ffffff;
+    --home-bg:#F9FAFB;
+    --home-border-color:rgba(0,0,0,.1);
+    --home-primary-text-color:#030712;
+    --home-secondary-text-color:#6b7280;
+    --home-card-shadow:0px 7px 15px 0px rgba(0, 0, 0, 0.02), 0px 28px 28px 0px rgba(0, 0, 0, 0.02), 0px 63px 38px 0px rgba(0, 0, 0, 0.01);
+    --home-box-bg:#ffffff;
+    --home-linkbox-bg:#ffffff;
+    --home-linkbox-border:1px solid rgba(0,0,0,.1);
+    --home-linkbox-text-color:#030712;
+    --home-linkbox-hover-bg:#e5e7eb;
+    --home-blocks-bg:transparent;
+    --home-blocks-block-bg:#ffffff;
+    --home-blocks-block-shadow:-10px 4px 10px 0px rgba(0, 0, 0, .1), -10px 4px 25px rgba(0, 0, 0, .1);
+    --home-blocks-border-left:5px solid rgba(0,0,0,.1);
+    --home-blocks-border-bottom:7px solid rgba(0,0,0,.1);
+    --home-blocks-border:1px solid rgba(0,0,0,.1);
+    --home-blocks-sidebar-bg: var(--p-surface-100);
+    --home-blocks-list[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/variables/landing/_dark.scss
+CONTENTS:
+.landing.layout-dark {
+    --home-highlight-color:#60a5fa;
+    --home-highlight-darker-color:#93c5fd;
+    --home-highlight-fore-color:#030712;
+    --home-bg:#111827;
+    --home-border-color:#424b57;
+    --home-primary-text-color:#ffffff;
+    --home-secondary-text-color:rgba(255,255,255,.6);
+    --home-card-shadow:0px 50px 100px rgba(0, 0, 0, 0.25);
+    --home-box-bg:#1f2937;
+    --home-linkbox-bg:rgba(255, 255, 255, .05);
+    --home-linkbox-border:1px solid rgba(255, 255, 255, .1);
+    --home-linkbox-text-color:#ffffff;
+    --home-linkbox-hover-bg:rgba(255, 255, 255, .1);
+    --home-blocks-bg:transparent;
+    --home-blocks-block-bg:#111827;
+    --home-blocks-block-shadow:0px 5px 10px 0px rgba(0, 0, 0, 0.25) , 0px 4px 25px rgba(0, 0, 0, 0.25);
+    --home-blocks-border-left:5px solid #1f2937;
+    --home-blocks-border-bottom:7px solid #1f2937;
+    --home-blocks-border:1px solid #424b57;
+    --home-blocks-sidebar-bg: var(--p-surface-900);
+    --home-blocks-list-bg: var(--p-surface-800);
+    --home-blocks-main-bg:[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/variables/_variables.scss
+CONTENTS:
+@import './landing/_light';
+@import './landing/_dark';
+@import './main/_light';
+@import './main/_dark';
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/variables/main/_light.scss
+CONTENTS:
+:root {
+    --primary-text-color:var(--p-primary-600);
+    --primary-color: var(--p-primary-color);
+    --primary-contrast-color:var(--p-primary-contrast-color);
+    --primary-hover-color: var(--p-primary-hover-color);
+    --text-color: var(--p-surface-700);
+    --text-secondary-color: var(--p-surface-500);
+    --glow-image: url(https://www.primefaces.org/cdn/primevue/images/layout/pattern.png);
+    --glow-blend: hard-light, multiply;
+    --topbar-sticky-background:rgba(255,255,255,.7);
+    --mobile-menu-background: #ffffff;
+    --card-border: 1px solid var(--p-surface-200);
+    --card-background: #ffffff;
+    --border-color: var(--p-surface-200);
+    --ground-background: var(--p-surface-50);
+    --overlay-background: #ffffff;
+    --hover-background: var(--p-surface-100);
+    --code-background: var(--p-surface-950);
+    --high-contrast-text-color: var(--p-surface-900);
+    --hover-border-color: var(--p-surface-400);
+    --mark-background: var(--p-surface-200);
+    --mark-text-color: var(--p-surface-700);
+    [... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/variables/main/_dark.scss
+CONTENTS:
+:root[class="p-dark"] {
+    --primary-text-color:var(--p-primary-400);
+    --primary-color: var(--p-primary-color);
+    --primary-contrast-color:var(--p-primary-contrast-color);
+    --primary-hover-color: var(--p-primary-hover-color);
+    --text-color: var(--p-surface-0);
+    --text-secondary-color: var(--p-surface-400);
+    --glow-image: url(https://www.primefaces.org/cdn/primevue/images/layout/pattern.png), radial-gradient(50% 50% at center -25px, var(--p-primary-color) 0%, #000000 100%);
+    --glow-blend: hard-light, color-dodge;
+    --topbar-sticky-background:rgba(0,0,0,.3);
+    --mobile-menu-background: rgba(0,0,0,.3);
+    --card-border: 1px solid transparent;
+    --card-background: var(--p-surface-900);
+    --border-color: var(--p-surface-700);
+    --ground-background: var(--p-surface-950);
+    --overlay-background: var(--p-surface-900);
+    --hover-background: var(--p-surface-800);
+    --code-background: var(--p-surface-900);
+    --high-contrast-text-color: var(--p-surface-0);
+    --hover-border-color:[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_core.scss
+CONTENTS:
+html {
+    font-size: 14px;
+    font-family: "Inter var", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-feature-settings: "cv02","cv03","cv04","cv11";
+    line-height: 1.2;
+}
+
+.material {
+    font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+body {
+    margin: 0px;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: var(--ground-background);
+    font-weight: normal;
+    color: var(--text-color);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.layout-wrapper {
+    background-color: var(--ground-background);
+}
+
+a {
+    text-decoration: none;
+}
+
+::selection {
+    background-color: var(--selection-background);
+    color: var(--selection-text-color);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 1.5rem 0 1rem 0;
+    font-fami[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_templates.scss
+CONTENTS:
+// TEMPLATE FEATURES ANIMATION
+.template-features-animation-card {
+    &:hover &-order {
+        div {
+            &:nth-child(3) {
+                animation: p-features-order-animation 2.5s ease-in-out;
+                color: var(--p-primary-400);
+            }
+        }
+    }
+
+    &-active &-order {
+        div {
+            &:nth-child(3) {
+                animation: p-features-order-animation 2.5s ease-in-out;
+                color: var(--p-primary-400);
+            }
+        }
+    }
+}
+
+.template-features a {
+    @include doc-link();
+}
+
+@keyframes p-features-order-animation {
+    0% {
+        clip-path: polygon(0% 100%, 15% 100%, 32% 100%, 54% 100%, 70% 100%, 84% 100%, 100% 100%,
+            100% 100%, 0% 100%);
+    }
+
+    20% {
+        clip-path: polygon(0% 45%, 15% 44%, 32% 50%, 54% 60%, 70% 61%, 84% 59%, 100% 52%,
+            100% 100%, 0% 100%);
+    }
+
+    40% {
+        clip-path: polygon(0% 60%, 16% 65%, 34% 66%, 51% 62%, 67% 50%, 84% 45%, 100% 46%, 100% 100%, 0% 100%);
+    }
+
+    60% {
+        clip-[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_config.scss
+CONTENTS:
+.layout-config {
+    backdrop-filter: blur(20px);
+    background-color: var(--mobile-menu-bg);
+
+    .p-selectbutton {
+        .p-button {
+            padding: 0.5rem 1rem;
+
+            &:first-child {
+                border-start-start-radius: 6px;
+                border-end-start-radius: 6px;
+            }
+    
+            &:last-child {
+                border-start-end-radius: 6px;
+                border-end-end-radius: 6px;
+            }
+        }
+    }
+
+    button {
+        &:focus-visible {
+            outline: 0 none;
+            border-color: var(--surface-500) !important;
+        }
+    }
+
+    .grid {
+        > div {
+            padding: 1rem;
+        }
+    }
+
+    .p-inputswitch {
+        .p-inputswitch-slider {
+            border-radius: 30px;
+            
+            &:before {
+                border-radius: 30px;
+            }
+        }
+    }
+}
+
+
+.layout-light {
+    .layout-config {
+        background: var(--surface-overlay);
+    }
+}
+
+.layout-dark {
+    .layout-config {
+        background: var(rgba([... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_sidebar.scss
+CONTENTS:
+.layout-sidebar {
+    position: sticky;
+    inset-inline-start: 0;
+    top: 6rem;
+    height: calc(100vh - 9rem);
+    user-select: none;
+    transition: transform .4s cubic-bezier(.05,.74,.2,.99), opacity .3s;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    flex: 0 0 250px;
+    margin-inline-end: 4rem;
+    overflow: auto;
+
+    .logo {
+        display: flex;
+        justify-content: center;
+    }
+
+    nav {
+        padding-block: 0;
+        padding-inline: 1rem 0;
+        margin: 0;
+        flex-grow: 1;
+    }
+
+    .layout-menu {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+
+        > li {
+            margin-bottom: .25rem;
+
+            > button,
+            > a {
+                display: flex;
+                width: 100%;
+                align-items: center;
+                padding-block: .5rem;
+                padding-inline: 1px;
+                color: var(--text-color);
+                font-weight: 600;
+                transition: outline-color 0.2s;
+                o[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_mixins.scss
+CONTENTS:
+@mixin focus-visible() {
+    &:focus-visible {
+        outline: 1px solid var(--primary-color);
+        outline-offset: var(--p-focus-ring-offset);
+    }
+}
+
+@mixin doc-link() {
+    color: var(--primary-text-color);
+    font-weight: 500;
+    transition: outline-color .2s, border-color .2s;
+    outline-color: transparent;
+    border-radius: 6px;
+    @include focus-visible();
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+@mixin mobile {
+    @media (max-width: 900px) {
+        @content;
+    }
+}
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_news.scss
+CONTENTS:
+.layout-news {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1100;
+    width: 100%;
+    height: 2rem;
+    padding: 0 2rem;
+    background-color: var(--primary-color);
+
+    .layout-news-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: calc(100% - var(--p-scrollbar-width, 0px));
+        height: 100%;
+    }
+
+    .layout-news-content {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 0%;
+    }
+
+    .layout-news-text {
+        line-height: 1.5;
+        display: block;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        min-width: 0%;
+        font-weight: 500;
+        color: var(--primary-contrast-color);
+    }
+
+    .layout-news-link {
+        margin-left: 0.5rem;
+        line-height: 1.5;
+        white-space: nowrap;
+    }
+
+    .layout-news-link,
+    .layout-news-link:visited,
+    .layout-news-link:active {
+        col[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/layout.css
+CONTENTS:
+.landing.layout-light {
+  --home-highlight-color:#3B82F6;
+  --home-highlight-darker-color:#2563eb;
+  --home-highlight-fore-color:#ffffff;
+  --home-bg:#F9FAFB;
+  --home-border-color:rgba(0,0,0,.1);
+  --home-primary-text-color:#030712;
+  --home-secondary-text-color:#6b7280;
+  --home-card-shadow:0px 7px 15px 0px rgba(0, 0, 0, 0.02), 0px 28px 28px 0px rgba(0, 0, 0, 0.02), 0px 63px 38px 0px rgba(0, 0, 0, 0.01);
+  --home-box-bg:#ffffff;
+  --home-linkbox-bg:#ffffff;
+  --home-linkbox-border:1px solid rgba(0,0,0,.1);
+  --home-linkbox-text-color:#030712;
+  --home-linkbox-hover-bg:#e5e7eb;
+  --home-blocks-bg:transparent;
+  --home-blocks-block-bg:#ffffff;
+  --home-blocks-block-shadow:-10px 4px 10px 0px rgba(0, 0, 0, .1), -10px 4px 25px rgba(0, 0, 0, .1);
+  --home-blocks-border-left:5px solid rgba(0,0,0,.1);
+  --home-blocks-border-bottom:7px solid rgba(0,0,0,.1);
+  --home-blocks-border:1px solid rgba(0,0,0,.1);
+  --home-blocks-sidebar-bg: var(--p-surface-100);
+  --home-blocks-list-bg: var(--p-surface-50);
+  --home-blocks-[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_footer.scss
+CONTENTS:
+.layout-footer {
+    padding: 2rem 4rem;
+    margin-top: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    font-weight: 500;
+    color: var(--text-color);
+    border-top: 1px solid var(--border-color);
+
+    a {
+        color: var(--primary-text-color);
+        font-weight: 700;
+        transition: outline-color .2s, border-color .2s;
+        outline-color: transparent;
+        border-radius: 6px;
+
+        @include focus-visible();
+
+        &:hover {
+            text-decoration: underline;
+        }
+
+    }
+}
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/layout/_topbar.scss
+CONTENTS:
+.layout-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: calc(100% - var(--p-scrollbar-width, 0px));
+    z-index: 1100;
+    transition: background-color .5s, border-color .5s;
+    border-bottom: 1px solid transparent;
+
+    &.layout-topbar-sticky {
+        border-bottom: 1px solid var(--border-color);
+        background-color: var(--topbar-sticky-background);
+        backdrop-filter: blur(8px);
+    }
+}
+
+.layout-topbar-inner {
+    height: 4rem;
+    padding: 0 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .layout-topbar-logo-container {
+        width: 250px;
+        margin-inline-end: 4rem;
+    }
+
+    .layout-topbar-logo,
+    .layout-topbar-icon {
+        transition: outline-color .2s;
+        outline-color: transparent;
+        @include focus-visible();
+
+        svg {
+            width: 120px;
+        }
+    }
+
+    .layout-topbar-logo {
+        display: inline-flex;
+
+        svg {
+            width: 120px;
+        }
+    }
+
+    .layout-topbar-icon {
+  [... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/global.scss
+CONTENTS:
+@import './tailwind/main.css';
+@import 'primeicons/primeicons.css';
+@import 'quill/dist/quill.snow.css';
+@import './flags.css';
+@import './layout/layout.scss';
+
+body {
+    visibility: hidden;
+    opacity: 0;
+}
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/tailwind/main.css
+CONTENTS:
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/styles/flags.css
+CONTENTS:
+span.flag{width:44px;height:30px;display:inline-block;}img.flag{width:30px}.flag{background:url(https://primefaces.org/cdn/primeng/images/flag/flags_responsive.png) no-repeat;background-size:100%;vertical-align: middle;}.flag-ad{background-position:0 .413223%}.flag-ae{background-position:0 .826446%}.flag-af{background-position:0 1.239669%}.flag-ag{background-position:0 1.652893%}.flag-ai{background-position:0 2.066116%}.flag-al{background-position:0 2.479339%}.flag-am{background-position:0 2.892562%}.flag-an{background-position:0 3.305785%}.flag-ao{background-position:0 3.719008%}.flag-aq{background-position:0 4.132231%}.flag-ar{background-position:0 4.545455%}.flag-as{background-position:0 4.958678%}.flag-at{background-position:0 5.371901%}.flag-au{background-position:0 5.785124%}.flag-aw{background-position:0 6.198347%}.flag-az{background-position:0 6.61157%}.flag-ba{background-position:0 7.024793%}.flag-bb{background-position:0 7.438017%}.flag-bd{background-position:0 7.85124%}.flag-be{background-position:[... content truncated ...]
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/data/news.json
+CONTENTS:
+{
+    "id": 1,
+    "content": "First Version! 🚀",
+    "linkText": "View Demo",
+    "linkHref": "https://www.dr.dk"
+}
+
+----------------------------------------
+
+FILENAME: ./apps/admin/src/assets/data/menu.json
+CONTENTS:
+{
+    "data": [
+        {
+            "name": "Home",
+            "icon": "pi pi-palette",
+            "routerLink": "/home"
+        },
+        {
+            "name": "KML",
+            "icon": "pi pi-palette",
+            "routerLink": "/kml"
+        }
+    ]
+}
+
 ----------------------------------------
 
 FILENAME: ./apps/admin/src/themes/app-theme.ts
