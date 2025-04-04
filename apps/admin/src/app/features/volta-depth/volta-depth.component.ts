@@ -122,15 +122,24 @@ export class VoltaDepthComponent { // Removed 'implements AfterViewInit'
   // --- Event Handler from TileUploadComponent ---
   onUploadValidated(stagedUpload: StagedUpload): void {
     console.log('VoltaDepthComponent: Received upload validation');
+    console.log('[Frontend] Received upload ID:', stagedUpload.response.uploadId);
     this.commitError.set(null);
     this.currentUploadData.set(stagedUpload); // Triggers effect to show dialog
   }
 
   // --- Methods Called by UploadConfirmationComponent (via parent injection) ---
   triggerCommit(): void { // No parameter needed here
+    console.log('triggerCommit called in VoltaDepthComponent');
+  
     const uploadData = this.currentUploadData();
-    if (!uploadData) return;
-
+    if (!uploadData) {
+      console.error('No upload data available for commit');
+      return;
+    }
+    
+    const uploadId = uploadData.response.uploadId;
+    console.log('[Frontend] Committing with upload ID:', uploadId);
+  
     this.commitLoading.set(true);
     this.commitError.set(null);
 
@@ -159,7 +168,9 @@ export class VoltaDepthComponent { // Removed 'implements AfterViewInit'
           this.commitError.set(detail);
           this.messageService.add({ key: 'mainToast', severity: 'error', summary: 'Commit Failed', detail: this.commitError() ?? 'Unknown error', sticky: true });
         },
+        
         complete: () => {
+          console.log('[Frontend] Committing with upload ID:', uploadData.response.uploadId);
           this.commitLoading.set(false);
         }
       });

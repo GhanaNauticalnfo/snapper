@@ -21,13 +21,6 @@ import { TextareaModule } from 'primeng/textarea';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
 
-// No longer needed if using Reactive Forms directly
-// interface KmlFormData {
-//   name: string;
-//   enabled: boolean;
-//   kml: string;
-// }
-
 @Component({
   selector: 'app-kml-list',
   standalone: true,

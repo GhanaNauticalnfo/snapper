@@ -58,6 +58,7 @@ import {
   
     async processUpload(file: Express.Multer.File): Promise<UploadResponseDto> {
       this.logger.log(`Processing upload for file: ${file.originalname}`);
+      await this.debugCache('Before processUpload');
       let geoJson: FeatureCollection<MultiPolygon>;
   
       // 1. Parse GeoJSON (same logic)
@@ -116,9 +117,9 @@ import {
       // 4. Store temporarily (same logic)
       const uploadId = uuidv4();
       const temporaryData: TemporaryUploadData = { tileId: deducedTileId, geoJson };
-      const ttlSeconds = 15 * 60;
+      const ttlSeconds = 15 * 60 * 1000;
       await this.cacheManager.set(uploadId, temporaryData, ttlSeconds);
-      this.logger.log(`Temporarily stored upload data with ID: ${uploadId} for ${ttlSeconds} seconds.`);
+      this.logger.log(`Temporarily stored upload data with ID: ${uploadId} for ${ttlSeconds} milliseconds.`);
   
       // 5. Return response (same logic)
       return {
@@ -131,6 +132,19 @@ import {
       };
     }
   
+    private async debugCache(context: string): Promise<void> {
+      try {
+        // This might not work with all cache managers - it depends on the implementation
+        const cacheKeys = this.cacheManager['store']?.keys ? 
+          await this.cacheManager['store'].keys() : 
+          'Cache keys not accessible';
+          
+        this.logger.log(`[${context}] Current cache info: ${JSON.stringify(cacheKeys)}`);
+      } catch (error) {
+        this.logger.warn(`Could not access cache keys: ${error.message}`);
+      }
+    }
+
     private findTileForFeature(feature: Feature<MultiPolygon>): string | null {
        // Uses this.tileBoundaries directly (which is initialized from the constant)
        let representativePoint: Feature<Point>;
@@ -160,30 +174,48 @@ import {
     }
   
     async commitUpload(uploadId: string): Promise<VoltaDepthTile> {
-      // ... (commitUpload logic remains exactly the same - check previous response) ...
-       this.logger.log(`Attempting to commit upload ID: ${uploadId}`);
+      this.logger.log(`Attempting to commit upload ID: ${uploadId}`);
       const temporaryData = await this.cacheManager.get<TemporaryUploadData>(uploadId);
       if (!temporaryData) {
         this.logger.warn(`Commit failed: No temporary data found for upload ID ${uploadId} (expired or invalid).`);
         throw new NotFoundException(`Upload session with ID ${uploadId} not found or expired.`);
       }
-  
+    
       const { tileId, geoJson } = temporaryData;
       this.logger.log(`Found temporary data for Tile ID: ${tileId}, Features: ${geoJson.features.length}`);
-  
+    
       const existingTile = await this.tileRepository.findOneBy({ id: tileId });
       const nextVersion = existingTile ? existingTile.version + 1 : 1;
       this.logger.log(`Tile ${tileId}: Current version is ${existingTile?.version ?? 'N/A'}, next version will be ${nextVersion}`);
-  
+    
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
-  
+    
       try {
         this.logger.log(`Starting transaction for Tile ID: ${tileId}, Version: ${nextVersion}`);
+        
+        // STEP 1: First ensure the parent tile record exists (or create it) BEFORE handling features
+        // This ensures the foreign key constraint will be satisfied
+        const tileMetaDataToSave: Partial<VoltaDepthTile> = {
+          id: tileId,
+          numberOfFeatures: geoJson.features.length,
+          version: nextVersion,
+        };
+        
+        // If it's a new tile, we need to set initial values
+        if (!existingTile) {
+          this.logger.log(`Creating new tile record for ID: ${tileId}`);
+        }
+        
+        const savedTileMetaData = await queryRunner.manager.save(VoltaDepthTile, tileMetaDataToSave);
+        this.logger.log(`Upserted Tile metadata for ID: ${tileId} with version ${savedTileMetaData.version}`);
+        
+        // STEP 2: Now we can safely delete existing features since the parent record exists
         const deleteResult = await queryRunner.manager.delete(VoltaDepthTileFeature, { tileId: tileId });
         this.logger.log(`Deleted ${deleteResult.affected ?? 0} existing features for Tile ID: ${tileId}`);
-  
+    
+        // STEP 3: Create and insert new features
         const newFeatures = geoJson.features.map((feature, index) => {
           const featureEntity = new VoltaDepthTileFeature();
           featureEntity.tileId = tileId;
@@ -196,26 +228,18 @@ import {
           featureEntity.geom = feature.geometry;
           return featureEntity;
         });
-  
+    
         await queryRunner.manager.save(VoltaDepthTileFeature, newFeatures, { chunk: 100 });
         this.logger.log(`Inserted ${newFeatures.length} new features.`);
-  
-        const tileMetaDataToSave: Partial<VoltaDepthTile> = {
-          id: tileId,
-          numberOfFeatures: newFeatures.length,
-          version: nextVersion,
-        };
-        const savedTileMetaData = await queryRunner.manager.save(VoltaDepthTile, tileMetaDataToSave);
-        this.logger.log(`Upserted Tile metadata for ID: ${tileId} with version ${savedTileMetaData.version}`);
-  
+    
         await queryRunner.commitTransaction();
         this.logger.log(`Transaction committed successfully for Tile ID: ${tileId}`);
-  
+    
         await this.cacheManager.del(uploadId);
         this.logger.log(`Removed temporary data for upload ID: ${uploadId}`);
-  
+    
         return savedTileMetaData;
-  
+    
       } catch (error) {
         this.logger.error(`Error during commit transaction for Tile ID ${tileId}, Upload ID ${uploadId}: ${error.message}`, error.stack);
         await queryRunner.rollbackTransaction();

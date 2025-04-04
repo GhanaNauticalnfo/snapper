@@ -67,8 +67,24 @@ import { VoltaDepthComponent } from '../../volta-depth.component';
       } @else { <p class="p-text-secondary"><i>Upload details not available.</i></p> }
    </div>
   `,
-    styles: [ // Styles remain the same
-        `:host { display: block; } .confirmation-content { padding: 0.5rem 0; } .details p { margin: 0.5rem 0; font-size: 0.95em; line-height: 1.5; } .font-mono { font-family: monospace; background-color: var(--surface-100); padding: 0.1rem 0.3rem; border-radius: 3px; } .font-medium { font-weight: 500; } .font-bold { font-weight: 700; } .p-text-warning { color: var(--yellow-600); } .map-section { margin-top: 1.5rem; } h5 { margin-top: 0; margin-bottom: 0.75rem; font-size: 1rem; color: var(--text-color-secondary); } .map-preview { height: 35vh; min-height: 280px; width: 100%; background-color: var(--surface-ground); position: relative; overflow: hidden; border-radius: var(--border-radius); } .map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: row; align-items: center; justify-content: center; background-color: rgba(255, 255, 255, 0.8); color: var(--text-color-secondary); font-style: italic; text-align: center; padding: 1rem; z-index: 10; } .map-error { color: var(--red-600); background-color: rgba(255, 235, 238, 0.9); font-weight: 500; } .map-error .pi { font-size: 1.2rem; margin-right: 0.5rem; } .map-placeholder .p-ml-2 { margin-left: 0.5rem; } .actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--surface-d);} .commit-error-message { margin-top: 1rem; font-size: 0.9em;} :host ::ng-deep .p-message-wrapper { margin-bottom: 1rem; }`
+    styles: [
+        `:host { display: block; } 
+        .confirmation-content { padding: 0.5rem 0; } 
+        .details p { margin: 0.5rem 0; font-size: 0.95em; line-height: 1.5; } 
+        .font-mono { font-family: monospace; background-color: var(--surface-100); padding: 0.1rem 0.3rem; border-radius: 3px; } 
+        .font-medium { font-weight: 500; } 
+        .font-bold { font-weight: 700; } 
+        .p-text-warning { color: var(--yellow-600); } 
+        .map-section { margin-top: 1.5rem; } 
+        h5 { margin-top: 0; margin-bottom: 0.75rem; font-size: 1rem; color: var(--text-color-secondary); } 
+        .map-preview { height: 35vh; min-height: 280px; width: 100%; background-color: var(--surface-ground); position: relative; overflow: hidden; border-radius: var(--border-radius); } 
+        .map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: row; align-items: center; justify-content: center; background-color: rgba(255, 255, 255, 0.8); color: var(--text-color-secondary); font-style: italic; text-align: center; padding: 1rem; z-index: 10; } 
+        .map-error { color: var(--red-600); background-color: rgba(255, 235, 238, 0.9); font-weight: 500; } 
+        .map-error .pi { font-size: 1.2rem; margin-right: 0.5rem; } 
+        .map-placeholder .p-ml-2 { margin-left: 0.5rem; } 
+        .actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--surface-d);} 
+        .commit-error-message { margin-top: 1rem; font-size: 0.9em;} 
+        :host ::ng-deep .p-message-wrapper { margin-bottom: 1rem; }`
     ]
 })
 export class UploadConfirmationComponent implements AfterViewInit, OnDestroy {
@@ -103,10 +119,18 @@ export class UploadConfirmationComponent implements AfterViewInit, OnDestroy {
              if (currentFile) { this.loadGeoJsonAndDisplay(currentFile); }
              else { this.removeGeoJsonFromMap(); }
         }
-    }, { allowSignalWrites: true });
+    });
 
     ngAfterViewInit(): void {
-        if (!this.mapLibreGl) { this.mapError.set('MapLibre GL JS not found.'); return; }
+        console.log('UploadConfirmationComponent.ngAfterViewInit - MapLibre available:', !!this.mapLibreGl);
+        
+        if (!this.mapLibreGl) { 
+            console.error('MapLibre GL JS not found on window object.');
+            this.mapError.set('MapLibre GL JS not found. Check script loading.'); 
+            return; 
+        }
+        
+        // Small timeout to allow DOM to settle
         setTimeout(() => this.initializeMap(), 50);
     }
 
@@ -116,11 +140,36 @@ export class UploadConfirmationComponent implements AfterViewInit, OnDestroy {
     }
 
     initializeMap(): void {
-        if (this.map || !this.mapContainer?.nativeElement || !this.mapLibreGl) return;
-        this.mapError.set(null); this.isMapInitialized.set(false);
+        console.log('Initializing map...');
+        
+        if (this.map) {
+            console.log('Map already initialized, skipping');
+            return;
+        }
+        
+        if (!this.mapContainer?.nativeElement) {
+            console.error('Map container element not found');
+            this.mapError.set('Map container not found');
+            return;
+        }
+        
+        if (!this.mapLibreGl) {
+            console.error('MapLibre GL not available');
+            this.mapError.set('MapLibre GL JS not found');
+            return;
+        }
+        
+        this.mapError.set(null);
+        this.isMapInitialized.set(false);
+        
         try {
             // Use type assertion if @types/maplibre-gl is installed and maplibregl is imported
             const MapConstructor = (this.mapLibreGl as typeof maplibregl).Map;
+            
+            if (!MapConstructor) {
+                throw new Error('MapLibre Map constructor not found');
+            }
+            
             const mapOptions: MapOptions = {
                 container: this.mapContainer.nativeElement,
                 style: 'https://demotiles.maplibre.org/style.json',
@@ -128,60 +177,240 @@ export class UploadConfirmationComponent implements AfterViewInit, OnDestroy {
                 zoom: 7,
                 attributionControl: false
             };
+            
+            console.log('Creating map with options:', mapOptions);
             this.map = new MapConstructor(mapOptions);
 
-            this.map?.once('load', () => {
+            this.map.once('load', () => {
+                 console.log('Map loaded successfully');
                  this.isMapInitialized.set(true);
                  const file = this.parentState()?.file;
-                 if (file) this.loadGeoJsonAndDisplay(file);
+                 if (file) {
+                     console.log('File available, loading to map:', file.name);
+                     this.loadGeoJsonAndDisplay(file);
+                 }
             });
-            this.map?.on('error', (e: { error?: Error }) => {
+            
+            this.map.on('error', (e: { error?: Error }) => {
                 const msg = e.error?.message || 'Unknown map error';
-                this.mapError.set(`Map failed: ${msg}`); this.isMapInitialized.set(false);
+                console.error('Map error:', msg);
+                this.mapError.set(`Map failed: ${msg}`);
+                this.isMapInitialized.set(false);
             });
         } catch (e: unknown) {
-            this.mapError.set(`Map init error: ${e instanceof Error ? e.message : String(e)}`);
+            const errorMsg = e instanceof Error ? e.message : String(e);
+            console.error('Map initialization error:', errorMsg);
+            this.mapError.set(`Map init error: ${errorMsg}`);
             this.isMapInitialized.set(false);
         }
     }
 
     loadGeoJsonAndDisplay(file: File | null): void {
-        if (!file) { this.mapError.set("No file."); this.removeGeoJsonFromMap(); return; }
-        if (!this.isMapInitialized() || !this.map?.loaded()) { this.mapError.set("Map loading..."); if (this.mapRetryTimeout) clearTimeout(this.mapRetryTimeout); this.mapRetryTimeout = setTimeout(() => this.loadGeoJsonAndDisplay(file), 300); return; }
-        this.mapError.set(null); this.isReadingFile.set(true); const reader = new FileReader();
+        if (!file) { 
+            console.warn('No file provided to loadGeoJsonAndDisplay');
+            this.mapError.set("No file provided"); 
+            this.removeGeoJsonFromMap(); 
+            return; 
+        }
+        
+        if (!this.isMapInitialized() || !this.map) { 
+            console.warn('Map not initialized, delaying GeoJSON load');
+            this.mapError.set("Map not ready. Please wait..."); 
+            
+            // Clear any existing timeout to prevent multiple attempts
+            if (this.mapRetryTimeout) {
+                clearTimeout(this.mapRetryTimeout);
+            }
+            
+            // Try again after a short delay
+            this.mapRetryTimeout = setTimeout(() => this.loadGeoJsonAndDisplay(file), 300); 
+            return; 
+        }
+        
+        // Check if map is fully loaded
+        if (!this.map.loaded()) {
+            console.warn('Map not fully loaded, delaying GeoJSON display');
+            this.mapError.set("Map still loading...");
+            
+            if (this.mapRetryTimeout) {
+                clearTimeout(this.mapRetryTimeout);
+            }
+            
+            this.mapRetryTimeout = setTimeout(() => this.loadGeoJsonAndDisplay(file), 300);
+            return;
+        }
+        
+        console.log(`Reading GeoJSON file: ${file.name}, size: ${file.size} bytes`);
+        this.mapError.set(null); 
+        this.isReadingFile.set(true);
+        
+        const reader = new FileReader();
+        
         reader.onload = (event) => {
-             this.isReadingFile.set(false);
-             try {
-                 if (!event.target?.result) throw new Error('Read error.');
-                 this.geoJsonData = JSON.parse(event.target.result as string);
-                 if (this.geoJsonData?.type !== 'FeatureCollection' || !Array.isArray(this.geoJsonData?.features)) throw new Error('Invalid GeoJSON.');
-                 this.addGeoJsonToMap();
-            } catch (e: unknown) { this.mapError.set(`Parse error: ${e instanceof Error ? e.message : String(e)}`); this.geoJsonData = null; this.removeGeoJsonFromMap(); }
+            this.isReadingFile.set(false);
+            try {
+                if (!event.target?.result) {
+                    throw new Error('File read resulted in null or undefined content');
+                }
+                
+                const content = event.target.result as string;
+                console.log(`Successfully read ${content.length} bytes from file`);
+                
+                try {
+                    this.geoJsonData = JSON.parse(content);
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    throw new Error(`Invalid JSON format: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+                }
+                
+                if (!this.geoJsonData) {
+                    throw new Error('Parsed GeoJSON is null or undefined');
+                }
+                
+                if (this.geoJsonData.type !== 'FeatureCollection') {
+                    console.error('Invalid GeoJSON type:', this.geoJsonData.type);
+                    throw new Error(`Invalid GeoJSON type: expected FeatureCollection, got ${this.geoJsonData.type}`);
+                }
+                
+                if (!Array.isArray(this.geoJsonData.features)) {
+                    throw new Error('GeoJSON features property is not an array');
+                }
+                
+                console.log(`GeoJSON contains ${this.geoJsonData.features.length} features`);
+                this.addGeoJsonToMap();
+                
+            } catch (e: unknown) { 
+                const errorMsg = e instanceof Error ? e.message : String(e);
+                console.error('GeoJSON parsing error:', errorMsg);
+                this.mapError.set(`GeoJSON parse error: ${errorMsg}`); 
+                this.geoJsonData = null; 
+                this.removeGeoJsonFromMap(); 
+            }
         };
+        
         reader.onerror = (event) => {
-             this.isReadingFile.set(false);
-             const msg = event.target?.error?.message || 'read error';
-             this.mapError.set(`File read error: ${msg}`); this.geoJsonData = null; this.removeGeoJsonFromMap();
+            this.isReadingFile.set(false);
+            const msg = event.target?.error?.message || 'Unknown read error';
+            console.error('File read error:', msg);
+            this.mapError.set(`File read error: ${msg}`); 
+            this.geoJsonData = null; 
+            this.removeGeoJsonFromMap();
         };
+        
         reader.readAsText(file);
     }
 
     addGeoJsonToMap(): void {
-         if (!this.map || !this.geoJsonData || !this.map.loaded()) return; this.removeGeoJsonFromMap(); try { this.map.addSource(this.MAP_SOURCE_ID, { type: 'geojson', data: this.geoJsonData }); this.map.addLayer({ id: this.MAP_LAYER_FILL_ID, type: 'fill', source: this.MAP_SOURCE_ID, paint: { 'fill-color': '#0d47a1', 'fill-opacity': 0.3 } }); this.map.addLayer({ id: this.MAP_LAYER_LINE_ID, type: 'line', source: this.MAP_SOURCE_ID, paint: { 'line-color': '#000', 'line-width': 0.8 } }); this.fitMapToBounds(); } catch (e: unknown) { this.mapError.set(`Display error: ${e instanceof Error ? e.message : String(e)}`); }
+        if (!this.map) {
+            console.error('Map instance not available');
+            return;
+        }
+        
+        if (!this.geoJsonData) {
+            console.error('No GeoJSON data available to add to map');
+            return;
+        }
+        
+        if (!this.map.loaded()) {
+            console.warn('Map not fully loaded, delaying adding GeoJSON layer');
+            setTimeout(() => this.addGeoJsonToMap(), 200);
+            return;
+        }
+        
+        console.log('Adding GeoJSON to map');
+        
+        // Remove any existing layers and sources first
+        this.removeGeoJsonFromMap();
+        
+        try {
+            // Add the GeoJSON as a source
+            this.map.addSource(this.MAP_SOURCE_ID, { 
+                type: 'geojson', 
+                data: this.geoJsonData 
+            });
+            
+            console.log('Added GeoJSON source to map');
+            
+            // Add a fill layer
+            this.map.addLayer({ 
+                id: this.MAP_LAYER_FILL_ID, 
+                type: 'fill', 
+                source: this.MAP_SOURCE_ID, 
+                paint: { 
+                    'fill-color': '#0d47a1', 
+                    'fill-opacity': 0.3 
+                } 
+            });
+            
+            // Add a line layer
+            this.map.addLayer({ 
+                id: this.MAP_LAYER_LINE_ID, 
+                type: 'line', 
+                source: this.MAP_SOURCE_ID, 
+                paint: { 
+                    'line-color': '#000', 
+                    'line-width': 0.8 
+                } 
+            });
+            
+            console.log('Added GeoJSON layers to map');
+            
+            // Fit the map to the bounds of the GeoJSON data
+            this.fitMapToBounds();
+            
+        } catch (e: unknown) {
+            const errorMsg = e instanceof Error ? e.message : String(e);
+            console.error('Error adding GeoJSON to map:', errorMsg);
+            this.mapError.set(`Error displaying GeoJSON: ${errorMsg}`);
+        }
     }
 
     removeGeoJsonFromMap(): void {
-         if (!this.map) return;
-         if (this.map.getLayer(this.MAP_LAYER_FILL_ID)) this.map.removeLayer(this.MAP_LAYER_FILL_ID);
-         if (this.map.getLayer(this.MAP_LAYER_LINE_ID)) this.map.removeLayer(this.MAP_LAYER_LINE_ID);
-         if (this.map.getSource(this.MAP_SOURCE_ID)) this.map.removeSource(this.MAP_SOURCE_ID);
+        if (!this.map) return;
+        
+        try {
+            if (this.map.getLayer(this.MAP_LAYER_FILL_ID)) {
+                this.map.removeLayer(this.MAP_LAYER_FILL_ID);
+            }
+            
+            if (this.map.getLayer(this.MAP_LAYER_LINE_ID)) {
+                this.map.removeLayer(this.MAP_LAYER_LINE_ID);
+            }
+            
+            if (this.map.getSource(this.MAP_SOURCE_ID)) {
+                this.map.removeSource(this.MAP_SOURCE_ID);
+            }
+            
+            console.log('Removed existing GeoJSON layers and source from map');
+        } catch (e) {
+            console.error('Error removing GeoJSON from map:', e);
+        }
     }
 
     fitMapToBounds(): void {
-         if (!this.map || !this.geoJsonData || this.geoJsonData.features.length === 0) return; console.warn("FitBounds using Turf is recommended."); this.map.flyTo({ center: [-0.5, 7.5], zoom: 8 });
+        if (!this.map || !this.geoJsonData || this.geoJsonData.features.length === 0) {
+            console.warn('Cannot fit map to bounds - map or GeoJSON data not available');
+            return;
+        }
+        
+        console.log("Fitting map to GeoJSON bounds");
+        
+        // For better bounds calculation, you might want to implement a proper
+        // bounding box calculation using the GeoJSON features
+        // For now, we'll just use a default center and zoom
+        this.map.flyTo({ center: [-0.5, 7.5], zoom: 8 });
+        
+        console.log("Map view adjusted");
     }
 
     // --- Actions call parent methods ---
-    commit(): void { this.parent.triggerCommit(); }
-    cancel(): void { this.parent.cancelCommit(); }
+    commit(): void { 
+        console.log('Committing upload...');
+        this.parent.triggerCommit(); 
+    }
+    
+    cancel(): void { 
+        console.log('Cancelling upload...');
+        this.parent.cancelCommit(); 
+    }
 }

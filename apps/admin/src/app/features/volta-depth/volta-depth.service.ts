@@ -26,7 +26,12 @@ export class VoltaDepthService {
 
   uploadTile(file: File): Observable<UploadResponse> {
     const formData = new FormData();
+    
+    // Add the file to the form data with field name 'file' to match the FileInterceptor
     formData.append('file', file, file.name);
+    
+    // Importantly, DO NOT set Content-Type header when sending FormData
+    // The browser will automatically set it to multipart/form-data with the correct boundary
     return this.http.post<UploadResponse>(`${this.apiUrlBase}/upload`, formData)
       .pipe(catchError(this.handleError));
   }
