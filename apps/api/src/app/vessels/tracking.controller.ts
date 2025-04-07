@@ -1,0 +1,103 @@
+// tracking.controller.ts
+import { 
+    Controller, Get, Post, Body, Param, 
+    HttpException, HttpStatus, Query 
+  } from '@nestjs/common';
+  import { TrackingService } from './tracking.service';
+  import { TrackingPoint } from './tracking-point.entity';
+  import { VesselService } from './vessel.service';
+  import { CreateTrackingPointDto } from './tracking-point.dto';
+  
+  @Controller('tracking')
+  export class TrackingController {
+    constructor(
+      private readonly trackingService: TrackingService,
+      private readonly vesselService: VesselService
+    ) {}
+  
+    @Get()
+    async findAll(): Promise<TrackingPoint[]> {
+      return this.trackingService.findAll();
+    }
+  
+    @Get('latest')
+    async getLatestPositions(): Promise<TrackingPoint[]> {
+      return this.trackingService.getLatestPositions();
+    }
+  
+    @Get(':id')
+    async findOne(@Param('id') id: string): Promise<TrackingPoint> {
+      const point = await this.trackingService.findOne(+id);
+      
+      if (!point) {
+        throw new HttpException('Tracking point not found', HttpStatus.NOT_FOUND);
+      }
+      
+      return point;
+    }
+  
+    @Post()
+    async create(@Body() createTrackingDto: CreateTrackingPointDto): Promise<TrackingPoint> {
+      try {
+        // Ensure vessel exists
+        const vessel = await this.vesselService.findOne(createTrackingDto.vessel_id);
+        
+        if (!vessel) {
+          throw new HttpException(
+            'Vessel not found',
+            HttpStatus.NOT_FOUND
+          );
+        }
+        
+        // Set timestamp to now if not provided
+        if (!createTrackingDto.timestamp) {
+          createTrackingDto.timestamp = new Date();
+        }
+        
+        return await this.trackingService.create(createTrackingDto);
+      } catch (error) {
+        if (error instanceof HttpException) {
+          throw error;
+        }
+        
+        throw new HttpException(
+          'Error creating tracking point',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+    }
+  
+    @Post('batch')
+    async createBatch(@Body() trackingPoints: CreateTrackingPointDto[]): Promise<{ success: boolean, count: number }> {
+      try {
+        let successCount = 0;
+        
+        for (const point of trackingPoints) {
+          // Ensure vessel exists
+          const vessel = await this.vesselService.findOne(point.vessel_id);
+          
+          if (!vessel) {
+            continue; // Skip points for non-existent vessels
+          }
+          
+          // Set timestamp to now if not provided
+          if (!point.timestamp) {
+            point.timestamp = new Date();
+          }
+          
+          await this.trackingService.create(point);
+          successCount++;
+        }
+        
+        return {
+          success: true,
+          count: successCount
+        };
+      } catch (error) {
+        throw new HttpException(
+          'Error creating tracking points batch',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+    }
+  }

@@ -17,7 +17,7 @@
     "paths": {
       "@snapper/shared": ["libs/shared/src/index.ts"]
     },
-    "resolveJsonModule": true,                           /* (UPDATED) Enable importing .json files. */
+    "resolveJsonModule": true
   },
   "exclude": ["node_modules", "tmp"]
 }

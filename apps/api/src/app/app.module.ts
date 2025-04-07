@@ -8,6 +8,7 @@ import { KmlDatasetModule } from './kml-dataset/kml-dataset.module';
 import { VoltaDepthModule } from './volta-depth/volta-depth.module';
 import { getDatabaseConfig } from '../config/database.config';
 import { KmlDataset } from './kml-dataset/kml-dataset.entity';
+import { VesselsModule } from './vessels/vessels.module';
 
 @Module({
   imports: [
@@ -21,13 +22,15 @@ import { KmlDataset } from './kml-dataset/kml-dataset.entity';
         const config = getDatabaseConfig();
         return {
           ...config,
-          // This is key: enable autoLoadEntities to pick up entities registered via forFeature
+          // Pick up entities registered via forFeature
           autoLoadEntities: true,
           // Explicitly register the entity
           entities: [KmlDataset],
+          logging: false,
         };
       },
     }),
+    VesselsModule,
     KmlDatasetModule,
     VoltaDepthModule
   ],

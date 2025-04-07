@@ -1,4 +1,4 @@
-import { Component, signal, inject, effect, computed, ChangeDetectionStrategy, DestroyRef, viewChild } from '@angular/core'; // Removed AfterViewInit, added viewChild
+import { Component, signal, inject, effect, computed, ChangeDetectionStrategy, DestroyRef, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -7,8 +7,8 @@ import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { MessageService } from 'primeng/api'; // Correct service import
-import { MessageModule } from 'primeng/message'; // Import p-message
+import { MessageService } from 'primeng/api';
+import { MessageModule } from 'primeng/message';
 
 // Child Components (Standalone)
 import { TileUploadComponent } from './components/tile-upload/tile-upload.component';
@@ -39,21 +39,20 @@ export interface StagedUpload {
     DialogModule,
     ButtonModule,
     ProgressSpinnerModule,
-    MessageModule, // Added for p-message
+    MessageModule,
   ],
-  providers: [MessageService], // Provide MessageService if not global
+  providers: [MessageService],
   template: `
     <p-toast key="mainToast" position="top-center"></p-toast>
 
     <div class="volta-depth-container">
       <h2>Volta Depth Tile Management</h2>
-      <app-tile-upload (uploadValidated)="onUploadValidated($event)"></app-tile-upload>
-      <hr>
-
-      <!-- Render list OR confirmation (inside dialog) -->
+      
+      <!-- List component first -->
       @if (!showConfirmation()) {
-        <!-- Add viewChild signal query reference -->
         <app-tile-list></app-tile-list>
+        <hr>
+        <app-tile-upload (uploadValidated)="onUploadValidated($event)"></app-tile-upload>
       }
 
       <p-dialog
@@ -63,7 +62,6 @@ export interface StagedUpload {
         [style]="{width: '60vw', minWidth: '500px'}"
         (onHide)="cancelCommit()"
         >
-          <!-- Ensure UploadConfirmationComponent selector matches -->
           @if (showConfirmation()) {
              <app-upload-confirmation></app-upload-confirmation>
           }
@@ -89,13 +87,13 @@ export interface StagedUpload {
     .dialog-loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.7); display: flex; justify-content: center; align-items: center; z-index: 10; border-radius: inherit; }
   `]
 })
-export class VoltaDepthComponent { // Removed 'implements AfterViewInit'
+export class VoltaDepthComponent {
   private voltaDepthService = inject(VoltaDepthService);
   private messageService = inject(MessageService);
   private destroyRef = inject(DestroyRef);
 
   // --- Signal-Based Child Query ---
-  private tileList = viewChild(TileListComponent); // Signal query for the list
+  private tileList = viewChild(TileListComponent);
 
   // --- Core State Signals ---
   readonly currentUploadData = signal<StagedUpload | null>(null);
@@ -128,7 +126,7 @@ export class VoltaDepthComponent { // Removed 'implements AfterViewInit'
   }
 
   // --- Methods Called by UploadConfirmationComponent (via parent injection) ---
-  triggerCommit(): void { // No parameter needed here
+  triggerCommit(): void {
     console.log('triggerCommit called in VoltaDepthComponent');
   
     const uploadData = this.currentUploadData();

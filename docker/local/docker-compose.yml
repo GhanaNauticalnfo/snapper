@@ -10,6 +10,7 @@ services:
       POSTGRES_DB: ${DATABASE_NAME:-snapper_db}
     volumes:
       - snapper-postgres-data:/var/lib/postgresql/data
+      - ./docker/local/postgres/init:/docker-entrypoint-initdb.d  # Add this line
     restart: unless-stopped
     networks:
       - snapper-network
@@ -26,15 +27,66 @@ services:
       snapper-postgres:
         condition: service_healthy
     environment:
-      # Connection string updated to match snapper-postgres credentials
       DATABASE_URL: postgresql://${DATABASE_USER:-snapper_user}:${DATABASE_PASSWORD:-snapper_password}@snapper-postgres:5432/${DATABASE_NAME:-snapper_db}
-      # Optional: Set watch mode to auto-reload sources on schema changes (dev)
-      # MARTIN_WATCH_MODE: true
     ports:
       - "4000:3000"
     restart: unless-stopped
     networks:
       - snapper-network
+      
+  artemis:
+    image: apache/activemq-artemis:latest
+    container_name: snapper-artemis
+    environment:
+      ARTEMIS_USERNAME: ${ARTEMIS_USER:-artemis}
+      ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD:-artemis_password}
+      RESTORE_CONFIGURATION: true
+      ENABLE_JMX_EXPORTER: true
+    ports:
+      - "8161:8161"  # Web console
+      - "1883:1883"  # MQTT
+      - "61616:61616"  # Core protocol (for admin connections)
+    volumes:
+      - artemis-data:/var/lib/artemis/data
+      - artemis-config:/var/lib/artemis/etc
+      - ./artemis-keycloak-config:/var/lib/artemis/keycloak-config
+    restart: unless-stopped
+    networks:
+      - snapper-network
+    depends_on:
+      - keycloak
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8161"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: snapper-keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://snapper-postgres:5432/${DATABASE_NAME:-snapper_db}
+      KC_DB_USERNAME: ${DATABASE_USER:-snapper_user}
+      KC_DB_PASSWORD: ${DATABASE_PASSWORD:-snapper_password}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin_password}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
+    command: 
+      - start-dev
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - snapper-network
+    depends_on:
+      snapper-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   snapper-network:
@@ -42,4 +94,8 @@ networks:
 
 volumes:
   snapper-postgres-data:
+    driver: local
+  artemis-data:
+    driver: local
+  artemis-config:
     driver: local

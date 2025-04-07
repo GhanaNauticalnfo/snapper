@@ -2,21 +2,21 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: snapper-postgres
-  namespace: test
+  namespace: prod
   labels:
     app: snapper-postgres
-    env: test
+    env: prod
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: snapper-postgres
-      env: test
+      env: prod
   template:
     metadata:
       labels:
         app: snapper-postgres
-        env: test
+        env: prod
     spec:
       containers:
       - name: postgres
@@ -40,16 +40,13 @@ spec:
             secretKeyRef:
               name: snapper-postgres-secret
               key: POSTGRES_DB
-        # Add this environment variable to fix the "directory not empty" issue
-        - name: PGDATA
-          value: /var/lib/postgresql/data/pgdata
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
             memory: "512Mi"
-            cpu: "300m"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
         volumeMounts:
         - name: postgres-data
           mountPath: /var/lib/postgresql/data
@@ -84,11 +81,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: snapper-postgres-service
-  namespace: test
+  namespace: prod
 spec:
   selector:
     app: snapper-postgres
-    env: test
+    env: prod
   ports:
   - port: 5432
     targetPort: 5432
@@ -98,10 +95,10 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: snapper-postgres-pvc
-  namespace: test
+  namespace: prod
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      storage: 10Gi

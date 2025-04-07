@@ -1,4 +1,4 @@
-# File: .github/workflows/deploy-snapper-frontend-test.yml
+# File: .github/workflows/deploy-api-test.yml
 name: Deploy Snapper API to Test
 
 on:
@@ -31,4 +31,6 @@ jobs:
       domain_name: snapper-test-api.ghananautical.info
       branch_name: ${{ needs.extract-branch.outputs.branch_name }}
       compare_branch: main
+      setup_database: true
+      run_migrations: true
     secrets: inherit

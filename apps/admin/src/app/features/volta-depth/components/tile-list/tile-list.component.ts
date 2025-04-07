@@ -1,14 +1,12 @@
-// src/app/features/volta-depth/components/tile-list/tile-list.component.ts
-
 import { Component, ChangeDetectionStrategy, computed, effect, inject, signal, DestroyRef } from '@angular/core';
-import { CommonModule, DatePipe, DecimalPipe } from '@angular/common'; // Keep imports
+import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, switchMap, tap, catchError, of, startWith, finalize } from 'rxjs';
 
 // PrimeNG Imports
 import { TableModule } from 'primeng/table';
-import { SortEvent } from 'primeng/api'; // Removed unused SortMeta
+import { SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
@@ -22,86 +20,78 @@ import { VoltaDepthService } from '../../volta-depth.service';
     selector: 'app-tile-list',
     standalone: true,
     imports: [
-        CommonModule, RouterModule, DatePipe, DecimalPipe, // Pipes are used
+        CommonModule, RouterModule, DatePipe, DecimalPipe,
         TableModule, ButtonModule, MessageModule, TagModule, SkeletonModule
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <div class="tile-list-container">
-        <div class="flex justify-content-between align-items-center mb-3">
+        <div class="flex align-items-center mb-3">
             <h4>Existing Tiles</h4>
-            <p-button
-                icon="pi pi-refresh"
-                [label]="loading() ? 'Loading...' : 'Refresh'"
-                (onClick)="triggerRefresh()"
-                [disabled]="loading()"
-                styleClass="p-button-sm p-button-outlined"
-            ></p-button>
         </div>
 
-        <!-- Error Message -->
         @if (error(); as errorMsg) {
           <p-message severity="error" [text]="errorMsg" styleClass="mb-3"></p-message>
         }
 
-        <!-- Table -->
-        <p-table
-          #tileTable
-          [value]="displayedTiles() ?? []"
-          [loading]="loading() && displayedTiles() === null"
-          styleClass="p-datatable-sm p-datatable-striped"
-          [tableStyle]="{'min-width': '50rem'}"
-          dataKey="id"
-          [customSort]="true"
-          (onSort)="onSort($event)"
-          [sortField]="$sortState().field"
-          [sortOrder]="$sortState().order"
-        > <!-- <<< FIX: Ensured opening tag is closed -->
-          <ng-template pTemplate="header">
-            <tr>
-              <th pSortableColumn="id" style="width: 10%">ID <p-sortIcon field="id"></p-sortIcon></th>
-              <th pSortableColumn="version" style="width: 10%">Ver <p-sortIcon field="version"></p-sortIcon></th>
-              <th pSortableColumn="numberOfFeatures" style="width: 15%">#Features <p-sortIcon field="numberOfFeatures"></p-sortIcon></th>
-              <th pSortableColumn="lastUpdated" style="width: 35%">Updated <p-sortIcon field="lastUpdated"></p-sortIcon></th>
-              <th style="width: 20%">Actions</th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-tile>
-              <tr>
-                  <td><span class="font-mono">{{ tile.id }}</span></td>
-                  <td><p-tag [value]="tile.version" severity="info"></p-tag></td>
-                  <td>{{ tile.numberOfFeatures | number }}</td> <!-- DecimalPipe usage -->
-                  <td>{{ tile.lastUpdated | date:'yyyy-MM-dd HH:mm:ss' }}</td> <!-- DatePipe usage -->
-                  <td><p-button label="Details" icon="pi pi-search" styleClass="p-button-text p-button-sm" [routerLink]="['/volta-depth', tile.id]"></p-button></td>
-              </tr>
-          </ng-template>
-          <ng-template pTemplate="emptymessage">
-            <tr>
-              <td colspan="5" class="text-center p-4">
-                @if (!loading() && !error()) {
-                  No tiles found.
-                } @else if (loading()) {
-                  <span>Loading data...</span>
-                }
-              </td>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="loadingbody" let-columns>
-              <!-- Corrected @for syntax -->
-              @for (item of [1, 2, 3]; track $index) {
+        <!-- Show block skeleton only on initial load -->
+        @if (showInitialSkeleton()) {
+            <p-skeleton height="150px" styleClass="mb-2"></p-skeleton>
+        } @else {
+            <!-- Render table once initial load attempt is done -->
+            <p-table
+              #tileTable
+              [value]="$tableData() ?? []"
+              [loading]="loading()"
+              styleClass="p-datatable-sm p-datatable-striped"
+              [tableStyle]="{'min-width': '50rem'}"
+              dataKey="id"
+              (onSort)="onPrimeNgSort($event)"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th pSortableColumn="id" style="width: 10%">ID <p-sortIcon field="id"></p-sortIcon></th>
+                  <th pSortableColumn="version" style="width: 10%">Ver <p-sortIcon field="version"></p-sortIcon></th>
+                  <th pSortableColumn="numberOfFeatures" style="width: 15%">#Features <p-sortIcon field="numberOfFeatures"></p-sortIcon></th>
+                  <th pSortableColumn="lastUpdated" style="width: 35%">Updated <p-sortIcon field="lastUpdated"></p-sortIcon></th>
+                  <th style="width: 20%">Actions</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-tile>
                   <tr>
-                      <td><p-skeleton></p-skeleton></td>
-                      <td><p-skeleton></p-skeleton></td>
-                      <td><p-skeleton></p-skeleton></td>
-                      <td><p-skeleton></p-skeleton></td>
-                      <td><p-skeleton></p-skeleton></td>
+                      <td><span class="font-mono">{{ tile.id }}</span></td>
+                      <td><p-tag [value]="tile.version" severity="info"></p-tag></td>
+                      <td>{{ tile.numberOfFeatures | number }}</td>
+                      <td>{{ tile.lastUpdated | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                      <td><p-button label="Details" icon="pi pi-search" styleClass="p-button-text p-button-sm" [routerLink]="['/volta-depth', tile.id]"></p-button></td>
                   </tr>
-              } <!-- Ensure @for has closing brace if inside another block, though it's standalone here -->
-          </ng-template>
-        </p-table> <!-- <<< FIX: Ensure closing tag exists and matches -->
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr>
+                  <td colspan="5" class="text-center p-4">
+                    @if (!loading() && !error()) {
+                      No tiles found.
+                    } @else {
+                      <span></span>
+                    }
+                  </td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="loadingbody">
+                  @for (item of [1, 2, 3]; track $index) {
+                      <tr>
+                          <td><p-skeleton></p-skeleton></td>
+                          <td><p-skeleton></p-skeleton></td>
+                          <td><p-skeleton></p-skeleton></td>
+                          <td><p-skeleton></p-skeleton></td>
+                          <td><p-skeleton></p-skeleton></td>
+                      </tr>
+                  }
+              </ng-template>
+            </p-table>
+        }
     </div>
   `,
-    // Styles remain the same
     styles: [`
     :host { display: block; }
     .tile-list-container { margin-top: 1rem; }
@@ -134,112 +124,93 @@ export class TileListComponent {
     private destroyRef = inject(DestroyRef);
 
     // --- State Signals ---
-    readonly loading = signal<boolean>(false);
+    readonly loading = signal<boolean>(true);
     readonly error = signal<string | null>(null);
-    readonly #tiles = signal<TileInfo[] | null>(null);
-    readonly $sortState = signal<{ field: keyof TileInfo | null, order: number }>({ field: null, order: 1 });
+    readonly $tableData = signal<TileInfo[] | null>(null);
+    readonly #initialLoadCompleted = signal<boolean>(false);
 
-    /** Trigger for initiating data fetch */
     private readonly refreshTrigger = new Subject<void>();
 
-    // --- Computed Signal for Display ---
-    readonly displayedTiles = computed(() => {
-        const data = this.#tiles();
-        const { field, order } = this.$sortState();
-
-        if (!data) return null;
-        if (!field) return data;
-
-        return [...data].sort((a, b) => {
-            const valueA = this.resolveFieldData(a, field);
-            const valueB = this.resolveFieldData(b, field);
-            let result = 0;
-
-            // --- FIX: Type checks for comparing 'unknown' values ---
-            if (valueA == null && valueB != null) result = -1;
-            else if (valueA != null && valueB == null) result = 1;
-            else if (valueA == null && valueB == null) result = 0;
-            // Specific type comparisons
-            else if (valueA instanceof Date && valueB instanceof Date) {
-                result = valueA.getTime() - valueB.getTime();
-            } else if (typeof valueA === 'string' && typeof valueB === 'string') {
-                result = valueA.localeCompare(valueB);
-            } else if (typeof valueA === 'number' && typeof valueB === 'number') {
-                result = valueA - valueB;
-            }
-            // Add more specific type checks if needed (e.g., boolean)
-            // Fallback comparison (less reliable for mixed types)
-            else if (valueA !== null && valueB !== null && valueA !== undefined && valueB !== undefined) {
-                 // Basic comparison if types are unknown but comparable (use with caution)
-                 result = (valueA < valueB) ? -1 : (valueA > valueB) ? 1 : 0;
-            }
-            // --- End of Type Checks ---
-
-            return result * order;
-        });
+    /** Computed signal to determine if the initial skeleton block should show */
+    readonly showInitialSkeleton = computed(() => {
+        return this.loading() && !this.#initialLoadCompleted();
     });
 
     constructor() {
+        console.log('TileListComponent Initializing...');
+
         // --- Effect to Fetch Data ---
         effect(() => {
             this.refreshTrigger.pipe(
                 startWith(undefined),
                 takeUntilDestroyed(this.destroyRef),
                 tap(() => {
+                    console.log('>>> Starting data fetch...');
                     this.loading.set(true);
                     this.error.set(null);
                 }),
-                switchMap(() => this.voltaDepthService.listTiles().pipe(
-                    tap((data) => {
-                        const processedData = data.map(t => ({
-                            ...t,
-                            created: t.created ? new Date(t.created) : null,
-                            lastUpdated: t.lastUpdated ? new Date(t.lastUpdated) : null,
-                            numberOfFeatures: typeof t.numberOfFeatures === 'string' ? parseInt(t.numberOfFeatures, 10) : t.numberOfFeatures ?? 0 // Ensure number, default 0 if null/undefined
-                        }) as TileInfo);
-                        this.#tiles.set(processedData);
-                    }),
-                    catchError((err: Error) => {
-                        console.error("Error fetching tiles:", err);
-                        this.error.set(err.message || 'Failed to load tiles');
-                        this.#tiles.set([]);
-                        return of(null);
-                    }),
-                    finalize(() => {
-                        this.loading.set(false);
-                    })
-                ))
-            ).subscribe();
+                switchMap(() => {
+                    console.log('>>> Calling voltaDepthService.listTiles()');
+                    return this.voltaDepthService.listTiles().pipe(
+                        tap((data) => {
+                            console.log('>>> Fetch SUCCESS. Raw data:', data);
+                            const processedData = this.processTileData(data);
+                            console.log('>>> Processed data:', processedData);
+                            this.$tableData.set(processedData);
+                        }),
+                        catchError((err: Error) => {
+                            console.error('>>> Fetch ERROR:', err);
+                            this.error.set(err.message || 'Failed to load tiles');
+                            this.$tableData.set([]);
+                            return of(null);
+                        }),
+                        finalize(() => {
+                            console.log('>>> Fetch FINALIZED. Setting loading=false, initialLoadCompleted=true');
+                            this.loading.set(false);
+                            this.#initialLoadCompleted.set(true);
+                        })
+                    );
+                })
+            ).subscribe({
+                 next: () => { /* Handled in tap */ },
+                 error: (err) => console.error('>>> Outer stream error (should not happen due to catchError):', err),
+                 complete: () => console.log('>>> Outer stream completed (likely on destroy)')
+            });
         });
     }
 
-    /** Handles the PrimeNG sort event */
-    onSort(event: SortEvent): void {
-        console.log('Sort Event:', event);
-        if (event.field) {
-            this.$sortState.set({
-                field: event.field as keyof TileInfo,
-                order: event.order ?? 1
-            });
+    /** Processes raw data into TileInfo[] with Date objects */
+    private processTileData(data: unknown): TileInfo[] {
+        if (!Array.isArray(data)) {
+            console.warn('processTileData received non-array or null:', data);
+            return [];
         }
+        
+        return data.map((t: any) => ({
+            id: t?.id ?? '',
+            version: t?.version ?? '',
+            numberOfFeatures: typeof t?.numberOfFeatures === 'string'
+                ? parseInt(t.numberOfFeatures, 10)
+                : (typeof t?.numberOfFeatures === 'number' ? t.numberOfFeatures : 0),
+            created: t?.created ? new Date(t.created) : null,
+            lastUpdated: t?.lastUpdated ? new Date(t.lastUpdated) : null,
+        }) as TileInfo);
     }
 
-    /** Internal method to trigger refresh from the button */
-    triggerRefresh(): void {
-        console.log("TileListComponent: Refresh button clicked.");
-        this.refreshTrigger.next();
+    /** Handles the PrimeNG sort event when customSort=false. */
+    onPrimeNgSort(event: SortEvent): void {
+        console.log('>>> PrimeNG Default Sort Event. event.data:', event.data);
+        if (event.data) {
+            this.$tableData.set([...event.data]);
+            console.log('>>> $tableData updated after sort.');
+        } else {
+             console.warn('>>> PrimeNG Sort Event received no data!');
+        }
     }
 
     /** Public method to trigger a refresh from outside */
     refreshTiles(): void {
-        console.log("TileListComponent: Refresh triggered externally.");
+        console.log(">>> TileListComponent: Refresh triggered externally.");
         this.refreshTrigger.next();
-    }
-
-
-    /** Helper to safely access field data */
-    private resolveFieldData(data: TileInfo, field: keyof TileInfo): unknown {
-        // Add specific handling if a field might be missing or needs transformation
-        return data[field];
     }
 }

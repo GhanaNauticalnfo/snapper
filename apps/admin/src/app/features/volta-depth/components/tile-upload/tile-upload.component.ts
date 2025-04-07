@@ -1,10 +1,14 @@
 import { Component, signal, inject, ChangeDetectionStrategy, Output, EventEmitter, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, EMPTY, switchMap, tap, catchError, finalize } from 'rxjs';
 
 // PrimeNG Imports
-import { FileUploadModule, FileUploadHandlerEvent, FileSelectEvent, FileUploadErrorEvent } from 'primeng/fileupload';
+import { FileUploadModule } from 'primeng/fileupload';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
+import { ProgressBarModule } from 'primeng/progressbar';
+import { TagModule } from 'primeng/tag';
+import { ButtonModule } from 'primeng/button';
 
 // Models/Service
 import { VoltaDepthService } from '../../volta-depth.service';
@@ -17,105 +21,150 @@ import { UploadResponse } from '../../models/upload-response.model';
     imports: [
         CommonModule,
         FileUploadModule,
+        ToastModule,
+        ProgressBarModule,
+        TagModule,
+        ButtonModule
     ],
+    providers: [MessageService],
     template: `
     <div class="tile-upload-wrapper">
-      <h4>Upload New Tile GeoJSON</h4>
+      <h4>Upload New Tile</h4>
+      
       <p-fileUpload
-        #fileUploadComponent
-        mode="basic"
-        name="file"
-        accept=".json,.geojson"
-        [maxFileSize]="52428800"
-        [auto]="true"
+        #fileUpload
+        mode="advanced"
         [customUpload]="true"
         (uploadHandler)="onUpload($event)"
+        accept=".json,.geojson"
+        [maxFileSize]="52428800"
+        [disabled]="isLoading()"
+        chooseLabel="Select GeoJSON"
+        [showCancelButton]="false"
+        [showUploadButton]="false"
+        [auto]="true"
         (onSelect)="onFileSelect($event)"
         (onError)="onFileError($event)"
-        [disabled]="isLoading()"
-        chooseLabel="Choose GeoJSON"
-        chooseIcon="pi pi-upload"
+        styleClass="w-full"
         [styleClass]="uploadError() ? 'p-invalid' : ''"
-        >
+      >
+        <ng-template pTemplate="content">
+          <div class="upload-status flex justify-content-between align-items-center" *ngIf="selectedFile()">
+            <div class="flex align-items-center">
+              <i class="pi pi-file-edit mr-2 text-xl"></i>
+              <span class="font-semibold">{{ selectedFile()?.name }}</span>
+              <p-tag 
+                [value]="isLoading() ? 'Validating...' : 'Selected'" 
+                [severity]="isLoading() ? 'info' : 'success'"
+                styleClass="ml-2"
+              ></p-tag>
+            </div>
+            <div *ngIf="isLoading()" class="flex align-items-center">
+              <p-progressBar mode="indeterminate" [style]="{'height': '6px', 'width': '200px'}"></p-progressBar>
+            </div>
+          </div>
+        </ng-template>
+        
+        <ng-template pTemplate="empty">
+          <div class="flex flex-column align-items-center p-4 gap-3 border-2 border-dashed surface-border border-round">
+            <i class="pi pi-cloud-upload text-5xl text-primary"></i>
+            <span class="font-semibold">Drag and drop GeoJSON file here</span>
+            <span class="text-sm text-color-secondary">or click to browse</span>
+          </div>
+        </ng-template>
       </p-fileUpload>
 
-      @if (isLoading()) {
-          <div class="loading-indicator">
-            <span>Validating file...</span>
-          </div>
-      }
-      @if (uploadError(); as errorMsg) {
-        <div class="p-error upload-error-message">
-             {{ errorMsg }}
-        </div>
-      }
+      <div *ngIf="uploadError()" class="p-error upload-error-message mt-2">
+        <i class="pi pi-exclamation-triangle mr-2"></i>{{ uploadError() }}
+      </div>
     </div>
   `,
     styles: [`
     :host { display: block; margin-bottom: 1rem; }
     .tile-upload-wrapper { padding: 1rem 1.25rem; border: 1px solid var(--surface-d); background-color: var(--surface-a); border-radius: 6px; }
     h4 { margin-top: 0; margin-bottom: 1rem; color: var(--text-color-secondary); }
-    :host ::ng-deep .p-fileupload-basic { width: auto; }
-    :host ::ng-deep .p-fileupload.p-invalid .p-button { border-color: var(--red-500); }
-    .loading-indicator { margin-top: 0.75rem; font-style: italic; color: var(--text-color-secondary); font-size: 0.9em; }
-    .upload-error-message { margin-top: 0.75rem; font-size: 0.9em; }
+    .upload-error-message { margin-top: 0.75rem; font-size: 0.9em; padding: 0.5rem; border-radius: 4px; background-color: var(--red-50); }
+    :host ::ng-deep .p-fileupload-content { padding: 1.25rem; }
+    :host ::ng-deep .p-fileupload-buttonbar { padding: 1.25rem; padding-bottom: 0; }
+    :host ::ng-deep .p-fileupload.p-invalid .p-fileupload-content { border-color: var(--red-500); }
+    :host ::ng-deep .p-fileupload-advanced { width: 100%; }
+    :host ::ng-deep .p-button.p-fileupload-choose:not(.p-disabled) { background-color: var(--primary-color); }
   `]
 })
 export class TileUploadComponent {
     private voltaDepthService = inject(VoltaDepthService);
     private destroyRef = inject(DestroyRef);
+    private messageService = inject(MessageService);
 
     // --- State Signals ---
     readonly isLoading = signal(false);
     readonly uploadError = signal<string | null>(null);
-    private currentFile: File | null = null;
+    readonly selectedFile = signal<File | null>(null);
 
     // --- Output Event ---
     @Output() uploadValidated = new EventEmitter<{ response: UploadResponse; file: File }>();
 
     // --- Upload Handler ---
-    onUpload(event: FileUploadHandlerEvent): void {
+    onUpload(event: any): void {
         const file = event.files[0];
-        if (!file) { this.uploadError.set("No file provided to upload handler."); return; }
+        if (!file) { 
+            this.uploadError.set("No file provided to upload handler."); 
+            return; 
+        }
+        
         console.log(`TileUploadComponent: Uploading ${file.name}`);
-        this.currentFile = file;
         this.isLoading.set(true);
         this.uploadError.set(null);
 
         this.voltaDepthService.uploadTile(file)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
-            next: (response) => {
-                console.log('TileUploadComponent: Validation success');
-                this.uploadValidated.emit({ response, file }); // Emit event UP to parent
-            },
-            error: (err: Error) => {
-                console.error('TileUploadComponent: Upload API error:', err);
-                this.uploadError.set(err.message || 'Unknown upload validation error.');
-            },
-            complete: () => {
-                this.isLoading.set(false);
-                // Clearing p-fileUpload might require ViewChild and calling its clear() method
-            }
-        });
+                next: (response) => {
+                    console.log('TileUploadComponent: Validation success');
+                    this.uploadValidated.emit({ response, file }); // Emit event UP to parent
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'File Validated',
+                        detail: `Successfully validated ${file.name} for Tile ${response.deducedTileId}`
+                    });
+                },
+                error: (err: Error) => {
+                    console.error('TileUploadComponent: Upload API error:', err);
+                    this.uploadError.set(err.message || 'Unknown upload validation error.');
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Validation Failed',
+                        detail: err.message || 'Unknown upload validation error.'
+                    });
+                },
+                complete: () => {
+                    this.isLoading.set(false);
+                }
+            });
     }
 
     /** Called when a file is selected */
-    onFileSelect(event: FileSelectEvent): void {
-         this.uploadError.set(null); // Clear previous errors
-         this.currentFile = event.files[0];
-         console.log("File selected:", this.currentFile?.name);
+    onFileSelect(event: any): void {
+        this.uploadError.set(null); // Clear previous errors
+        this.selectedFile.set(event.files[0]);
+        console.log("File selected:", event.files[0]?.name);
     }
 
     /** Called by p-fileUpload on internal errors */
-    onFileError(event: FileUploadErrorEvent): void {
+    onFileError(event: any): void {
         const firstFileName = event.files[0]?.name || 'unknown file';
         // Access error message if available (structure might vary by PrimeNG version)
-        const internalError = (event as any).error?.message || 'Check constraints.'; // Use 'any' carefully if type is uncertain
+        const internalError = event.error?.message || 'Check file size and format constraints.';
         const errorMsg = `File rejected: ${firstFileName}. ${internalError}`;
         console.error("p-fileUpload error:", errorMsg, event);
         this.uploadError.set(errorMsg);
         this.isLoading.set(false);
-        this.currentFile = null;
+        this.selectedFile.set(null);
+        
+        this.messageService.add({
+            severity: 'error',
+            summary: 'Upload Error',
+            detail: errorMsg
+        });
     }
 }

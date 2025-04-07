@@ -30,6 +30,16 @@ on:
         type: string
         description: 'Branch to compare against for affected detection'
         default: 'main'
+      setup_database:
+        required: false
+        type: boolean
+        description: 'Whether to set up a PostgreSQL database for this app'
+        default: false
+      run_migrations:
+        required: false
+        type: boolean
+        description: 'Whether to run database migrations after deployment'
+        default: false
 
 jobs:
   check-affected:
@@ -111,9 +121,61 @@ jobs:
             echo "${{ inputs.app_name }} is not affected by changes"
             echo "is_affected=false" >> $GITHUB_OUTPUT
           fi
+
+  setup-database:
+    needs: check-affected
+    # Only run if database setup is requested and app is affected
+    if: |
+      inputs.setup_database == true && (
+        needs.check-affected.outputs.is_affected == 'true' ||
+        (inputs.environment == 'prod' && github.event_name == 'workflow_dispatch')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          
+      - name: Save DigitalOcean kubeconfig
+        run: |
+          echo "Available Kubernetes clusters:"
+          doctl kubernetes cluster list
+          
+          # Get the cluster ID instead of relying on exact name match
+          CLUSTER_NAME="${{ inputs.environment == 'prod' && secrets.PROD_CLUSTER_NAME || secrets.TEST_CLUSTER_NAME }}"
+          CLUSTER_ID=$(doctl kubernetes cluster list --format ID,Name --no-header | grep ${CLUSTER_NAME} | awk '{print $1}')
+          
+          if [ -z "$CLUSTER_ID" ]
+          then
+            echo "Could not find cluster with name containing ${CLUSTER_NAME}"
+            echo "Please check the cluster name secret and available clusters listed above"
+            exit 1
+          else
+            echo "Found cluster ID: $CLUSTER_ID"
+            doctl kubernetes cluster kubeconfig save $CLUSTER_ID
+          fi
+      
+      # This step runs only if the database doesn't exist yet
+      - name: Apply PostgreSQL deployment
+        run: |
+          # Convert environment name if needed (production -> prod)
+          ENV_NAME="${{ inputs.environment }}"
+          if [ "$ENV_NAME" == "production" ]; then
+            ENV_NAME="prod"
+          fi
+          
+          if ! kubectl get deployment snapper-postgres -n $ENV_NAME &> /dev/null; then
+            kubectl apply -f apps/${{ inputs.app_name }}/kubernetes/postgres-$ENV_NAME.yaml
+            echo "PostgreSQL deployment created for $ENV_NAME environment"
+          else
+            echo "PostgreSQL deployment already exists for $ENV_NAME environment, skipping"
+          fi
           
   build-and-push:
-    needs: check-affected
+    needs: [check-affected, setup-database]
     # Skip if not affected by changes and not production with manual trigger
     if: |
       needs.check-affected.outputs.is_affected == 'true' ||
@@ -153,7 +215,7 @@ jobs:
             ENVIRONMENT=${{ inputs.environment }}
           
   deploy:
-    needs: [check-affected, build-and-push]
+    needs: [check-affected, setup-database, build-and-push]
     # Only run if build was executed
     if: |
       needs.check-affected.outputs.is_affected == 'true' ||
@@ -188,14 +250,20 @@ jobs:
       
       - name: Deploy to Kubernetes
         run: |
+          # Convert environment name if needed (production -> prod)
+          ENV_NAME="${{ inputs.environment }}"
+          if [ "$ENV_NAME" == "production" ]; then
+            ENV_NAME="prod"
+          fi
+          
           # Create directory structure if it doesn't exist
-          mkdir -p k8s/${{ inputs.environment }}
+          mkdir -p k8s/$ENV_NAME
           
           # Copy the deployment file to the expected location
-          cp apps/${{ inputs.app_name }}/kubernetes/${{ inputs.environment }}.yaml k8s/${{ inputs.environment }}/deployment.yaml
+          cp apps/${{ inputs.app_name }}/kubernetes/$ENV_NAME.yaml k8s/$ENV_NAME/deployment.yaml
           
           # Apply Kubernetes manifests
-          kubectl apply -f k8s/${{ inputs.environment }}/deployment.yaml
+          kubectl apply -f k8s/$ENV_NAME/deployment.yaml
           
           # Set the image name based on environment
           if [ "${{ inputs.environment }}" == "prod" ]; then
@@ -205,7 +273,87 @@ jobs:
           fi
           
           # Update the container image
-          kubectl set image deployment/${{ inputs.image_name }} ${{ inputs.image_name }}=ghananauticalinfo/${{ inputs.image_name }}:${IMAGE_TAG} -n ${{ inputs.environment }}
+          kubectl set image deployment/${{ inputs.image_name }} ${{ inputs.image_name }}=ghananauticalinfo/${{ inputs.image_name }}:${IMAGE_TAG} -n $ENV_NAME
           
           # Wait for rollout to complete
-          kubectl rollout status deployment/${{ inputs.image_name }} -n ${{ inputs.environment }}
+          kubectl rollout status deployment/${{ inputs.image_name }} -n $ENV_NAME
+  
+  run-migrations:
+    needs: [check-affected, deploy]
+    # Only run if migrations are requested and app is affected
+    if: |
+      inputs.run_migrations == true && (
+        needs.check-affected.outputs.is_affected == 'true' ||
+        (inputs.environment == 'prod' && github.event_name == 'workflow_dispatch')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          
+      - name: Save DigitalOcean kubeconfig
+        run: |
+          # Get the cluster ID instead of relying on exact name match
+          CLUSTER_NAME="${{ inputs.environment == 'prod' && secrets.PROD_CLUSTER_NAME || secrets.TEST_CLUSTER_NAME }}"
+          CLUSTER_ID=$(doctl kubernetes cluster list --format ID,Name --no-header | grep ${CLUSTER_NAME} | awk '{print $1}')
+          
+          if [ -z "$CLUSTER_ID" ]
+          then
+            echo "Could not find cluster with name containing ${CLUSTER_NAME}"
+            echo "Please check the cluster name secret and available clusters listed above"
+            exit 1
+          else
+            echo "Found cluster ID: $CLUSTER_ID"
+            doctl kubernetes cluster kubeconfig save $CLUSTER_ID
+          fi
+      
+      - name: Run database migrations
+        run: |
+          # Convert environment name if needed (production -> prod)
+          ENV_NAME="${{ inputs.environment }}"
+          if [ "$ENV_NAME" == "production" ]; then
+            ENV_NAME="prod"
+          fi
+          
+          TIMESTAMP=$(date +%s)
+          BRANCH="${{ inputs.environment == 'prod' && 'main' || inputs.branch_name }}"
+          
+          # Create the migration job by replacing placeholders
+          cat apps/${{ inputs.app_name }}/kubernetes/run-migrations.yaml | \
+            sed "s/{TIMESTAMP}/$TIMESTAMP/g" | \
+            sed "s/{ENVIRONMENT}/$ENV_NAME/g" | \
+            sed "s/{BRANCH}/$BRANCH/g" | \
+            kubectl apply -f -
+          
+          echo "Migration job created: snapper-api-migrations-$TIMESTAMP"
+          echo "Waiting for job to complete..."
+          
+          # Wait for job to complete
+          kubectl wait --for=condition=complete job/snapper-api-migrations-$TIMESTAMP --namespace $ENV_NAME --timeout=300s
+          
+          if [ $? -eq 0 ]; then
+            echo "Migration completed successfully"
+            
+            # Show logs
+            POD_NAME=$(kubectl get pods -n $ENV_NAME -l job-name=snapper-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
+            echo "Migration logs:"
+            kubectl logs $POD_NAME -n $ENV_NAME
+            
+            # Cleanup
+            echo "Cleaning up job..."
+            kubectl delete job snapper-api-migrations-$TIMESTAMP -n $ENV_NAME
+          else
+            echo "Migration failed or timed out"
+            
+            # Show logs for debugging
+            POD_NAME=$(kubectl get pods -n $ENV_NAME -l job-name=snapper-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
+            echo "Migration logs:"
+            kubectl logs $POD_NAME -n $ENV_NAME
+            
+            # Don't fail the workflow since deployment already happened
+            echo "::warning::Migration job failed but deployment was completed"
+          fi
