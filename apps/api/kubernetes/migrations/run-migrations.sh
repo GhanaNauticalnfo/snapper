@@ -22,7 +22,7 @@ fi
 TIMESTAMP=$(date +%s)
 
 # Create the migration job by replacing placeholders
-cat run-migrations.yaml | \
+cat migrations/run-migrations.yaml | \
   sed "s/{TIMESTAMP}/$TIMESTAMP/g" | \
   sed "s/{ENVIRONMENT}/$ENVIRONMENT/g" | \
   sed "s/{BRANCH}/$BRANCH/g" | \

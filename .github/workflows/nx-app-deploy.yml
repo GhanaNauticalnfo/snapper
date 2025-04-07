@@ -323,7 +323,7 @@ jobs:
           BRANCH="${{ inputs.environment == 'prod' && 'main' || inputs.branch_name }}"
           
           # Create the migration job by replacing placeholders
-          cat apps/${{ inputs.app_name }}/kubernetes/run-migrations.yaml | \
+          cat apps/${{ inputs.app_name }}/kubernetes/migrations/run-migrations.yaml | \
             sed "s/{TIMESTAMP}/$TIMESTAMP/g" | \
             sed "s/{ENVIRONMENT}/$ENV_NAME/g" | \
             sed "s/{BRANCH}/$BRANCH/g" | \
