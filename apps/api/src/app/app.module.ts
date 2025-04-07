@@ -1,38 +1,45 @@
 // apps/api/src/app/app.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config'; // Import ConfigService
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { KmlDatasetModule } from './kml-dataset/kml-dataset.module';
 import { VoltaDepthModule } from './volta-depth/volta-depth.module';
-import { getDatabaseConfig } from '../config/database.config';
-import { KmlDataset } from './kml-dataset/kml-dataset.entity';
+// Import the CORRECT factory function from database.config.ts
+import { typeOrmModuleOptionsFactory } from '../config/database.config';
+// KmlDataset entity will be picked up by autoLoadEntities or by forFeature in its own module
+// import { KmlDataset } from './kml-dataset/kml-dataset.entity';
 import { VesselsModule } from './vessels/vessels.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
+      isGlobal: true, // Good practice: Makes ConfigService available everywhere
       envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
     TypeOrmModule.forRootAsync({
+      // Make ConfigModule available for injection into the factory
       imports: [ConfigModule],
-      useFactory: () => {
-        const config = getDatabaseConfig();
-        return {
-          ...config,
-          // Pick up entities registered via forFeature
-          autoLoadEntities: true,
-          // Explicitly register the entity
-          entities: [KmlDataset],
-          logging: false,
-        };
-      },
+      // Use the dedicated factory function we created/modified
+      useFactory: typeOrmModuleOptionsFactory,
+      // Inject the ConfigService (or any other services the factory needs)
+      inject: [ConfigService],
+      // --- Remove manual merging below ---
+      // useFactory: () => { // OLD anonymous factory
+      //   const config = getDatabaseConfig(); // ERROR was here
+      //   return {
+      //     ...config,
+      //     autoLoadEntities: true, // Let the factory handle this
+      //     entities: [KmlDataset], // Let the factory handle this or use forFeature
+      //     logging: false, // Let the factory handle this
+      //   };
+      // },
     }),
+    // Register feature modules AFTER TypeOrmModule.forRootAsync
     VesselsModule,
     KmlDatasetModule,
-    VoltaDepthModule
+    VoltaDepthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

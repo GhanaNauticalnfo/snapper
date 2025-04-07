@@ -1,50 +1,90 @@
 // apps/api/src/config/database.config.ts
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { dataSourceOptions } from './typeorm.config'; // Import shared options
+import { ConfigService } from '@nestjs/config';
+// We don't need getTypeOrmDataSourceOptions here anymore for defaults
+// import { getTypeOrmDataSourceOptions } from '../datasource';
+import { LoggerOptions } from 'typeorm';
+import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
-// This function now simply adapts the shared options for NestJS TypeOrmModule
-export const getDatabaseConfig = (): TypeOrmModuleOptions => {
-  console.log('Loading database config for NestJS...');
+type TypeOrmLogLevel = "query" | "error" | "schema" | "warn" | "info" | "log" | "migration";
 
-  // Start with the shared options
-  const config: TypeOrmModuleOptions = {
-    ...dataSourceOptions,
+const getLoggerOptions = (configValue: string | boolean | undefined): LoggerOptions | undefined => {
+    if (configValue === 'true' || configValue === true) return 'all';
+    if (configValue === 'false' || configValue === false) return undefined;
+    if (typeof configValue === 'string' && configValue.includes(',')) {
+        // Consider adding validation ensure levels are valid TypeOrmLogLevel
+        return configValue.split(',').map(s => s.trim()) as TypeOrmLogLevel[];
+    }
+    return undefined;
+};
 
-    // --- NestJS TypeOrmModule Specific Options ---
+export const typeOrmModuleOptionsFactory = (configService: ConfigService): TypeOrmModuleOptions => {
+    console.log('[NestJS DB Config] Loading database config for NestJS runtime...');
 
-    // Let NestJS handle entity discovery based on the glob pattern
-    // You could potentially use autoLoadEntities with the glob in entities,
-    // but providing the entities array directly from dataSourceOptions is robust.
-    // autoLoadEntities: true,
-
-    // IMPORTANT: Remove synchronize! Rely on migrations exclusively.
-       // >>> KEY CHANGE HERE <<<
-    // Enable synchronize ONLY in development for rapid iteration.
-    // Disable it strictly for production (and ideally staging/test).
-    synchronize: process.env.NODE_ENV === 'development', // Use true for dev, false otherwise
-
-    // synchronize: false, // Explicitly false or just remove it
-
-    // Keep logging configuration specific to NestJS runtime if needed
-    logging: process.env.NODE_ENV !== 'production', // Example: log in dev, not prod
-  };
-
-  
-
-  if (config.synchronize) {
-    console.warn(
-      '*** TypeORM synchronize is ENABLED. Schema changes will be applied automatically. DO NOT USE IN PRODUCTION! ***'
+    // Get runtime logging preference directly from ConfigService
+    const loggingSetting = configService.get<string | boolean>(
+        'TYPEORM_LOGGING',
+        configService.get<string>('NODE_ENV', 'development') !== 'production' // Default based on NODE_ENV
     );
-  } else {
-    console.log(
-      'TypeORM synchronize is DISABLED. Using migrations for schema changes.'
-    );
-  }
-  
-  console.log(
-    'Database config loaded. Using entities from glob:',
-    dataSourceOptions.entities
-  );
+    const runtimeLogging = getLoggerOptions(loggingSetting);
 
-  return config;
+    // --- Get Connection Details Primarily from ConfigService ---
+    // Provide only essential, safe, hardcoded defaults if needed.
+    const url = configService.get<string>('DATABASE_URL'); // No default needed; rely on env var presence
+    const host = configService.get<string>('DATABASE_HOST'); // No default needed
+    const port = configService.get<number>('DATABASE_PORT', 5432); // Safe default: 5432 for Postgres
+    const username = configService.get<string>('DATABASE_USER'); // No default needed
+    const password = configService.get<string>('DATABASE_PASSWORD'); // No default needed
+    const database = configService.get<string>('DATABASE_NAME'); // No default needed
+    const sslEnabled = configService.get<string | boolean>('DATABASE_SSL', process.env.NODE_ENV === 'production'); // Default SSL based on NODE_ENV
+
+    const sslOptions = (sslEnabled === 'true' || sslEnabled === true)
+        ? { rejectUnauthorized: false } // Basic SSL, adjust as needed
+        : false;
+
+    // --- Construct Final Options ---
+    // Build the options object directly using values from ConfigService
+    const finalOptions: TypeOrmModuleOptions = {
+        type: 'postgres', // Explicitly set the type
+
+        // Assign derived connection details
+        url: url, // Pass url if defined
+        // Only pass host/port etc., if URL is NOT defined
+        host: !url ? host : undefined,
+        port: !url ? port : undefined,
+        username: !url ? username : undefined,
+        password: !url ? password : undefined,
+        database: !url ? database : undefined,
+        ssl: sslOptions,
+
+        // Runtime specific settings
+        synchronize: false, // CRITICAL
+        logging: runtimeLogging,
+        autoLoadEntities: true, // Use NestJS mechanism
+
+        // Make sure these are not included when using autoLoadEntities
+        entities: undefined,
+        migrations: undefined,
+        subscribers: undefined,
+
+    } as PostgresConnectionOptions & TypeOrmModuleOptions; // Type assertion still useful
+
+    // --- Final Validation (Runtime) ---
+    const checkOptions = finalOptions as Partial<PostgresConnectionOptions>;
+    const hasUrl = !!checkOptions.url;
+    // Check host/user/db only if URL is not provided
+    const hasDetails = !hasUrl && !!(checkOptions.host && checkOptions.username && checkOptions.database);
+
+    // Ensure *either* URL *or* Details are sufficiently provided
+    if (!hasUrl && !hasDetails) {
+        console.error("[NestJS DB Config] Error: Insufficient database connection details for runtime.");
+        console.error("[NestJS DB Config] Ensure either DATABASE_URL or (DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME) are set in environment and loaded by ConfigModule.");
+        throw new Error("Database configuration incomplete for NestJS runtime.");
+    }
+
+    console.log('[NestJS DB Config] Database config loaded. Synchronize: false.');
+    console.log(`[NestJS DB Config] Connection Method: ${hasUrl ? 'DATABASE_URL' : 'Host/User/DB Details'}`);
+    console.log(`[NestJS DB Config] Logging: ${JSON.stringify(runtimeLogging)}`);
+
+    return finalOptions;
 };
