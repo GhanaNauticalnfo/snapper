@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class EnableUuidExtension1744096218410 implements MigrationInterface {
+export class EnableUuidExtension1678886399999 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Add this line to enable the extension

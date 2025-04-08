@@ -66,7 +66,7 @@ if (!hasUrl && !hasDetails) {
     throw new Error("Database configuration incomplete for CLI.");
 }
 console.log(`[DataSource CLI] Connection Method: ${hasUrl ? 'DATABASE_URL' : 'Host/User/DB Details'}`);
-
+//
 export const AppDataSource = new DataSource(dataSourceOptions);
 //
 export const getTypeOrmDataSourceOptions = (): PostgresConnectionOptions => {
