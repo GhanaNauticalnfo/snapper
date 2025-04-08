@@ -4,18 +4,33 @@
   "sourceRoot": "apps/api/src",
   "projectType": "application",
   "targets": {
-    "build": {
-      "executor": "nx:run-commands",
+    "build-cli": {
+      "executor": "nx:run-script",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/api/cli_build"
+      ],
       "options": {
-        "command": "webpack-cli build",
+        "script": "build:cli"
+      }
+    },
+    "build": {
+      "dependsOn": [
+        "build-cli"
+      ],
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/dist/apps/api"
+      ],
+      "options": {
+        "command": "webpack --config apps/api/webpack.config.js",
         "args": [
-          "node-env=production"
+          "--node-env=production"
         ]
       },
       "configurations": {
         "development": {
           "args": [
-            "node-env=development"
+            "--node-env=development"
           ]
         }
       }
@@ -45,7 +60,7 @@
         "{workspaceRoot}/coverage/{projectRoot}"
       ],
       "options": {
-        "jestConfig": "jest.config.ts",
+        "jestConfig": "apps/api/jest.config.ts",
         "passWithNoTests": true
       },
       "configurations": {
@@ -55,44 +70,34 @@
         }
       }
     },
-    "typeorm": {
-      "executor": "nx:run-commands",
+    "typeorm:ts-runner": {
+      "executor": "nx:run-script",
       "options": {
-        "command": "typeorm-ts-node-commonjs"
+        "script": "typeorm:ts"
       }
     },
     "migration:generate": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "nx run api:typeorm -- migration:generate apps/api/src/migrations/InitialSchema -d apps/api/src/config/typeorm.config.ts"
-      },
-      "configurations": {
-        "custom": {
-          "command": "nx run api:typeorm -- migration:generate apps/api/src/migrations/{args.name} -d apps/api/src/config/typeorm.config.ts"
-        }
+        "command": "npm run migration:generate --name={args.name}"
       }
     },
     "migration:create": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "nx run api:typeorm -- migration:create apps/api/src/migrations/EmptyMigration"
-      },
-      "configurations": {
-        "custom": {
-          "command": "nx run api:typeorm -- migration:create apps/api/src/migrations/{args.name}"
-        }
+        "command": "npm run typeorm:ts -- migration:create apps/api/src/migrations/{args.name}"
       }
     },
     "migration:run": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "nx run api:typeorm -- migration:run -d apps/api/src/config/typeorm.config.ts"
+        "command": "npm run migration:run:dev"
       }
     },
     "migration:revert": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "nx run api:typeorm -- migration:revert -d apps/api/src/config/typeorm.config.ts"
+        "command": "npm run migration:revert:dev"
       }
     }
   },
