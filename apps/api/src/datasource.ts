@@ -1,23 +1,29 @@
 // apps/api/src/datasource.ts
-
-// --- TEMPORARY DEBUG LOGGING ---
-console.log('[DEBUG] Reading process.env in datasource.ts:');
-console.log('[DEBUG] NODE_ENV:', process.env.NODE_ENV);
-console.log('[DEBUG] DATABASE_HOST:', process.env.DATABASE_HOST);
-console.log('[DEBUG] DATABASE_PORT:', process.env.DATABASE_PORT);
-console.log('[DEBUG] DATABASE_USER:', process.env.DATABASE_USER);
-console.log('[DEBUG] DATABASE_PASSWORD:', process.env.DATABASE_PASSWORD ? '******' : undefined); // Mask password
-console.log('[DEBUG] DATABASE_NAME:', process.env.DATABASE_NAME);
-console.log('[DEBUG] DATABASE_URL:', process.env.DATABASE_URL);
-console.log('--- END DEBUG LOGGING ---');
-// --- END TEMPORARY DEBUG LOGGING ---
-
 import { DataSource } from 'typeorm';
 import * as path from 'path';
-// import 'dotenv/config'; // Keep this commented out for now to rely solely on dotenv-cli
+import * as dotenv from 'dotenv'; // Import dotenv
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
-// ... (rest of the file remains the same as the version from # Step 1: Strengthen Typing) ...
+// Explicitly load the .env.development file from the project root
+// Path is relative from apps/api/src/datasource.ts up to the root
+const envPath = path.resolve(__dirname, '../../../.env.development');
+const result = dotenv.config({ path: envPath });
+
+if (result.error) {
+    console.warn(`[DataSource CLI] Warning: Could not load .env file from ${envPath}:`, result.error.message);
+    // Don't throw an error here, maybe env vars are set globally
+} else {
+    console.log(`[DataSource CLI] Loaded environment variables from: ${envPath}`);
+}
+
+// Check necessary variables AFTER attempting to load .env
+if (!process.env.DATABASE_HOST && !process.env.DATABASE_URL) {
+     console.error("[DataSource CLI] Error: DB connection details missing after attempting to load .env.");
+     console.error("[DataSource CLI] Ensure DATABASE_URL or DATABASE_HOST/PORT/USER/PASSWORD/NAME are set in .env.development or globally.");
+     // Optionally, throw an error here if you absolutely require the .env file
+     // throw new Error("Database configuration missing.");
+}
+
 
 const isCompiled = path.extname(__filename) === '.js';
 const baseDir = __dirname;
@@ -54,9 +60,9 @@ export const dataSourceOptions: PostgresConnectionOptions = {
 const hasUrl = !!dataSourceOptions.url;
 const hasDetails = !hasUrl && !!(dataSourceOptions.host && dataSourceOptions.username && dataSourceOptions.database);
 
+// This validation should now pass if .env was loaded correctly
 if (!hasUrl && !hasDetails) {
-    console.error("[DataSource CLI] Error: Insufficient database connection details."); // This error is being hit
-    console.error("[DataSource CLI] Set DATABASE_URL or DATABASE_HOST/PORT/USER/PASSWORD/NAME env vars.");
+    console.error("[DataSource CLI] Error: Insufficient database connection details even after loading .env.");
     throw new Error("Database configuration incomplete for CLI.");
 }
 console.log(`[DataSource CLI] Connection Method: ${hasUrl ? 'DATABASE_URL' : 'Host/User/DB Details'}`);
