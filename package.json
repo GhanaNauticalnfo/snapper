@@ -13,6 +13,7 @@
     "build:cli": "tsc -p apps/api/tsconfig.cli.json",
     "typeorm:ts": "ts-node -r tsconfig-paths/register -P apps/api/tsconfig.app.json ./node_modules/typeorm/cli.js --dataSource apps/api/src/datasource.ts",
     "typeorm:js": "node ./node_modules/typeorm/cli.js --dataSource dist/apps/api/cli_build/datasource.js",
+    "migration:create": "ts-node -r tsconfig-paths/register -P apps/api/tsconfig.app.json ./node_modules/typeorm/cli.js migration:create",
     "migration:generate": "npm run typeorm:ts -- migration:generate apps/api/src/migrations/%npm_config_name%",
     "migration:run:dev": "npm run typeorm:ts -- migration:run",
     "migration:revert:dev": "npm run typeorm:ts -- migration:revert",
