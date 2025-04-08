@@ -13,9 +13,8 @@
     
     "build:cli": "tsc -p apps/api/tsconfig.cli.json",
 
-"typeorm:ts": "ts-node -r tsconfig-paths/register -P apps/api/tsconfig.app.json ./node_modules/typeorm/cli.js --dataSource apps/api/src/datasource.ts",
-
-   "typeorm:js": "node ./node_modules/typeorm/cli.js --dataSource dist/apps/api/datasource.js",
+    "typeorm:js": "node ./node_modules/typeorm/cli.js --dataSource dist/apps/api/cli_build/datasource.js",
+    "typeorm:ts": "ts-node -r tsconfig-paths/register -P apps/api/tsconfig.app.json ./node_modules/typeorm/cli.js --dataSource apps/api/src/datasource.ts",
 
    "migration:generate": "npm run typeorm:ts -- migration:generate apps/api/src/migrations/%npm_config_name%",
 
