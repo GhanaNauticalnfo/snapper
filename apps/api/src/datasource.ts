@@ -2,13 +2,10 @@
 import { DataSource } from 'typeorm';
 import * as path from 'path';
 import 'dotenv/config';
-// Import the specific options type for better type safety
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
 // Determine if running as compiled JS (checks file extension)
 const isCompiled = path.extname(__filename) === '.js';
-
-// --- Path Calculation (Revised for TSC output vs TS source) ---
 
 // Base directory calculation is different depending on context:
 // - TS execution (ts-node): __dirname is apps/api/src
