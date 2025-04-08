@@ -1,73 +1,78 @@
 // apps/api/src/datasource.ts
-import { DataSource, DataSourceOptions } from 'typeorm';
+import { DataSource } from 'typeorm';
 import * as path from 'path';
-// Load environment variables from .env files using dotenv/config
-// Ensures .env vars are available for CLI commands. NestJS handles this for runtime.
 import 'dotenv/config';
+// Import the specific options type for better type safety
+import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
 // Determine if running as compiled JS (checks file extension)
 const isCompiled = path.extname(__filename) === '.js';
 
-// --- Path Calculation ---
-// Calculate base directory relative to this file's location.
-// Assumes standard Nx output structure:
-// - TS: apps/api/src/datasource.ts -> baseDir = apps/api/src
-// - JS: dist/apps/api/datasource.js -> baseDir = dist/apps/api
-const baseDir = isCompiled ? __dirname : path.join(__dirname);
+// --- Path Calculation (Revised for TSC output vs TS source) ---
 
-// Define paths relative to the baseDir calculated above
-const entitiesPath = path.join(baseDir, '**', '*.entity{.ts,.js}');
-const migrationsPath = path.join(baseDir, 'migrations', '*{.ts,.js}'); // Migrations assumed to be in ./migrations relative to entities/datasource
+// Base directory calculation is different depending on context:
+// - TS execution (ts-node): __dirname is apps/api/src
+// - JS execution (compiled via tsc): __dirname is dist/apps/api/cli_build
+const baseDir = __dirname; // Use __dirname directly
 
-console.log(`[DataSource CLI] Running in ${isCompiled ? 'compiled JS' : 'TypeScript'} mode.`);
-console.log(`[DataSource CLI] Base directory calculated as: ${baseDir}`);
-console.log(`[DataSource CLI] Loading entities from: ${entitiesPath}`);
-console.log(`[DataSource CLI] Loading migrations from: ${migrationsPath}`);
+// Paths for JS (compiled) execution relative to cli_build directory
+const jsEntitiesPath = path.join(baseDir, '**', '*.entity.js'); // Look within cli_build/**
+const jsMigrationsPath = path.join(baseDir, 'migrations', '*.js'); // Look within cli_build/migrations
+
+// Paths for TS (source) execution relative to src directory
+const tsEntitiesPath = path.join(baseDir, '**', '*.entity.ts'); // Look within src/**
+const tsMigrationsPath = path.join(baseDir, 'migrations', '*.ts'); // Look within src/migrations
+
+// Select the correct paths based on execution context
+const entities = [isCompiled ? jsEntitiesPath : tsEntitiesPath];
+const migrations = [isCompiled ? jsMigrationsPath : tsMigrationsPath];
+
+console.log(`[DataSource CLI] Mode: ${isCompiled ? 'JS (Compiled via TSC)' : 'TS (Source)'}`);
+console.log(`[DataSource CLI] __dirname: ${__dirname}`);
+console.log(`[DataSource CLI] Effective Entities Path: ${entities[0]}`);
+console.log(`[DataSource CLI] Effective Migrations Path: ${migrations[0]}`);
 // --- End Path Calculation ---
 
 // --- Core DataSource Options ---
-// Defined once here, exported for use by NestJS config.
-export const dataSourceOptions: DataSourceOptions = {
+// Use the specific PostgresConnectionOptions type
+export const dataSourceOptions: PostgresConnectionOptions = {
     type: 'postgres',
-    // Prefer DATABASE_URL if provided, otherwise use individual components
     url: process.env.DATABASE_URL,
-    host: process.env.DATABASE_HOST, // Ignored if DATABASE_URL is set
-    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-    username: process.env.DATABASE_USER,
-    password: process.env.DATABASE_PASSWORD,
-    database: process.env.DATABASE_NAME,
-    entities: [entitiesPath], // Use calculated paths
-    migrations: [migrationsPath], // Use calculated paths
-    migrationsTableName: 'migrations', // Explicitly define table name
-    synchronize: false, // <<< CRITICAL: ALWAYS FALSE for migrations & CLI >>>
-    logging: process.env.TYPEORM_LOGGING === 'true', // Control CLI logging via env var
+    // Provide host/port etc., only if URL is not set
+    host: process.env.DATABASE_URL ? undefined : process.env.DATABASE_HOST,
+    port: process.env.DATABASE_URL ? undefined : parseInt(process.env.DATABASE_PORT || '5432', 10),
+    username: process.env.DATABASE_URL ? undefined : process.env.DATABASE_USER,
+    password: process.env.DATABASE_URL ? undefined : process.env.DATABASE_PASSWORD,
+    database: process.env.DATABASE_URL ? undefined : process.env.DATABASE_NAME,
+    // Use the dynamically determined paths
+    entities: entities,
+    migrations: migrations,
+    migrationsTableName: 'migrations',
+    synchronize: false, // CRITICAL: ALWAYS FALSE
+    logging: process.env.TYPEORM_LOGGING === 'true',
     ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_SSL === 'true'
-        ? { rejectUnauthorized: false } // Adjust SSL for prod as needed
-        : false,
+        ? { rejectUnauthorized: false } // Use TlsOptions object
+        : false, // Use boolean false
 };
 
 // --- Validation ---
 const hasUrl = !!dataSourceOptions.url;
-const hasDetails = !!(dataSourceOptions.host && dataSourceOptions.username && dataSourceOptions.database);
+// Need to check host/user/db only if URL is not set
+const hasDetails = !hasUrl && !!(dataSourceOptions.host && dataSourceOptions.username && dataSourceOptions.database);
 
 if (!hasUrl && !hasDetails) {
-    console.error("[DataSource CLI] Error: Database connection details missing.");
-    console.error("[DataSource CLI] Set DATABASE_URL or DATABASE_HOST, DATABASE_PORT, DATABASE_USER, DATABASE_PASSWORD, DATABASE_NAME env vars.");
+    console.error("[DataSource CLI] Error: Insufficient database connection details.");
+    console.error("[DataSource CLI] Set DATABASE_URL or DATABASE_HOST/PORT/USER/PASSWORD/NAME env vars.");
     throw new Error("Database configuration incomplete for CLI.");
 }
-if(hasUrl){
-    console.log("[DataSource CLI] Using DATABASE_URL.");
-} else {
-    console.log("[DataSource CLI] Using individual DB connection parameters.");
-}
+console.log(`[DataSource CLI] Connection Method: ${hasUrl ? 'DATABASE_URL' : 'Host/User/DB Details'}`);
 // --- End Validation ---
 
 // --- Exports ---
-// Export the DataSource instance specifically for the TypeORM CLI runner scripts
+// Export the DataSource instance specifically for the TypeORM CLI
 export const AppDataSource = new DataSource(dataSourceOptions);
 
-// Export a function to get the options, usable by NestJS config
-export const getTypeOrmDataSourceOptions = (): DataSourceOptions => {
-    // Return a copy to prevent accidental modification if needed, though options are generally static
+// Export a function to get the options, usable by NestJS config (typed correctly)
+export const getTypeOrmDataSourceOptions = (): PostgresConnectionOptions => {
     return { ...dataSourceOptions };
 };

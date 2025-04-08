@@ -1,0 +1,26 @@
+// apps/api/tsconfig.cli.json
+{
+    "extends": "./tsconfig.json", // Inherit base settings
+    "compilerOptions": {
+      "outDir": "../../dist/apps/api/cli_build", // Output to a subfolder within the main dist
+      "rootDir": "./src", // Look for source files starting from src
+      "module": "CommonJS", // TypeORM CLI runs in Node, needs CommonJS
+      "declaration": false, // No need for .d.ts files for CLI execution
+      "sourceMap": false, // No need for source maps for CLI execution
+      "skipLibCheck": true // Speed up compilation
+    },
+    "include": [
+      // Explicitly include only the files needed for CLI operations
+      "src/datasource.ts",
+      "src/migrations/**/*.ts",
+      "src/**/*.entity.ts" // Include entities as TypeORM might need them
+    ],
+    "exclude": [
+      // Exclude test files and the main NestJS app entry point if desired
+      "**/*.spec.ts",
+      "**/*.test.ts",
+      "src/main.ts",
+      "src/app/**/*", // Exclude app controllers/services/modules unless entities are there
+      "src/config/database.config.ts" // Exclude NestJS runtime config
+    ]
+  }

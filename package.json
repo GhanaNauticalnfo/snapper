@@ -11,7 +11,9 @@
     "log:artemis": "docker compose -f docker/local/docker-compose.yml logs -f artemis",
     "log:keycloak": "docker compose -f docker/local/docker-compose.yml logs -f keycloak",
     
-   "typeorm:ts": "ts-node -r tsconfig-paths/register -P apps/api/tsconfig.app.json ./node_modules/typeorm/cli.js --dataSource apps/api/src/datasource.ts",
+    "build:cli": "tsc -p apps/api/tsconfig.cli.json",
+
+"typeorm:ts": "ts-node -r tsconfig-paths/register -P apps/api/tsconfig.app.json ./node_modules/typeorm/cli.js --dataSource apps/api/src/datasource.ts",
 
    "typeorm:js": "node ./node_modules/typeorm/cli.js --dataSource dist/apps/api/datasource.js",
 

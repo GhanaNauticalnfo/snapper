@@ -14,6 +14,8 @@ RUN npm ci
 # Copy the rest of the code
 COPY . .
 
+RUN npm run build:cli
+
 # Build with specified environment
 ARG ENVIRONMENT=production
 RUN npx nx build api --configuration=${ENVIRONMENT}
