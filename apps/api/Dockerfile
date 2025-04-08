@@ -16,34 +16,50 @@ COPY . .
 
 # Build the CLI files using tsc
 RUN echo "--- Running build:cli ---" && npm run build:cli
-RUN echo "--- Contents of /app/dist/apps/api after build:cli ---" && ls -lR /app/dist/apps/api || echo "dist/apps/api not found yet"
+RUN echo "--- Verifying cli_build contents ---"
+# Check if the specific datasource file exists after tsc build
+RUN if [ -f /app/dist/apps/api/cli_build/datasource.js ]; then echo "cli_build/datasource.js FOUND after tsc"; else echo "cli_build/datasource.js NOT FOUND after tsc"; fi
+# List the contents of the cli_build directory
+RUN ls -lR /app/dist/apps/api/cli_build || echo "cli_build directory not found"
+
 
 # Build the main application bundle with specified environment
 ARG ENVIRONMENT=production
-RUN echo "--- Running nx build api ---" && npx nx build api --configuration=${ENVIRONMENT}
-RUN echo "--- Contents of /app/dist/apps/api after nx build ---" && ls -lR /app/dist/apps/api || echo "dist/apps/api not found"
+# Ensure webpack doesn't clean (check webpack.config.js for output.clean=false)
+RUN echo "--- Running nx build api (Webpack) ---"
+RUN npx nx build api --configuration=${ENVIRONMENT}
+RUN echo "--- Contents of /app/dist/apps/api after nx build (should include cli_build) ---"
+RUN ls -lR /app/dist/apps/api || echo "/app/dist/apps/api not found after webpack"
 
 
 # Stage 2: Run the application
 FROM node:18-alpine
 WORKDIR /app
 
-# Copy package files
 COPY package.json package-lock.json ./
-
-# Install only production dependencies
 RUN npm ci --only=production
 
-# *** CORRECTED COPY COMMAND ***
-# Copy the *entire* built api output (including cli_build) into the correct subfolder structure
-# Source: /app/dist/apps/api from build stage
-# Destination: /app/dist/apps/api in final stage
-COPY --from=build /app/dist/apps/api ./dist/apps/api
+# *** MORE EXPLICIT COPY STRATEGY ***
+# Ensure the target directory exists
+RUN mkdir -p /app/dist/apps/api
+# Copy specific essential items from the build stage to the final stage
+
+# 1. Copy the Webpack bundle (main.js, assets, etc.)
+COPY --from=build /app/dist/apps/api/main.js* ./dist/apps/api/
+COPY --from=build /app/dist/apps/api/assets ./dist/apps/api/assets/
+# Copy generated package.json if present (adjust path if needed)
+COPY --from=build /app/dist/apps/api/package.json ./dist/apps/api/
+COPY --from=build /app/dist/apps/api/package-lock.json ./dist/apps/api/ # Usually not needed but safe
+
+# 2. Copy the ENTIRE cli_build directory explicitly
+COPY --from=build /app/dist/apps/api/cli_build ./dist/apps/api/cli_build
 
 # Add verification step in final stage
 RUN echo "--- Contents of /app/dist in final stage ---" && ls -lR /app/dist
+RUN echo "--- Specifically checking for /app/dist/apps/api/cli_build/datasource.js ---"
+RUN if [ -f /app/dist/apps/api/cli_build/datasource.js ]; then echo "FINAL CHECK: datasource.js FOUND"; else echo "FINAL CHECK: datasource.js NOT FOUND"; fi
+
 
 EXPOSE 3000
-# *** CORRECTED CMD PATH ***
 # CMD should point to the webpack bundle entry point within the copied structure
 CMD ["node", "dist/apps/api/main.js"]
