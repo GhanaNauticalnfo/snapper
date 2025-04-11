@@ -15,7 +15,9 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@snapper/shared": ["libs/shared/src/index.ts"]
+      "@snapper/map": ["libs/map/src/index.ts"],
+      "@snapper/shared": ["libs/shared/src/index.ts"],
+      "@snapper/shared-models": ["libs/shared-models/src/index.ts"]
     },
     "resolveJsonModule": true
   },

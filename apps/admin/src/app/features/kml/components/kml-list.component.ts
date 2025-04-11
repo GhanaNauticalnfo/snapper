@@ -2,7 +2,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-// Import ReactiveFormsModule
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { KmlDatasetService } from '../services/kml-dataset.service';
 import { KmlDataset } from '../models/kml-dataset.model';
@@ -19,7 +18,8 @@ import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { CheckboxModule } from 'primeng/checkbox';
-import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
+import { TooltipModule } from 'primeng/tooltip';
+import { SkeletonModule } from 'primeng/skeleton';
 
 @Component({
   selector: 'app-kml-list',
@@ -27,7 +27,7 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
   imports: [
     CommonModule,
     RouterModule,
-    ReactiveFormsModule, // Add ReactiveFormsModule
+    ReactiveFormsModule,
     TableModule,
     ButtonModule,
     ProgressSpinnerModule,
@@ -38,16 +38,23 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
     InputTextModule,
     TextareaModule,
     CheckboxModule,
-    TooltipModule // Add TooltipModule
+    TooltipModule,
+    SkeletonModule
   ],
   providers: [ConfirmationService, MessageService],
   template: `
     <p-toast></p-toast>
-    <p-confirmDialog></p-confirmDialog>
+    <p-confirmDialog
+      header="Confirm Deletion" 
+      icon="pi pi-exclamation-triangle" 
+      acceptButtonStyleClass="p-button-danger" 
+      acceptIcon="pi pi-trash"
+      rejectButtonStyleClass="p-button-secondary">
+    </p-confirmDialog>
 
     <div class="kml-list-container">
-      <div class="flex justify-content-between align-items-center mb-3">
-        <h2>KML Datasets</h2>
+    <div class="flex justify-content-between align-items-center mb-3">
+        <h4>KML Datasets</h4>
         <p-button
           label="New KML Document"
           icon="pi pi-plus"
@@ -66,26 +73,24 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
         [tableStyle]="{ 'min-width': '50rem' }"
         [paginator]="datasets().length > 10"
         [rows]="10"
-        styleClass="p-datatable-striped"
+        styleClass="p-datatable-sm p-datatable-striped"
         [rowHover]="true"
-        [showCurrentPageReport]="true"
-        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
         [loading]="loading()"
       >
         <ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="id">ID <p-sortIcon field="id"></p-sortIcon></th>
-            <th pSortableColumn="name">Name <p-sortIcon field="name"></p-sortIcon></th>
-            <th pSortableColumn="enabled">Enabled <p-sortIcon field="enabled"></p-sortIcon></th>
-            <th pSortableColumn="created">Created <p-sortIcon field="created"></p-sortIcon></th>
-            <th pSortableColumn="last_updated">Last Updated <p-sortIcon field="last_updated"></p-sortIcon></th>
-            <th>Actions</th>
+            <th pSortableColumn="id" style="width: 10%">ID <p-sortIcon field="id"></p-sortIcon></th>
+            <th pSortableColumn="name" style="width: 20%">Name <p-sortIcon field="name"></p-sortIcon></th>
+            <th pSortableColumn="enabled" style="width: 10%">Enabled <p-sortIcon field="enabled"></p-sortIcon></th>
+            <th pSortableColumn="created" style="width: 15%">Created <p-sortIcon field="created"></p-sortIcon></th>
+            <th pSortableColumn="last_updated" style="width: 15%">Last Updated <p-sortIcon field="last_updated"></p-sortIcon></th>
+            <th style="width: 30%">Actions</th>
           </tr>
         </ng-template>
 
         <ng-template pTemplate="body" let-dataset>
           <tr>
-            <td>{{ dataset.id }}</td>
+            <td><span class="font-mono">{{ dataset.id }}</span></td>
             <td>{{ dataset.name }}</td>
             <td>
               <span [class]="dataset.enabled ? 'status-badge status-enabled' : 'status-badge status-disabled'">
@@ -95,45 +100,52 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
             <td>{{ dataset.created | date:'medium' }}</td>
             <td>{{ dataset.last_updated | date:'medium' }}</td>
             <td>
-              <div class="action-buttons">
-                <p-button
-                  icon="pi pi-search"
-                  styleClass="p-button-info p-button-sm"
-                  (onClick)="openViewDialog(dataset)"
-                  pTooltip="View"
-                  tooltipPosition="top"
-                ></p-button>
-                <p-button
-                  icon="pi pi-pencil"
-                  styleClass="p-button-success p-button-sm"
-                  (onClick)="openEditDialog(dataset)"
-                  pTooltip="Edit"
-                  tooltipPosition="top"
-                ></p-button>
-                <p-button
-                  icon="pi pi-trash"
-                  styleClass="p-button-danger p-button-sm"
-                  (onClick)="confirmDelete(dataset)"
-                  pTooltip="Delete"
-                  tooltipPosition="top"
-                ></p-button>
-              </div>
+              <p-button 
+                label="Details" 
+                icon="pi pi-search" 
+                styleClass="p-button-text p-button-sm" 
+                (onClick)="openViewDialog(dataset)">
+              </p-button>
+              <p-button 
+                label="Edit" 
+                icon="pi pi-pencil" 
+                styleClass="p-button-text p-button-sm" 
+                (onClick)="openEditDialog(dataset)">
+              </p-button>
+              <p-button 
+                label="Delete" 
+                icon="pi pi-trash" 
+                styleClass="p-button-text p-button-sm" 
+                (onClick)="confirmDelete(dataset)">
+              </p-button>
             </td>
           </tr>
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="6" class="text-center">
-              @if (error()) {
+            <td colspan="6" class="text-center p-4">
+              @if (!loading() && !error()) {
+                No KML datasets found.
+              } @else if (error()) {
                 <div class="p-error">{{ error() }}</div>
-              } @else if (!loading()) {
-                No KML datasets found. Click "New KML Document" to get started.
               } @else {
-                <!-- Handled by table loading state or main spinner -->
+                <span></span>
               }
             </td>
           </tr>
+        </ng-template>
+        <ng-template pTemplate="loadingbody">
+          @for (item of [1, 2, 3]; track $index) {
+            <tr>
+              <td><p-skeleton></p-skeleton></td>
+              <td><p-skeleton></p-skeleton></td>
+              <td><p-skeleton></p-skeleton></td>
+              <td><p-skeleton></p-skeleton></td>
+              <td><p-skeleton></p-skeleton></td>
+              <td><p-skeleton></p-skeleton></td>
+            </tr>
+          }
         </ng-template>
       </p-table>
     </div>
@@ -202,18 +214,10 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
       }
 
       <ng-template pTemplate="footer">
-        <p-button
-          icon="pi pi-pencil"
-          label="Edit"
-          styleClass="p-button-success mr-2"
-          (onClick)="openEditDialog(selectedDataset())"
-        ></p-button>
-        <p-button
-          icon="pi pi-times"
-          label="Close"
-          styleClass="p-button-secondary"
-          (onClick)="closeViewDialog()"
-        ></p-button>
+        <div class="flex justify-content-between">
+          <p-button label="Back to List" icon="pi pi-arrow-left" styleClass="p-button-secondary" (onClick)="closeViewDialog()"></p-button>
+          <p-button label="Edit" icon="pi pi-pencil" styleClass="p-button-success" (onClick)="openEditDialog(selectedDataset())"></p-button>
+        </div>
       </ng-template>
     </p-dialog>
 
@@ -235,7 +239,6 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
           <label for="name" class="form-label">Name <span class="required-asterisk">*</span></label>
           <span class="p-input-icon-left w-full">
             <i class="pi pi-tag"></i>
-            <!-- Use formControlName -->
             <input
               type="text"
               pInputText
@@ -254,7 +257,6 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
         <div class="form-group">
           <label for="enabled" class="form-label">Status</label>
           <div class="p-field-checkbox">
-             <!-- Use formControlName -->
             <p-checkbox
               formControlName="enabled"
               [binary]="true"
@@ -266,7 +268,6 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
 
         <div class="form-group">
           <label for="kml" class="form-label">KML Content <span class="required-asterisk">*</span></label>
-           <!-- Use formControlName -->
           <textarea
             pTextarea
             id="kml"
@@ -302,69 +303,76 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
     </p-dialog>
   `,
   styles: [`
-    /* Add :host styles for potential overrides if needed */
-    :host {
-      display: block;
-      padding: 1rem; /* Add some padding around the whole component */
+    :host { display: block; }
+    .kml-list-container { margin-top: 1rem; }
+    .font-mono { font-family: monospace; background-color: var(--surface-100); padding: 0.1rem 0.3rem; border-radius: 3px; }
+    
+    /* PrimeNG datatable styling - matches Volta Depth */
+    :host ::ng-deep .p-datatable-sm .p-datatable-tbody > tr > td { padding: 0.6rem 0.8rem; vertical-align: middle; }
+    :host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
+      text-align: left;
+      background-color: var(--surface-100) !important;
+      font-size: 0.85rem;
+      padding: 0.6rem 0.8rem;
+      white-space: nowrap;
+      cursor: pointer;
     }
-
-    .kml-list-container {
-      /* padding: 0.5rem; Removed, added to :host */
+    :host ::ng-deep .p-datatable .p-sortable-column:not(.p-highlight):hover {
+      background-color: var(--surface-200) !important;
+      color: var(--text-color);
     }
-
+    :host ::ng-deep .p-datatable .p-sortable-column.p-highlight {
+      background-color: var(--surface-100) !important;
+      color: var(--text-color);
+    }
+    :host ::ng-deep .p-tag { font-size: 0.8rem; }
+    :host ::ng-deep .p-sortable-column .p-sortable-column-icon { margin-left: 0.5em; vertical-align: middle; }
+    
+    p-message { margin-bottom: 1rem; }
+    .text-center { text-align: center; }
+    
     .loading-container {
       display: flex;
       justify-content: center;
-      align-items: center; /* Center vertically too */
+      align-items: center;
       padding: 2rem;
-      min-height: 200px; /* Ensure spinner has space */
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap; /* Allow wrapping on smaller screens */
+      min-height: 200px;
     }
 
     .status-badge {
-      border-radius: 4px; /* Slightly more rounded */
+      border-radius: 4px;
       padding: 0.25rem 0.5rem;
       text-transform: uppercase;
       font-weight: 700;
       font-size: 0.75rem;
       letter-spacing: 0.3px;
-      display: inline-block; /* Ensure proper spacing */
+      display: inline-block;
     }
 
     .status-enabled {
-      background-color: var(--green-100, #C8E6C9); /* Use CSS variables */
+      background-color: var(--green-100, #C8E6C9);
       color: var(--green-700, #256029);
     }
 
     .status-disabled {
-      background-color: var(--red-100, #FFCDD2); /* Use CSS variables */
+      background-color: var(--red-100, #FFCDD2);
       color: var(--red-700, #C63737);
-    }
-
-    .text-center {
-      text-align: center;
-      padding: 2rem 0;
     }
 
     .detail-item {
       margin-bottom: 1rem;
       display: flex;
-      align-items: flex-start; /* Align top for potentially long values */
-      gap: 0.5rem; /* Add gap */
+      align-items: flex-start;
+      gap: 0.5rem;
     }
 
     .detail-label {
       font-weight: 600;
-      min-width: 120px; /* Adjust as needed */
-      flex-shrink: 0; /* Prevent shrinking */
+      min-width: 120px;
+      flex-shrink: 0;
     }
     .detail-value {
-      word-break: break-word; /* Allow long names to wrap */
+      word-break: break-word;
     }
 
     .kml-content {
@@ -374,24 +382,23 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
     .kml-code-container {
       max-height: 400px;
       overflow: auto;
-      background-color: var(--surface-b, #f8f9fa); /* Use CSS variables */
+      background-color: var(--surface-b, #f8f9fa);
       border-radius: 4px;
-      border: 1px solid var(--surface-d, #e9ecef); /* Use CSS variables */
+      border: 1px solid var(--surface-d, #e9ecef);
     }
 
     .kml-code {
-      padding: 1rem; /* Slightly more padding */
+      padding: 1rem;
       white-space: pre-wrap;
-      word-wrap: break-word; /* Ensure long lines wrap */
-      font-family: var(--font-family-monospace, monospace); /* Use CSS variable */
+      word-wrap: break-word;
+      font-family: var(--font-family-monospace, monospace);
       color: var(--text-color, #333);
       margin: 0;
-      font-size: 0.875rem; /* Slightly smaller for code */
+      font-size: 0.875rem;
     }
 
     .form-container {
-      /* Add some padding inside the dialog */
-       padding: 0.5rem 0;
+      padding: 0.5rem 0;
     }
 
     .form-group {
@@ -405,13 +412,13 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
     }
 
     .required-asterisk {
-      color: var(--red-500, #f44336); /* Use CSS variable */
+      color: var(--red-500, #f44336);
     }
 
     .kml-textarea {
-      font-family: var(--font-family-monospace, monospace); /* Use CSS variable */
+      font-family: var(--font-family-monospace, monospace);
       resize: vertical;
-      min-height: 150px; /* Minimum height */
+      min-height: 150px;
     }
 
     .p-field-checkbox {
@@ -419,38 +426,23 @@ import { TooltipModule } from 'primeng/tooltip'; // Import TooltipModule
       align-items: center;
     }
 
-    .w-full {
-      width: 100%;
-    }
-
-    .mr-2 {
-      margin-right: 0.5rem;
-    }
-
-    .ml-2 {
-      margin-left: 0.5rem;
-    }
-
-    .mt-1 {
-      margin-top: 0.25rem;
-    }
-
-    .block {
-      display: block;
-    }
+    /* Utility classes */
+    .w-full { width: 100%; }
+    .mr-2 { margin-right: 0.5rem; }
+    .ml-2 { margin-left: 0.5rem; }
+    .mt-1 { margin-top: 0.25rem; }
+    .block { display: block; }
+    .flex { display: flex; }
+    .justify-content-between { justify-content: space-between; }
+    .align-items-center { align-items: center; }
+    .mb-3 { margin-bottom: 1rem; }
 
     /* PrimeNG Input Validation Highlighting */
     .ng-invalid.ng-dirty {
        border-color: var(--red-500, #f44336);
     }
 
-    /* Utility classes from template */
-    .flex { display: flex; }
-    .justify-content-between { justify-content: space-between; }
-    .align-items-center { align-items: center; }
-    .mb-3 { margin-bottom: 1rem; } /* Adjusted to match common spacing */
-
-    .grid { display: flex; flex-wrap: wrap; margin-right: -0.5rem; margin-left: -0.5rem; row-gap: 0.5rem; /* Add row gap */}
+    .grid { display: flex; flex-wrap: wrap; margin-right: -0.5rem; margin-left: -0.5rem; row-gap: 0.5rem; }
     .col-12 { flex: 0 0 100%; padding: 0 0.5rem; max-width: 100%; }
 
     @media (min-width: 768px) {
@@ -462,15 +454,15 @@ export class KmlListComponent implements OnInit {
   private kmlDatasetService = inject(KmlDatasetService);
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
-  private fb = inject(FormBuilder); // Inject FormBuilder
+  private fb = inject(FormBuilder);
 
   // Data signals
   datasets = signal<KmlDataset[]>([]);
   loading = signal<boolean>(false);
-  saving = signal<boolean>(false); // Signal for save operation specifically
+  saving = signal<boolean>(false);
   error = signal<string | null>(null);
 
-  // Dialog control properties (using standard properties is fine here)
+  // Dialog control properties
   viewDialogVisible = false;
   formDialogVisible = false;
 
@@ -483,9 +475,8 @@ export class KmlListComponent implements OnInit {
 
   constructor() {
     this.kmlForm = this.fb.group({
-      // id: [null], // We don't edit the ID in the form
       name: ['', Validators.required],
-      enabled: [true], // Default value for new entries
+      enabled: [true],
       kml: ['', Validators.required]
     });
   }
@@ -497,7 +488,7 @@ export class KmlListComponent implements OnInit {
   loadDatasets(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.datasets.set([]); // Clear previous data on reload
+    this.datasets.set([]);
 
     this.kmlDatasetService.getAll().subscribe({
       next: (data) => {
@@ -528,18 +519,15 @@ export class KmlListComponent implements OnInit {
 
   closeViewDialog(): void {
     this.viewDialogVisible = false;
-    // No need to clear selectedDataset here if it's only set on open
-    // If Edit is clicked from View, openEditDialog will handle it.
-    // If just closed, it will be overwritten or unused next time.
   }
 
   // --- Form Dialog Methods ---
   openNewDialog(): void {
     this.isEditMode.set(false);
-    this.selectedDataset.set(null); // Ensure no dataset is selected
+    this.selectedDataset.set(null);
     this.kmlForm.reset({
       name: '',
-      enabled: true, // Default value
+      enabled: true,
       kml: ''
     });
     this.formDialogVisible = true;
@@ -550,14 +538,13 @@ export class KmlListComponent implements OnInit {
 
     this.isEditMode.set(true);
     this.selectedDataset.set(dataset);
-    this.kmlForm.patchValue({ // Use patchValue for flexibility
+    this.kmlForm.patchValue({
       name: dataset.name || '',
       enabled: dataset.enabled,
       kml: dataset.kml || ''
     });
     this.formDialogVisible = true;
 
-    // Close view dialog if it's open and we clicked Edit from there
     if (this.viewDialogVisible) {
       this.viewDialogVisible = false;
     }
@@ -565,16 +552,12 @@ export class KmlListComponent implements OnInit {
 
   closeFormDialog(): void {
     this.formDialogVisible = false;
-    // Resetting form state is handled by openNewDialog/openEditDialog
-    // Clearing selectedDataset is good practice if dialog closes unexpectedly
-    // No timeout needed now
     this.selectedDataset.set(null);
   }
 
   // --- Save Data Method ---
   saveDataset(): void {
     if (this.kmlForm.invalid) {
-      // Mark all fields as touched to display validation errors
       this.kmlForm.markAllAsTouched();
       this.messageService.add({
         severity: 'warn',
@@ -586,7 +569,7 @@ export class KmlListComponent implements OnInit {
     }
 
     this.saving.set(true);
-    const formData = this.kmlForm.value; // Get data from the form group
+    const formData = this.kmlForm.value;
 
     if (this.isEditMode() && this.selectedDataset()) {
       const datasetId = this.selectedDataset()?.id;
@@ -595,7 +578,6 @@ export class KmlListComponent implements OnInit {
         this.kmlDatasetService.update(datasetId, formData).subscribe({
           next: (updatedData) => {
             console.log('KML Dataset updated:', updatedData);
-            // Update datasets list immutably
             this.datasets.update(currentDatasets =>
               currentDatasets.map(item =>
                 item.id === updatedData.id ? updatedData : item
@@ -623,20 +605,16 @@ export class KmlListComponent implements OnInit {
           }
         });
       } else {
-        // Should not happen if isEditMode is true and selectedDataset is set
         console.error("Save error: Edit mode is true but dataset ID is missing.");
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Cannot update dataset: ID missing.' });
         this.saving.set(false);
       }
     } else {
-      // Create new dataset
       this.kmlDatasetService.create(formData).subscribe({
         next: (newData) => {
           console.log('KML Dataset created:', newData);
-          // Add new dataset to the list immutably
           this.datasets.update(currentDatasets =>
-            [...currentDatasets, newData] // Add to the end
-            // Or use [...currentDatasets, newData].sort(...) if you want to maintain sort order
+            [...currentDatasets, newData]
           );
           this.messageService.add({
             severity: 'success',
@@ -664,7 +642,7 @@ export class KmlListComponent implements OnInit {
 
   // --- Delete Confirmation ---
   confirmDelete(dataset: KmlDataset): void {
-    if (!dataset || dataset.id === undefined) return; // Basic guard
+    if (!dataset || dataset.id === undefined) return;
 
     this.confirmationService.confirm({
       message: `Are you sure you want to delete the KML dataset "${dataset.name}" (ID: ${dataset.id})? This action cannot be undone.`,
@@ -674,15 +652,13 @@ export class KmlListComponent implements OnInit {
       acceptLabel: 'Delete',
       rejectLabel: 'Cancel',
       accept: () => this.deleteKml(dataset.id),
-      // reject: () => { // Optional: handle rejection }
     });
   }
 
   deleteKml(id: number): void {
-    this.loading.set(true); // Indicate activity during delete
+    this.loading.set(true);
     this.kmlDatasetService.delete(id).subscribe({
       next: () => {
-        // Update datasets list immutably
         this.datasets.update(currentDatasets =>
           currentDatasets.filter(dataset => dataset.id !== id)
         );
@@ -693,10 +669,9 @@ export class KmlListComponent implements OnInit {
           detail: 'KML dataset deleted successfully',
           life: 3000
         });
-        // If the deleted item was selected, clear selection
         if (this.selectedDataset()?.id === id) {
             this.selectedDataset.set(null);
-            this.closeViewDialog(); // Close view dialog if it was showing the deleted item
+            this.closeViewDialog();
         }
       },
       error: (err) => {
@@ -709,7 +684,7 @@ export class KmlListComponent implements OnInit {
         });
       },
       complete: () => {
-         this.loading.set(false); // Stop indicating activity
+         this.loading.set(false);
       }
     });
   }

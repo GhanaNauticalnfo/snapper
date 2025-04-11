@@ -2,6 +2,7 @@
 import { Component } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../shared/components/sidebar/sidebar.component';
+import { User } from '@snapper/shared-models';
 
 @Component({
   selector: 'app-root',

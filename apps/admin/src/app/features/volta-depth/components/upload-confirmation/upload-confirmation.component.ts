@@ -9,8 +9,8 @@ import { MessageModule } from 'primeng/message';
 
 // GeoJSON/MapLibre types
 import type { FeatureCollection } from 'geojson';
-// Import Map type and MapLibre GL JS namespace type if @types/maplibre-gl is installed
-import type { Map, MapOptions } from 'maplibre-gl';
+// Import Map type from MapLibre GL JS
+import type { Map } from 'maplibre-gl';
 import type * as maplibregl from 'maplibre-gl'; // Import namespace for type assertion
 
 // Inject the PARENT component
@@ -106,7 +106,6 @@ export class UploadConfirmationComponent implements AfterViewInit, OnDestroy {
     private geoJsonData: FeatureCollection | null = null;
     private mapRetryTimeout: ReturnType<typeof setTimeout> | null = null;
     // Use unknown for global library access, cast when needed
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private mapLibreGl: unknown = (typeof window !== 'undefined' ? (window as any)['maplibregl'] : undefined);
     private readonly MAP_SOURCE_ID = 'upload-preview-source';
     private readonly MAP_LAYER_FILL_ID = 'upload-preview-fill';
@@ -139,8 +138,9 @@ export class UploadConfirmationComponent implements AfterViewInit, OnDestroy {
         if (this.mapRetryTimeout) clearTimeout(this.mapRetryTimeout);
     }
 
+    // Initialize map with OSM
     initializeMap(): void {
-        console.log('Initializing map...');
+        console.log('Initializing map with OSM...');
         
         if (this.map) {
             console.log('Map already initialized, skipping');
@@ -170,33 +170,41 @@ export class UploadConfirmationComponent implements AfterViewInit, OnDestroy {
                 throw new Error('MapLibre Map constructor not found');
             }
             
-            const mapOptions: MapOptions = {
-                container: this.mapContainer.nativeElement,
-                style: 'https://demotiles.maplibre.org/style.json',
-                center: [-0.5, 7.5],
-                zoom: 7,
-                attributionControl: false
-            };
-            
-            console.log('Creating map with options:', mapOptions);
-            this.map = new MapConstructor(mapOptions);
-
-            this.map.once('load', () => {
-                 console.log('Map loaded successfully');
-                 this.isMapInitialized.set(true);
-                 const file = this.parentState()?.file;
-                 if (file) {
-                     console.log('File available, loading to map:', file.name);
-                     this.loadGeoJsonAndDisplay(file);
-                 }
+            // Import the utility function for map options
+            import('../../utils/map-utils').then(({ createOsmMapOptions }) => {
+                try {
+                    // Create map with OSM
+                    const mapOptions = createOsmMapOptions(this.mapContainer.nativeElement);
+                    
+                    console.log('Creating map with OSM style');
+                    this.map = new MapConstructor(mapOptions);
+                    
+                    this.map.once('load', () => {
+                        console.log('OSM Map loaded successfully');
+                        this.isMapInitialized.set(true);
+                        const file = this.parentState()?.file;
+                        if (file) {
+                            console.log('File available, loading to map:', file.name);
+                            this.loadGeoJsonAndDisplay(file);
+                        }
+                    });
+                    
+                    this.map.on('error', (e: { error?: Error }) => {
+                        const msg = e.error?.message || 'Unknown map error';
+                        console.error('Map error:', msg);
+                        this.mapError.set(`Map failed: ${msg}`);
+                        this.isMapInitialized.set(false);
+                    });
+                    
+                } catch (err) {
+                    console.error('Error creating map with options:', err);
+                    this.mapError.set(`Error creating map: ${err}`);
+                }
+            }).catch(err => {
+                console.error('Error importing map utils:', err);
+                this.mapError.set(`Error loading map utilities: ${err}`);
             });
             
-            this.map.on('error', (e: { error?: Error }) => {
-                const msg = e.error?.message || 'Unknown map error';
-                console.error('Map error:', msg);
-                this.mapError.set(`Map failed: ${msg}`);
-                this.isMapInitialized.set(false);
-            });
         } catch (e: unknown) {
             const errorMsg = e instanceof Error ? e.message : String(e);
             console.error('Map initialization error:', errorMsg);
@@ -331,32 +339,47 @@ export class UploadConfirmationComponent implements AfterViewInit, OnDestroy {
             
             console.log('Added GeoJSON source to map');
             
-            // Add a fill layer
-            this.map.addLayer({ 
-                id: this.MAP_LAYER_FILL_ID, 
-                type: 'fill', 
-                source: this.MAP_SOURCE_ID, 
-                paint: { 
-                    'fill-color': '#0d47a1', 
-                    'fill-opacity': 0.3 
-                } 
+            // Import default styles from map utils
+            import('../../utils/map-utils').then(({ defaultGeoJsonStyle }) => {
+                // Add a fill layer
+                this.map!.addLayer({ 
+                    id: this.MAP_LAYER_FILL_ID, 
+                    type: 'fill', 
+                    source: this.MAP_SOURCE_ID, 
+                    paint: defaultGeoJsonStyle.fill.paint
+                });
+                
+                // Add a line layer
+                this.map!.addLayer({ 
+                    id: this.MAP_LAYER_LINE_ID, 
+                    type: 'line', 
+                    source: this.MAP_SOURCE_ID, 
+                    paint: defaultGeoJsonStyle.line.paint
+                });
+                
+                console.log('Added GeoJSON layers to map');
+                
+                // Fit the map to the bounds of the GeoJSON data
+                this.fitMapToBounds();
+            }).catch(err => {
+                console.error('Error importing default styles:', err);
+                // Fallback to hardcoded styles
+                this.map!.addLayer({ 
+                    id: this.MAP_LAYER_FILL_ID, 
+                    type: 'fill', 
+                    source: this.MAP_SOURCE_ID, 
+                    paint: { 'fill-color': '#0d47a1', 'fill-opacity': 0.3 }
+                });
+                
+                this.map!.addLayer({ 
+                    id: this.MAP_LAYER_LINE_ID, 
+                    type: 'line', 
+                    source: this.MAP_SOURCE_ID, 
+                    paint: { 'line-color': '#000', 'line-width': 0.8 }
+                });
+                
+                this.fitMapToBounds();
             });
-            
-            // Add a line layer
-            this.map.addLayer({ 
-                id: this.MAP_LAYER_LINE_ID, 
-                type: 'line', 
-                source: this.MAP_SOURCE_ID, 
-                paint: { 
-                    'line-color': '#000', 
-                    'line-width': 0.8 
-                } 
-            });
-            
-            console.log('Added GeoJSON layers to map');
-            
-            // Fit the map to the bounds of the GeoJSON data
-            this.fitMapToBounds();
             
         } catch (e: unknown) {
             const errorMsg = e instanceof Error ? e.message : String(e);
@@ -393,14 +416,75 @@ export class UploadConfirmationComponent implements AfterViewInit, OnDestroy {
             return;
         }
         
-        console.log("Fitting map to GeoJSON bounds");
+        console.log("Fitting map to Volta Lake bounds");
         
-        // For better bounds calculation, you might want to implement a proper
-        // bounding box calculation using the GeoJSON features
-        // For now, we'll just use a default center and zoom
-        this.map.flyTo({ center: [-0.5, 7.5], zoom: 8 });
-        
-        console.log("Map view adjusted");
+        // Import the helper function to fit the map to Volta Lake bounds
+        // First try to fit to the GeoJSON features if possible
+        try {
+            // Calculate bounds from GeoJSON features
+            let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+            
+            this.geoJsonData.features.forEach(feature => {
+                if (!feature.geometry) return;
+                
+                // Handle different geometry types safely
+                if (feature.geometry.type === 'MultiPolygon') {
+                    // Handle MultiPolygon - coordinates is array of array of array of positions
+                    feature.geometry.coordinates.forEach((polygon: number[][][]) => {
+                        polygon.forEach((ring: number[][]) => {
+                            ring.forEach((coord: number[]) => {
+                                const [lng, lat] = coord;
+                                minLng = Math.min(minLng, lng);
+                                maxLng = Math.max(maxLng, lng);
+                                minLat = Math.min(minLat, lat);
+                                maxLat = Math.max(maxLat, lat);
+                            });
+                        });
+                    });
+                }
+                else if (feature.geometry.type === 'Polygon') {
+                    // Handle Polygon - coordinates is array of array of positions
+                    feature.geometry.coordinates.forEach((ring: number[][]) => {
+                        ring.forEach((coord: number[]) => {
+                            const [lng, lat] = coord;
+                            minLng = Math.min(minLng, lng);
+                            maxLng = Math.max(maxLng, lng);
+                            minLat = Math.min(minLat, lat);
+                            maxLat = Math.max(maxLat, lat);
+                        });
+                    });
+                }
+                // Add additional geometry type handlers if needed
+            });
+            
+            // Only proceed if we found valid bounds
+            if (minLng !== Infinity && maxLng !== -Infinity && minLat !== Infinity && maxLat !== -Infinity) {
+                // Add some padding to the bounds
+                const paddingFactor = 0.1; // 10% padding
+                const lngPadding = (maxLng - minLng) * paddingFactor;
+                const latPadding = (maxLat - minLat) * paddingFactor;
+                
+                this.map.fitBounds(
+                    [
+                        [minLng - lngPadding, minLat - latPadding], // SW
+                        [maxLng + lngPadding, maxLat + latPadding]  // NE
+                    ],
+                    { padding: 50, maxZoom: 10 }
+                );
+                
+                console.log("Map view adjusted to GeoJSON bounds");
+                return;
+            } else {
+                throw new Error("Could not calculate valid bounds from features");
+            }
+        } catch (e) {
+            console.error("Error calculating GeoJSON bounds, using Volta Lake bounds instead", e);
+            // Fallback to fitting to the entire Volta Lake bounds
+            import('../../utils/map-utils').then(({ fitMapToVoltaLakeBounds }) => {
+                fitMapToVoltaLakeBounds(this.map);
+                console.log("Map view adjusted to Volta Lake bounds");
+            });
+        }
     }
 
     // --- Actions call parent methods ---

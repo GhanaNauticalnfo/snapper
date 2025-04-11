@@ -11,6 +11,9 @@ import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
 import { SkeletonModule } from 'primeng/skeleton';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 
 // Models/Service
 import { TileInfo } from '../../models/tile-info.model';
@@ -21,14 +24,25 @@ import { VoltaDepthService } from '../../volta-depth.service';
     standalone: true,
     imports: [
         CommonModule, RouterModule, DatePipe, DecimalPipe,
-        TableModule, ButtonModule, MessageModule, TagModule, SkeletonModule
+        TableModule, ButtonModule, MessageModule, TagModule, SkeletonModule,
+        ConfirmDialogModule, ToastModule
     ],
+    providers: [ConfirmationService, MessageService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <div class="tile-list-container">
         <div class="flex align-items-center mb-3">
             <h4>Existing Tiles</h4>
         </div>
+
+        <p-toast key="tileListToast"></p-toast>
+        <p-confirmDialog 
+            header="Confirm Deletion" 
+            icon="pi pi-exclamation-triangle" 
+            acceptButtonStyleClass="p-button-danger" 
+            acceptIcon="pi pi-trash"
+            rejectButtonStyleClass="p-button-secondary">
+        </p-confirmDialog>
 
         @if (error(); as errorMsg) {
           <p-message severity="error" [text]="errorMsg" styleClass="mb-3"></p-message>
@@ -54,7 +68,7 @@ import { VoltaDepthService } from '../../volta-depth.service';
                   <th pSortableColumn="version" style="width: 10%">Ver <p-sortIcon field="version"></p-sortIcon></th>
                   <th pSortableColumn="numberOfFeatures" style="width: 15%">#Features <p-sortIcon field="numberOfFeatures"></p-sortIcon></th>
                   <th pSortableColumn="lastUpdated" style="width: 35%">Updated <p-sortIcon field="lastUpdated"></p-sortIcon></th>
-                  <th style="width: 20%">Actions</th>
+                  <th style="width: 30%">Actions</th>
                 </tr>
               </ng-template>
               <ng-template pTemplate="body" let-tile>
@@ -63,7 +77,22 @@ import { VoltaDepthService } from '../../volta-depth.service';
                       <td><p-tag [value]="tile.version" severity="info"></p-tag></td>
                       <td>{{ tile.numberOfFeatures | number }}</td>
                       <td>{{ tile.lastUpdated | date:'yyyy-MM-dd HH:mm:ss' }}</td>
-                      <td><p-button label="Details" icon="pi pi-search" styleClass="p-button-text p-button-sm" [routerLink]="['/volta-depth', tile.id]"></p-button></td>
+                      <td class="actions-cell">
+                          <p-button 
+                              label="Details" 
+                              icon="pi pi-search" 
+                              styleClass="p-button-text p-button-sm"
+                              [routerLink]="['/volta-depth', tile.id]">
+                          </p-button>
+                          <p-button 
+                              label="Delete" 
+                              icon="pi pi-trash" 
+                              styleClass="p-button-text p-button-sm p-button-danger"
+                              [loading]="(deletingTileId() === tile.id)"
+                              [disabled]="isDeleting()"
+                              (onClick)="confirmDeleteTile(tile)">
+                          </p-button>
+                      </td>
                   </tr>
               </ng-template>
               <ng-template pTemplate="emptymessage">
@@ -117,23 +146,32 @@ import { VoltaDepthService } from '../../volta-depth.service';
     :host ::ng-deep .p-sortable-column .p-sortable-column-icon { margin-left: 0.5em; vertical-align: middle; }
     p-message { margin-bottom: 1rem; }
     .text-center { text-align: center; }
+    .actions-cell { display: flex; gap: 0.5rem; }
   `]
 })
 export class TileListComponent {
     private voltaDepthService = inject(VoltaDepthService);
     private destroyRef = inject(DestroyRef);
+    private confirmationService = inject(ConfirmationService);
+    private messageService = inject(MessageService);
 
     // --- State Signals ---
     readonly loading = signal<boolean>(true);
     readonly error = signal<string | null>(null);
     readonly $tableData = signal<TileInfo[] | null>(null);
     readonly #initialLoadCompleted = signal<boolean>(false);
+    readonly deletingTileId = signal<string | null>(null);
 
     private readonly refreshTrigger = new Subject<void>();
 
     /** Computed signal to determine if the initial skeleton block should show */
     readonly showInitialSkeleton = computed(() => {
         return this.loading() && !this.#initialLoadCompleted();
+    });
+
+    /** Computed signal to check if any deletion is in progress */
+    readonly isDeleting = computed(() => {
+        return this.deletingTileId() !== null;
     });
 
     constructor() {
@@ -212,5 +250,54 @@ export class TileListComponent {
     refreshTiles(): void {
         console.log(">>> TileListComponent: Refresh triggered externally.");
         this.refreshTrigger.next();
+    }
+
+    /** Shows confirmation dialog before deleting a tile */
+    confirmDeleteTile(tile: TileInfo): void {
+        console.log(`Confirming deletion of tile: ${tile.id}`);
+        
+        this.confirmationService.confirm({
+            message: `Are you sure you want to delete tile <strong>${tile.id}</strong>? <br><br>
+                     This will permanently remove the tile and all its <strong>${tile.numberOfFeatures}</strong> features. 
+                     <br>This action cannot be undone.`,
+            accept: () => {
+                this.deleteTile(tile.id);
+            }
+        });
+    }
+
+    /** Performs the actual tile deletion after confirmation */
+    private deleteTile(tileId: string): void {
+        console.log(`Deleting tile: ${tileId}`);
+        this.deletingTileId.set(tileId);
+
+        this.voltaDepthService.deleteTile(tileId)
+            .pipe(
+                takeUntilDestroyed(this.destroyRef),
+                finalize(() => this.deletingTileId.set(null))
+            )
+            .subscribe({
+                next: (response) => {
+                    console.log('Delete successful:', response);
+                    this.messageService.add({
+                        key: 'tileListToast',
+                        severity: 'success',
+                        summary: 'Tile Deleted',
+                        detail: `Tile ${tileId} has been successfully deleted.`
+                    });
+                    // Refresh the tile list
+                    this.refreshTiles();
+                },
+                error: (err: Error) => {
+                    console.error('Delete error:', err);
+                    this.messageService.add({
+                        key: 'tileListToast',
+                        severity: 'error',
+                        summary: 'Delete Failed',
+                        detail: err.message || 'Failed to delete tile',
+                        life: 5000
+                    });
+                }
+            });
     }
 }

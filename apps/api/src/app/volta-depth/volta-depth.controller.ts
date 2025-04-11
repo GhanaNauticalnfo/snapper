@@ -1,7 +1,10 @@
+// apps/api/src/app/volta-depth/volta-depth.controller.ts
+
 import {
   Controller,
   Post,
   Get,
+  Delete,
   Param,
   Body,
   UseInterceptors,
@@ -94,4 +97,15 @@ export class VoltaDepthController {
     this.logger.log(`Request received for tile info: ${tileId}`);
     return this.voltaDepthService.getTileInfo(tileId);
   }
+
+    /**
+   * Delete a specific tile and all its features.
+   */
+    @Delete('tiles/:tileId')
+    @HttpCode(HttpStatus.OK)
+    async deleteTile(@Param('tileId') tileId: string): Promise<{ message: string; tileId: string }> {
+      this.logger.log(`Request received to delete tile: ${tileId}`);
+      await this.voltaDepthService.deleteTile(tileId);
+      return { message: 'Tile and associated features deleted successfully.', tileId };
+    }
 }

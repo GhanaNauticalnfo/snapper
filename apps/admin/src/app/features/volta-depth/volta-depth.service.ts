@@ -43,6 +43,11 @@ export class VoltaDepthService {
       .pipe(catchError(this.handleError));
   }
 
+  deleteTile(tileId: string): Observable<{ message: string; tileId: string }> {
+    return this.http.delete<{ message: string; tileId: string }>(`${this.apiUrlBase}/tiles/${tileId}`)
+      .pipe(catchError(this.handleError));
+  }
+  
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An unknown error occurred!';
     if (error.error instanceof ErrorEvent) {

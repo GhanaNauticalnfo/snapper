@@ -36,9 +36,11 @@ import { StyleClass } from 'primeng/styleclass';
 -->
 
             <ul class="topbar-items">
+
                 <li>
                     <div id="docsearch"></div>
                 </li>
+                <!--
                 <li>
                     <a href="https://github.com/primefaces/primeng" target="_blank" rel="noopener noreferrer" class="topbar-item">
                         <i class="pi pi-github text-surface-700 dark:text-surface-100"></i>
@@ -54,11 +56,13 @@ import { StyleClass } from 'primeng/styleclass';
                         <i class="pi pi-comments text-surface-700 dark:text-surface-100"></i>
                     </a>
                 </li>
+-->
                 <li>
                     <button type="button" class="topbar-item" (click)="toggleDarkMode()">
                         <i class="pi" [ngClass]="{ 'pi-moon': isDarkMode(), 'pi-sun': !isDarkMode() }"></i>
                     </button>
                 </li>
+                <!--
                 <li>
                     <button type="button" class="topbar-item relative group overflow-hidden !border-transparent" (click)="toggleDesigner()">
                         <span
@@ -69,6 +73,7 @@ import { StyleClass } from 'primeng/styleclass';
                         <i class="pi pi-cog z-10"></i>
                     </button>
                 </li>
+-->
                 <li *ngIf="showMenuButton" class="menu-button">
                     <button type="button" class="topbar-item menu-button" (click)="toggleMenu()" aria-label="Menu">
                         <i class="pi pi-bars"></i>

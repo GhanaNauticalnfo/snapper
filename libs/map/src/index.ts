@@ -1,0 +1,22 @@
+// libs/map/src/index.ts
+// Core exports
+export * from './lib/core/map.service';
+export * from './lib/core/layer-manager.service';
+
+// Models
+export * from './lib/models/map-config.model';
+
+// Map styles
+export * from './lib/styles/osm-style';
+
+// Base layer export
+export * from './lib/layers/base-layer.service';
+
+// Component exports
+export * from './lib/components/map/map.component';
+
+// Layer exports
+export * from './lib/layers/ais/ais-ships-layer.service';
+export * from './lib/layers/weather/weather-layer.service';
+export * from './lib/layers/niord/niord-layer.service';
+export * from './lib/layers/niord/niord-messages.component';

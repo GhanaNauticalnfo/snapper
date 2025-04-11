@@ -58,7 +58,7 @@ export const typeOrmModuleOptionsFactory = (configService: ConfigService): TypeO
         ssl: sslOptions,
 
         // Runtime specific settings
-        synchronize: false, // CRITICAL
+        synchronize: true, // Remove for Deployment
         logging: runtimeLogging,
         autoLoadEntities: true, // Use NestJS mechanism
 

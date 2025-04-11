@@ -8,9 +8,6 @@
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "paths": {
-        "@/*": ["src/*"]
-    }
   },
   "files": [],
   "include": [],

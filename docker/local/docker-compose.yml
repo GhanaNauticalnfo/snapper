@@ -10,7 +10,6 @@ services:
       POSTGRES_DB: ${DATABASE_NAME:-snapper_db}
     volumes:
       - snapper-postgres-data:/var/lib/postgresql/data
-      - ./docker/local/postgres/init:/docker-entrypoint-initdb.d  # Add this line
     restart: unless-stopped
     networks:
       - snapper-network
@@ -28,12 +27,16 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${DATABASE_USER:-snapper_user}:${DATABASE_PASSWORD:-snapper_password}@snapper-postgres:5432/${DATABASE_NAME:-snapper_db}
+    volumes:
+      - ../../support/martin/config.yaml:/config.yaml  # Mount the config file
+    command: --config /config.yaml --webui enable-for-all  # Use the config file
     ports:
       - "4000:3000"
     restart: unless-stopped
     networks:
       - snapper-network
       
+ 
   artemis:
     image: apache/activemq-artemis:latest
     container_name: snapper-artemis
@@ -49,12 +52,12 @@ services:
     volumes:
       - artemis-data:/var/lib/artemis/data
       - artemis-config:/var/lib/artemis/etc
-      - ./artemis-keycloak-config:/var/lib/artemis/keycloak-config
+ #     - ./artemis-keycloak-config:/var/lib/artemis/keycloak-config
     restart: unless-stopped
     networks:
       - snapper-network
-    depends_on:
-      - keycloak
+#    depends_on:
+#      - keycloak
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8161"]
       interval: 30s
@@ -62,6 +65,7 @@ services:
       retries: 3
 
   keycloak:
+    profiles: ["keycloak"]  # KEYCLOAK IS DISABLED FOR NOW
     image: quay.io/keycloak/keycloak:latest
     container_name: snapper-keycloak
     environment:
@@ -69,6 +73,7 @@ services:
       KC_DB_URL: jdbc:postgresql://snapper-postgres:5432/${DATABASE_NAME:-snapper_db}
       KC_DB_USERNAME: ${DATABASE_USER:-snapper_user}
       KC_DB_PASSWORD: ${DATABASE_PASSWORD:-snapper_password}
+      KC_DB_SCHEMA: keycloak
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin_password}
       KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}

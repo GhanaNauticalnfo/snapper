@@ -19,7 +19,6 @@
           "zone.js"
         ],
         "tsConfig": "apps/frontend/tsconfig.app.json",
-        "tailwindConfig": "apps/frontend/tailwind.config.js",
         "assets": [
           {
             "glob": "**/*",

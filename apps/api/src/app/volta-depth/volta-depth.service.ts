@@ -172,6 +172,58 @@ import {
         }
         return null;
     }
+
+    async deleteTile(tileId: string): Promise<void> {
+      this.logger.log(`Attempting to delete tile with ID: ${tileId}`);
+      
+      // Check if the tile exists first
+      const existingTile = await this.tileRepository.findOneBy({ id: tileId });
+      if (!existingTile) {
+        this.logger.warn(`Deletion failed: Tile with ID ${tileId} not found.`);
+        throw new NotFoundException(`Tile with ID '${tileId}' not found.`);
+      }
+      
+      // Use a transaction to ensure both tile and features are deleted atomically
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      
+      try {
+        this.logger.log(`Starting transaction for deletion of Tile ID: ${tileId}`);
+        
+        // Step 1: Delete all the features that belong to this tile
+        const deleteFeatureResult = await queryRunner.manager.delete(
+          VoltaDepthTileFeature, 
+          { tileId }
+        );
+        this.logger.log(`Deleted ${deleteFeatureResult.affected ?? 0} features for Tile ID: ${tileId}`);
+        
+        // Step 2: Delete the tile metadata
+        const deleteTileResult = await queryRunner.manager.delete(
+          VoltaDepthTile, 
+          { id: tileId }
+        );
+        
+        if (deleteTileResult.affected === 0) {
+          throw new Error(`Failed to delete tile metadata for ID: ${tileId}`);
+        }
+        
+        this.logger.log(`Deleted tile metadata for Tile ID: ${tileId}`);
+        
+        // Commit the transaction
+        await queryRunner.commitTransaction();
+        this.logger.log(`Transaction committed successfully. Tile ${tileId} and its features have been deleted.`);
+        
+      } catch (error) {
+        this.logger.error(`Error during deletion transaction for Tile ID ${tileId}: ${error.message}`, error.stack);
+        await queryRunner.rollbackTransaction();
+        this.logger.log(`Transaction rolled back for Tile ID: ${tileId}`);
+        throw new InternalServerErrorException(`Failed to delete tile ${tileId}: ${error.message}`);
+      } finally {
+        await queryRunner.release();
+        this.logger.log(`Query runner released for Tile ID: ${tileId}`);
+      }
+    }
   
     async commitUpload(uploadId: string): Promise<VoltaDepthTile> {
       this.logger.log(`Attempting to commit upload ID: ${uploadId}`);

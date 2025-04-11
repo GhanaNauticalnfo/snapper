@@ -1,6 +1,8 @@
 import { Route } from '@angular/router';
 import { AppMainComponent } from './layout/app.main.component';
 import { KmlComponent } from './features/kml/kml.component';
+import { VesselComponent } from './features/vessels/vessel.component';
+import { LiveComponent } from './features/live/live.component';
 
 export const routes: Route[] = [
   {
@@ -29,7 +31,13 @@ export const routes: Route[] = [
     path: 'volta-depth',
     loadComponent: () => import('./features/volta-depth/volta-depth.component')
       .then(m => m.VoltaDepthComponent)
-  }
+  },
+  {
+    path: 'vessels', component: VesselComponent,
+  },
+  {
+    path: 'live', component: LiveComponent,
+  },
 ]
   }
 ];

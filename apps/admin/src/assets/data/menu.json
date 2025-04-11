@@ -2,18 +2,28 @@
     "data": [
         {
             "name": "Home",
-            "icon": "pi pi-palette",
+            "icon": "pi pi-home",
             "routerLink": "/home"
         },
         {
             "name": "KML",
-            "icon": "pi pi-palette",
+            "icon": "pi pi-map",
             "routerLink": "/kml"
         },
         {
             "name": "Volta Depths",
-            "icon": "pi pi-palette",
+            "icon": "pi pi-chart-line",
             "routerLink": "/volta-depth"
+        },
+        {
+            "name": "Vessels",
+            "icon": "pi pi-compass",
+            "routerLink": "/vessels"
+        },
+        {
+            "name": "Live",
+            "icon": "pi pi-compass",
+            "routerLink": "/live"
         }
     ]
 }
