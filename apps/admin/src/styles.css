@@ -13,3 +13,19 @@ html,
 body {
   height: 100%;
 }
+
+body.map-fullscreen-active {
+  overflow: hidden; /* Prevent scrolling */
+  margin: 0;
+  padding: 0;
+}
+
+/* Hide all other page elements when in fullscreen mode */
+body.map-fullscreen-active > *:not(.map-container) {
+  display: none !important;
+}
+
+/* Exception for the map container */
+body.map-fullscreen-active .map-container.fullscreen {
+  display: block !important;
+}

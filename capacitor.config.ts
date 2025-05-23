@@ -2,17 +2,16 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.tracker.app',
-  appName: 'Tracker',
-  webDir: 'dist/apps/tracker',
+  appId: 'info.ghananautical.snapper',
+  appName: 'GhanaNautical Snapper',
+  webDir: 'dist/apps/frontend/browser', // Updated to include the browser subdirectory
   server: {
     androidScheme: 'https'
   },
   android: {
-    useLegacyBridge: true // Required for background geolocation on Android
+    useLegacyBridge: true
   },
   plugins: {
-    // Request permissions for iOS
     Geolocation: {
       requestInCourse: true
     }

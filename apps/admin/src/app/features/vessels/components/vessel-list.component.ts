@@ -86,11 +86,10 @@ import { InputNumberModule } from 'primeng/inputnumber';
       >
         <ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="id" style="width: 8%">ID <p-sortIcon field="id"></p-sortIcon></th>
-            <th pSortableColumn="name" style="width: 15%">Name <p-sortIcon field="name"></p-sortIcon></th>
-            <th pSortableColumn="type" style="width: 10%">Type <p-sortIcon field="type"></p-sortIcon></th>
-            <th pSortableColumn="last_seen" style="width: 15%">Last Seen <p-sortIcon field="last_seen"></p-sortIcon></th>
-            <th pSortableColumn="last_position" style="width: 17%">Last Position <p-sortIcon field="last_position"></p-sortIcon></th>
+            <th pSortableColumn="id" style="width: 10%">ID <p-sortIcon field="id"></p-sortIcon></th>
+            <th pSortableColumn="name" style="width: 20%">Name <p-sortIcon field="name"></p-sortIcon></th>
+            <th pSortableColumn="type" style="width: 15%">Type <p-sortIcon field="type"></p-sortIcon></th>
+            <th pSortableColumn="last_seen" style="width: 20%">Last Seen <p-sortIcon field="last_seen"></p-sortIcon></th>
             <th pSortableColumn="enabled" style="width: 10%">Enabled <p-sortIcon field="enabled"></p-sortIcon></th>
             <th style="width: 25%">Actions</th>
           </tr>
@@ -107,17 +106,14 @@ import { InputNumberModule } from 'primeng/inputnumber';
             </td>
             <td>{{ vessel.last_seen | date:'medium' }}</td>
             <td>
-              <span>{{ vessel.last_position?.latitude?.toFixed(6) || 'N/A' }}, {{ vessel.last_position?.longitude?.toFixed(6) || 'N/A' }}</span>
-            </td>
-            <td>
               <span [class]="vessel.enabled ? 'status-badge status-enabled' : 'status-badge status-disabled'">
                 {{ vessel.enabled ? 'Yes' : 'No' }}
               </span>
             </td>
             <td>
               <p-button 
-                label="Details" 
-                icon="pi pi-search" 
+                label="View" 
+                icon="pi pi-eye" 
                 styleClass="p-button-text p-button-sm" 
                 (onClick)="openViewDialog(vessel)">
               </p-button>
@@ -139,7 +135,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="7" class="text-center p-4">
+            <td colspan="6" class="text-center p-4">
               @if (!loading() && !error()) {
                 No vessels found.
               } @else if (error()) {
@@ -304,59 +300,6 @@ import { InputNumberModule } from 'primeng/inputnumber';
           }
         </div>
 
-        <div class="form-group">
-          <label for="last_seen" class="form-label">Last Seen <span class="required-asterisk">*</span></label>
-          <p-calendar
-            id="last_seen"
-            formControlName="last_seen"
-            [showTime]="true"
-            [showSeconds]="true"
-            dateFormat="yy-mm-dd"
-            placeholder="Select date and time"
-            [style]="{'width':'100%'}"
-            [ngClass]="{'ng-invalid ng-dirty': vesselForm.controls['last_seen'].invalid && vesselForm.controls['last_seen'].touched}"
-          ></p-calendar>
-          @if (vesselForm.controls['last_seen'].invalid && vesselForm.controls['last_seen'].touched) {
-            <small class="p-error block mt-1">Last seen date is required.</small>
-          }
-        </div>
-
-        <div class="grid">
-          <div class="col-12 md:col-6">
-            <div class="form-group">
-              <label for="latitude" class="form-label">Latitude <span class="required-asterisk">*</span></label>
-              <p-inputNumber
-                id="latitude"
-                formControlName="latitude"
-                [minFractionDigits]="6"
-                [maxFractionDigits]="6"
-                placeholder="Enter latitude"
-                [style]="{'width':'100%'}"
-                [ngClass]="{'ng-invalid ng-dirty': vesselForm.controls['latitude'].invalid && vesselForm.controls['latitude'].touched}"
-              ></p-inputNumber>
-              @if (vesselForm.controls['latitude'].invalid && vesselForm.controls['latitude'].touched) {
-                <small class="p-error block mt-1">Valid latitude is required (-90 to 90).</small>
-              }
-            </div>
-          </div>
-          <div class="col-12 md:col-6">
-            <div class="form-group">
-              <label for="longitude" class="form-label">Longitude <span class="required-asterisk">*</span></label>
-              <p-inputNumber
-                id="longitude"
-                formControlName="longitude"
-                [minFractionDigits]="6"
-                [maxFractionDigits]="6"
-                placeholder="Enter longitude"
-                [style]="{'width':'100%'}"
-                [ngClass]="{'ng-invalid ng-dirty': vesselForm.controls['longitude'].invalid && vesselForm.controls['longitude'].touched}"
-              ></p-inputNumber>
-              @if (vesselForm.controls['longitude'].invalid && vesselForm.controls['longitude'].touched) {
-                <small class="p-error block mt-1">Valid longitude is required (-180 to 180).</small>
-              }
-            </div>
-          </div>
-        </div>
 
         <div class="form-group">
           <label for="enabled" class="form-label">Status</label>
@@ -553,9 +496,6 @@ export class VesselListComponent implements OnInit {
     this.vesselForm = this.fb.group({
       name: ['', Validators.required],
       type: ['', Validators.required],
-      last_seen: [new Date(), Validators.required],
-      latitude: [0, [Validators.required, Validators.min(-90), Validators.max(90)]],
-      longitude: [0, [Validators.required, Validators.min(-180), Validators.max(180)]],
       enabled: [true]
     });
   }
@@ -607,9 +547,6 @@ export class VesselListComponent implements OnInit {
     this.vesselForm.reset({
       name: '',
       type: '',
-      last_seen: new Date(),
-      latitude: 0,
-      longitude: 0,
       enabled: true
     });
     this.formDialogVisible = true;
@@ -623,9 +560,6 @@ export class VesselListComponent implements OnInit {
     this.vesselForm.patchValue({
       name: vessel.name || '',
       type: vessel.type,
-      last_seen: new Date(vessel.last_seen),
-      latitude: vessel.last_position?.latitude || 0,
-      longitude: vessel.last_position?.longitude || 0,
       enabled: vessel.enabled
     });
     this.formDialogVisible = true;
@@ -656,15 +590,10 @@ export class VesselListComponent implements OnInit {
     this.saving.set(true);
     const formValue = this.vesselForm.value;
     
-    // Create the data object with the position properly structured
+    // Create the data object
     const vesselData = {
       name: formValue.name,
       type: formValue.type,
-      last_seen: formValue.last_seen,
-      last_position: {
-        latitude: formValue.latitude,
-        longitude: formValue.longitude
-      },
       enabled: formValue.enabled
     };
 

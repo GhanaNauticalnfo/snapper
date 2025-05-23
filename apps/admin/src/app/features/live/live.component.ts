@@ -8,7 +8,8 @@ import {
   WeatherLayerService, 
   NiordLayerService,
   MapConfig,
-  OSM_STYLE
+  OSM_STYLE,
+  DepthLayerService
 } from '@snapper/map';
 
 @Component({
@@ -26,6 +27,7 @@ import {
     }
   `],
   providers: [
+    DepthLayerService,
     AisShipLayerService,
     WeatherLayerService,
     NiordLayerService
@@ -43,12 +45,13 @@ export class LiveComponent implements OnInit {
     showFullscreenControl: true,
     showZoomControls: true,
     showCompass: true,
-    availableLayers: ['ais-ships', 'weather', 'niord'],
+    availableLayers: ['ais-ships', 'weather', 'niord', 'depth'],
     initialActiveLayers: ['ais-ships'], // Automatically activate this layer on load
     layerNames: {
       'ais-ships': 'Ships',
-      'weather': 'Weather Data',
-      'niord': 'Notices'
+      'weather': 'Weather',
+      'niord': 'NW/NM',
+      'depth': 'Depths'
     }
   };
   
@@ -57,5 +60,6 @@ export class LiveComponent implements OnInit {
     this.layerManager.registerLayer('ais-ships', AisShipLayerService);
     this.layerManager.registerLayer('weather', WeatherLayerService);
     this.layerManager.registerLayer('niord', NiordLayerService);
+    this.layerManager.registerLayer('depth', DepthLayerService);
   }
 }

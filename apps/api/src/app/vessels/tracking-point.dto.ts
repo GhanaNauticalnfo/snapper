@@ -10,4 +10,10 @@ export class CreateTrackingPointDto {
     signal_strength?: number;
     device_id?: string;
     status?: string;
+    // Additional fields from Android app
+    speed?: number;
+    course?: number;
+    altitude?: number;
+    accuracy?: number;
+    provider?: string;
   }

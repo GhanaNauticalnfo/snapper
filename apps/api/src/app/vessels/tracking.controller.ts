@@ -1,18 +1,21 @@
 // tracking.controller.ts
 import { 
     Controller, Get, Post, Body, Param, 
-    HttpException, HttpStatus, Query 
+    HttpException, HttpStatus, Query, UseGuards, Req
   } from '@nestjs/common';
   import { TrackingService } from './tracking.service';
   import { TrackingPoint } from './tracking-point.entity';
   import { VesselService } from './vessel.service';
   import { CreateTrackingPointDto } from './tracking-point.dto';
+  import { DeviceAuthService } from './device-auth.service';
+  import { DeviceAuthGuard } from './device-auth.guard';
   
   @Controller('tracking')
   export class TrackingController {
     constructor(
       private readonly trackingService: TrackingService,
-      private readonly vesselService: VesselService
+      private readonly vesselService: VesselService,
+      private readonly deviceAuthService: DeviceAuthService
     ) {}
   
     @Get()
@@ -99,5 +102,31 @@ import {
           HttpStatus.BAD_REQUEST
         );
       }
+    }
+
+    @Post('activate')
+    async activateDevice(@Body() body: { activation_token: string }) {
+      return await this.deviceAuthService.activateDevice(body.activation_token);
+    }
+
+    @Post('report')
+    @UseGuards(DeviceAuthGuard)
+    async reportPosition(@Body() body: any, @Req() req: any): Promise<TrackingPoint> {
+      const deviceToken = req.deviceToken;
+      
+      // Map Android format to our format
+      const trackingData: CreateTrackingPointDto = {
+        vessel_id: deviceToken.vessel_id,
+        latitude: body.latitude,
+        longitude: body.longitude,
+        timestamp: new Date(body.timestamp),
+        speed: body.speed || null,
+        course: body.bearing || null,
+        altitude: body.altitude || null,
+        accuracy: body.accuracy || null,
+        provider: body.provider || null
+      };
+
+      return await this.trackingService.create(trackingData);
     }
   }

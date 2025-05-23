@@ -1,0 +1,5 @@
+{
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "nxConsole.generateAiAgentRules": true,
+    "gradle.nestedProjects": true 
+}

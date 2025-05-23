@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GhanaNautical Snapper</string>
+    <string name="title_activity_main">GhanaNautical Snapper</string>
+    <string name="package_name">info.ghananautical.snapper</string>
+    <string name="custom_url_scheme">info.ghananautical.snapper</string>
+</resources>

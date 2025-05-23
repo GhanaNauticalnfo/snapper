@@ -19,4 +19,7 @@ export * from './lib/components/map/map.component';
 export * from './lib/layers/ais/ais-ships-layer.service';
 export * from './lib/layers/weather/weather-layer.service';
 export * from './lib/layers/niord/niord-layer.service';
+export * from './lib/layers/nwnm/nw-nm-layer.service';
+
 export * from './lib/layers/niord/niord-messages.component';
+export * from './lib/layers/depth/depth-layer.service';

@@ -3,7 +3,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Map, GeoJSONSource } from 'maplibre-gl';
 import { BaseLayerService } from '../base-layer.service';
-import { lastValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'

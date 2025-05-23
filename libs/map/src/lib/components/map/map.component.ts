@@ -44,26 +44,30 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
     </div>
   `,
   styles: [`
-    .map-container {
-      position: relative;
-      height: 500px;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
-    }
-    .map-container.fullscreen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100% !important;
-      z-index: 9999;
-      border-radius: 0;
-    }
-    .map-canvas {
-      height: 100%;
-    }
+  .map-container {
+    position: relative;
+    height: 500px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+  }
+  .map-container.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw; /* Use viewport width to ensure full width */
+    height: 100vh !important; /* Use viewport height to ensure full height */
+    z-index: 9999; /* High z-index to be above everything else */
+    border-radius: 0;
+    margin: 0;
+    padding: 0;
+  }
+  /* Add styles to ensure the map canvas fills the container */
+  .map-canvas {
+    height: 100%;
+    width: 100%;
+  }
     .map-controls {
       position: absolute;
       top: 10px;
@@ -227,37 +231,88 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   
   toggleFullscreen(): void {
+    const mapContainer = this.mapElement.nativeElement.parentElement as HTMLElement;
     const newState = !this.isFullscreen();
-    this.isFullscreen.set(newState);
     
-    // Resize the map after toggling fullscreen to ensure proper rendering
+    if (newState) {
+      // Enter fullscreen mode
+      if (mapContainer.requestFullscreen) {
+        mapContainer.requestFullscreen();
+      } else if ((mapContainer as any).mozRequestFullScreen) { /* Firefox */
+        (mapContainer as any).mozRequestFullScreen();
+      } else if ((mapContainer as any).webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+        (mapContainer as any).webkitRequestFullscreen();
+      } else if ((mapContainer as any).msRequestFullscreen) { /* IE/Edge */
+        (mapContainer as any).msRequestFullscreen();
+      }
+      
+      // Update state
+      this.isFullscreen.set(true);
+      
+      // Add listener for fullscreen change events
+      document.addEventListener('fullscreenchange', this.handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', this.handleFullscreenChange);
+      document.addEventListener('mozfullscreenchange', this.handleFullscreenChange);
+      document.addEventListener('MSFullscreenChange', this.handleFullscreenChange);
+      
+    } else {
+      // Exit fullscreen mode
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if ((document as any).mozCancelFullScreen) { /* Firefox */
+        (document as any).mozCancelFullScreen();
+      } else if ((document as any).webkitExitFullscreen) { /* Chrome, Safari & Opera */
+        (document as any).webkitExitFullscreen();
+      } else if ((document as any).msExitFullscreen) { /* IE/Edge */
+        (document as any).msExitFullscreen();
+      }
+      
+      // Update state
+      this.isFullscreen.set(false);
+    }
+    
+    // Resize the map after toggling fullscreen
     setTimeout(() => {
       if (this._map) {
         this._map.resize();
       }
     }, 100);
+  }
+  
+  // Add this method to handle fullscreen change events
+  private handleFullscreenChange = () => {
+    const isInFullScreen = !!(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement
+    );
     
-    // Optionally handle escape key to exit fullscreen
-    if (newState) {
-      const escapeHandler = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          this.isFullscreen.set(false);
-          
-          setTimeout(() => {
-            if (this._map) {
-              this._map.resize();
-            }
-          }, 100);
-          
-          document.removeEventListener('keydown', escapeHandler);
-        }
-      };
-      
-      document.addEventListener('keydown', escapeHandler);
+    this.isFullscreen.set(isInFullScreen);
+    
+    // Resize the map to fit the new container size
+    if (this._map) {
+      this._map.resize();
+    }
+    
+    // Remove listeners if we're no longer in fullscreen
+    if (!isInFullScreen) {
+      document.removeEventListener('fullscreenchange', this.handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', this.handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', this.handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', this.handleFullscreenChange);
     }
   }
-
+  
+  // Don't forget to clean up when the component is destroyed
   ngOnDestroy(): void {
+    // Remove fullscreen change listeners
+    document.removeEventListener('fullscreenchange', this.handleFullscreenChange);
+    document.removeEventListener('webkitfullscreenchange', this.handleFullscreenChange);
+    document.removeEventListener('mozfullscreenchange', this.handleFullscreenChange);
+    document.removeEventListener('MSFullscreenChange', this.handleFullscreenChange);
+    
+    // Rest of your cleanup code
     this.layerManager.destroy();
     this.mapService.removeMap();
   }
