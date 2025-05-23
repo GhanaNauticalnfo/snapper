@@ -1,8 +1,8 @@
 // features/vessels/components/vessel-list.component.ts
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { VesselDatasetService } from '../services/vessel-dataset.service';
 import { VesselDataset } from '../models/vessel-dataset.model';
 
@@ -22,6 +22,8 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SkeletonModule } from 'primeng/skeleton';
 import { CalendarModule } from 'primeng/calendar';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 
 @Component({
   selector: 'app-vessel-list',
@@ -30,6 +32,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
     CommonModule,
     RouterModule,
     ReactiveFormsModule,
+    FormsModule,
     TableModule,
     ButtonModule,
     ProgressSpinnerModule,
@@ -43,7 +46,9 @@ import { InputNumberModule } from 'primeng/inputnumber';
     TooltipModule,
     SkeletonModule,
     CalendarModule,
-    InputNumberModule
+    InputNumberModule,
+    IconFieldModule,
+    InputIconModule
   ],
   providers: [ConfirmationService, MessageService],
   template: `
@@ -59,7 +64,20 @@ import { InputNumberModule } from 'primeng/inputnumber';
     <div class="vessel-list-container">
       <div class="flex justify-content-between align-items-center mb-3">
         <h4>Vessels</h4>
-        <div>
+        <div class="flex gap-2 align-items-center">
+          <p-iconField iconPosition="left">
+            <p-inputIcon>
+              <i class="pi pi-search"></i>
+            </p-inputIcon>
+            <input 
+              type="text" 
+              pInputText 
+              placeholder="Search by vessel name..." 
+              [ngModel]="searchTerm()"
+              (ngModelChange)="searchTerm.set($event)"
+              class="search-input"
+            />
+          </p-iconField>
           <p-button 
             label="Add New Vessel" 
             icon="pi pi-plus" 
@@ -76,9 +94,9 @@ import { InputNumberModule } from 'primeng/inputnumber';
       }
 
       <p-table
-        [value]="datasets()"
+        [value]="filteredDatasets()"
         [tableStyle]="{ 'min-width': '50rem' }"
-        [paginator]="datasets().length > 10"
+        [paginator]="filteredDatasets().length > 10"
         [rows]="10"
         styleClass="p-datatable-sm p-datatable-striped"
         [rowHover]="true"
@@ -136,7 +154,9 @@ import { InputNumberModule } from 'primeng/inputnumber';
         <ng-template pTemplate="emptymessage">
           <tr>
             <td colspan="6" class="text-center p-4">
-              @if (!loading() && !error()) {
+              @if (!loading() && !error() && searchTerm()) {
+                No vessels found matching "{{ searchTerm() }}".
+              } @else if (!loading() && !error()) {
                 No vessels found.
               } @else if (error()) {
                 <div class="p-error">{{ error() }}</div>
@@ -449,6 +469,11 @@ import { InputNumberModule } from 'primeng/inputnumber';
     .justify-content-between { justify-content: space-between; }
     .align-items-center { align-items: center; }
     .mb-3 { margin-bottom: 1rem; }
+    .gap-2 { gap: 0.5rem; }
+    
+    .search-input {
+      width: 300px;
+    }
 
     /* PrimeNG Input Validation Highlighting */
     .ng-invalid.ng-dirty {
@@ -474,6 +499,18 @@ export class VesselListComponent implements OnInit {
   loading = signal<boolean>(false);
   saving = signal<boolean>(false);
   error = signal<string | null>(null);
+  searchTerm = signal<string>('');
+  
+  // Computed signal for filtered datasets
+  filteredDatasets = computed(() => {
+    const term = this.searchTerm().toLowerCase().trim();
+    if (!term) {
+      return this.datasets();
+    }
+    return this.datasets().filter(vessel => 
+      vessel.name?.toLowerCase().includes(term)
+    );
+  });
 
   // Dialog control properties
   viewDialogVisible = false;
@@ -714,4 +751,5 @@ export class VesselListComponent implements OnInit {
       }
     });
   }
+  
 }
