@@ -14,26 +14,12 @@ import { StyleClass } from 'primeng/styleclass';
         <div class="layout-topbar-inner">
 
         <div class="layout-topbar-logo-container">
-    <a [routerLink]="['/']" class="layout-topbar-logo" aria-label="GMA Logo">
-        <svg width="120" height="33" viewBox="0 0 120 33" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <text x="40" y="22" font-size="16" font-family="Arial, sans-serif" font-weight="bold" fill="var(--high-contrast-text-color)">GMA</text>
-            <path d="M15.1934 0L0.0391 5.38288L2.35052 25.3417L15.1934 32.427L28.0364 25.3417L30.3478 5.38288L15.1934 0Z" fill="var(--p-primary-color)"/>
-            <path d="M15 5C18 5 21 7 23 9C25 11 26 14 26 16C26 18 25 21 23 23C21 25 18 27 15 27C12 27 9 25 7 23C5 21 4 18 4 16C4 14 5 11 7 9C9 7 12 5 15 5Z" fill="var(--high-contrast-text-color)"/>
-            <path d="M15 8C16.5 8 18 9 19 10C20 11 21 13 21 14C21 15 20 17 19 18C18 19 16.5 20 15 20C13.5 20 12 19 11 18C10 17 9 15 9 14C9 13 10 11 11 10C12 9 13.5 8 15 8Z" fill="var(--p-primary-color)"/>
-        </svg>
+    <a [routerLink]="['/']" class="layout-topbar-logo" aria-label="Ghana Maritime Authority Logo">
+        <img src="assets/images/ghana-maritime-authority-logo.png" alt="Ghana Maritime Authority" height="50" />
+        <span class="logo-text">Ghana Maritime Authority</span>
     </a>
 </div>
 
-<!--
-<div class="layout-topbar-logo-container">
-    <a [routerLink]="['/']" class="layout-topbar-logo" aria-label="Snapper Icon">
-        <svg width="33" height="33" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M15 5C18 5 21 7 23 9C25 11 26 14 26 16C26 18 25 21 23 23C21 25 18 27 15 27C12 27 9 25 7 23C5 21 4 18 4 16C4 14 5 11 7 9C9 7 12 5 15 5Z" fill="var(--p-primary-color)"/>
-            <path d="M15 8C16.5 8 18 9 19 10C20 11 21 13 21 14C21 15 20 17 19 18C18 19 16.5 20 15 20C13.5 20 12 19 11 18C10 17 9 15 9 14C9 13 10 11 11 10C12 9 13.5 8 15 8Z" fill="var(--high-contrast-text-color)"/>
-        </svg>
-    </a>
-</div>
--->
 
             <ul class="topbar-items">
 

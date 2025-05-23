@@ -78,6 +78,7 @@
       },
       "options": {
         "port": 4201,
+        "host": "0.0.0.0",
         "open": true,
         "proxyConfig": "apps/admin/proxy.conf.json"
       },

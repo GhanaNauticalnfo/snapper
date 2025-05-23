@@ -38,10 +38,26 @@
     }
 
     .layout-topbar-logo {
-        display: inline-flex;
+        display: flex;
+        align-items: center;
+        gap: 8px;
 
         svg {
             width: 120px;
+        }
+
+        img {
+            height: 50px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-color);
+            letter-spacing: 1px;
+            white-space: nowrap;
         }
     }
 

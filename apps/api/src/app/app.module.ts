@@ -11,6 +11,10 @@ import { typeOrmModuleOptionsFactory } from '../config/database.config';
 // KmlDataset entity will be picked up by autoLoadEntities or by forFeature in its own module
 // import { KmlDataset } from './kml-dataset/kml-dataset.entity';
 import { VesselsModule } from './vessels/vessels.module';
+import { RoutesModule } from './routes/routes.module';
+import { SyncModule } from './sync/sync.module';
+import { MarkersModule } from './markers/markers.module';
+import { HazardsModule } from './hazards/hazards.module';
 
 @Module({
   imports: [
@@ -40,6 +44,10 @@ import { VesselsModule } from './vessels/vessels.module';
     VesselsModule,
     KmlDatasetModule,
     VoltaDepthModule,
+    RoutesModule,
+    SyncModule,
+    MarkersModule,
+    HazardsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

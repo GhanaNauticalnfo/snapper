@@ -21,6 +21,11 @@
             "routerLink": "/vessels"
         },
         {
+            "name": "Routes",
+            "icon": "pi pi-route",
+            "routerLink": "/routes"
+        },
+        {
             "name": "Live",
             "icon": "pi pi-compass",
             "routerLink": "/live"

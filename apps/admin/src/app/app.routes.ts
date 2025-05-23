@@ -3,6 +3,7 @@ import { AppMainComponent } from './layout/app.main.component';
 import { KmlComponent } from './features/kml/kml.component';
 import { VesselComponent } from './features/vessels/vessel.component';
 import { LiveComponent } from './features/live/live.component';
+import { RoutesComponent } from './features/routes/routes.component';
 
 export const routes: Route[] = [
   {
@@ -34,6 +35,9 @@ export const routes: Route[] = [
   },
   {
     path: 'vessels', component: VesselComponent,
+  },
+  {
+    path: 'routes', component: RoutesComponent,
   },
   {
     path: 'live', component: LiveComponent,
