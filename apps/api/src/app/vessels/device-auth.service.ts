@@ -1,14 +1,14 @@
 import { Injectable, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DeviceToken } from './device-token.entity';
+import { Device } from './device.entity';
 import { randomBytes } from 'crypto';
 
 @Injectable()
 export class DeviceAuthService {
   constructor(
-    @InjectRepository(DeviceToken)
-    private deviceTokenRepository: Repository<DeviceToken>,
+    @InjectRepository(Device)
+    private deviceRepository: Repository<Device>,
   ) {}
 
   async activateDevice(activationToken: string): Promise<{
@@ -17,20 +17,20 @@ export class DeviceAuthService {
     device_id: string;
     vessel?: string;
   }> {
-    const deviceToken = await this.deviceTokenRepository.findOne({
+    const device = await this.deviceRepository.findOne({
       where: { activation_token: activationToken },
       relations: ['vessel'],
     });
 
-    if (!deviceToken) {
+    if (!device) {
       throw new HttpException('Invalid activation token', HttpStatus.NOT_FOUND);
     }
 
-    if (deviceToken.is_activated) {
+    if (device.is_activated) {
       throw new HttpException('Token already activated', HttpStatus.GONE);
     }
 
-    if (deviceToken.expires_at && deviceToken.expires_at < new Date()) {
+    if (device.expires_at && device.expires_at < new Date()) {
       throw new HttpException('Activation token expired', HttpStatus.GONE);
     }
 
@@ -38,22 +38,22 @@ export class DeviceAuthService {
     const authToken = this.generateToken(64);
     
     // Activate device
-    deviceToken.is_activated = true;
-    deviceToken.activated_at = new Date();
-    deviceToken.auth_token = authToken;
+    device.is_activated = true;
+    device.activated_at = new Date();
+    device.auth_token = authToken;
     
-    await this.deviceTokenRepository.save(deviceToken);
+    await this.deviceRepository.save(device);
 
     return {
       auth_token: authToken,
-      device_token: deviceToken.device_token,
-      device_id: deviceToken.device_id,
-      vessel: deviceToken.vessel?.name,
+      device_token: device.device_token,
+      device_id: device.device_id,
+      vessel: device.vessel?.name,
     };
   }
 
-  async validateDeviceToken(authToken: string): Promise<DeviceToken> {
-    const deviceToken = await this.deviceTokenRepository.findOne({
+  async validateDevice(authToken: string): Promise<Device> {
+    const device = await this.deviceRepository.findOne({
       where: { 
         auth_token: authToken,
         is_activated: true 
@@ -61,26 +61,26 @@ export class DeviceAuthService {
       relations: ['vessel'],
     });
 
-    if (!deviceToken) {
+    if (!device) {
       throw new UnauthorizedException('Invalid device token');
     }
 
-    return deviceToken;
+    return device;
   }
 
-  async createDeviceToken(vesselId?: number, expiresInDays: number = 30): Promise<DeviceToken> {
-    const deviceToken = new DeviceToken();
-    deviceToken.device_token = this.generateToken(32);
-    deviceToken.activation_token = this.generateToken(16);
-    deviceToken.vessel_id = vesselId;
+  async createDevice(vesselId?: number, expiresInDays: number = 30): Promise<Device> {
+    const device = new Device();
+    device.device_token = this.generateToken(32);
+    device.activation_token = this.generateToken(16);
+    device.vessel_id = vesselId;
     
     if (expiresInDays > 0) {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + expiresInDays);
-      deviceToken.expires_at = expiresAt;
+      device.expires_at = expiresAt;
     }
 
-    return await this.deviceTokenRepository.save(deviceToken);
+    return await this.deviceRepository.save(device);
   }
 
   private generateToken(length: number): string {

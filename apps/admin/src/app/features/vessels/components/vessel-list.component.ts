@@ -8,7 +8,7 @@ import { VesselDataset } from '../models/vessel-dataset.model';
 import { OSM_STYLE } from '@snapper/map';
 import { TimeAgoPipe } from '@snapper/shared';
 
-interface DeviceToken {
+interface Device {
   device_id: string;
   device_token: string;
   activation_token: string;
@@ -41,6 +41,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { DividerModule } from 'primeng/divider';
+import { TabViewModule } from 'primeng/tabview';
 
 @Component({
   selector: 'app-vessel-list',
@@ -67,6 +68,7 @@ import { DividerModule } from 'primeng/divider';
     IconFieldModule,
     InputIconModule,
     DividerModule,
+    TabViewModule,
     TimeAgoPipe
   ],
   providers: [ConfirmationService, MessageService],
@@ -77,12 +79,15 @@ import { DividerModule } from 'primeng/divider';
       icon="pi pi-exclamation-triangle" 
       acceptButtonStyleClass="p-button-danger" 
       acceptIcon="pi pi-trash"
-      rejectButtonStyleClass="p-button-secondary">
+      rejectButtonStyleClass="p-button-secondary"
+      [style]="{width: '50vw', 'max-width': '600px'}">
     </p-confirmDialog>
 
-    <div class="vessel-list-container">
-      <div class="flex justify-content-between align-items-center mb-3">
-        <h4>Vessels</h4>
+    <!-- Vessel List View -->
+    @if (!vesselDialogVisible) {
+      <div class="vessel-list-container">
+        <div class="flex justify-content-between align-items-center mb-3">
+          <h4>Vessels</h4>
         <div class="flex gap-2 align-items-center">
           <p-iconField iconPosition="left">
             <p-inputIcon>
@@ -93,7 +98,7 @@ import { DividerModule } from 'primeng/divider';
               pInputText 
               placeholder="Search by vessel name..." 
               [ngModel]="searchTerm()"
-              (ngModelChange)="searchTerm.set($event)"
+              (ngModelChange)="onSearchChange($event)"
               class="search-input"
             />
           </p-iconField>
@@ -128,7 +133,6 @@ import { DividerModule } from 'primeng/divider';
             <th pSortableColumn="type" style="width: 15%">Type <p-sortIcon field="type"></p-sortIcon></th>
             <th pSortableColumn="last_seen" style="width: 20%">Last Seen <p-sortIcon field="last_seen"></p-sortIcon></th>
             <th pSortableColumn="enabled" style="width: 10%">Enabled <p-sortIcon field="enabled"></p-sortIcon></th>
-            <th style="width: 25%">Actions</th>
           </tr>
         </ng-template>
 
@@ -150,32 +154,12 @@ import { DividerModule } from 'primeng/divider';
                 {{ vessel.enabled ? 'Yes' : 'No' }}
               </span>
             </td>
-            <td class="actions-column" (click)="$event.stopPropagation()">
-              <p-button 
-                label="View" 
-                icon="pi pi-eye" 
-                styleClass="p-button-text p-button-sm" 
-                (onClick)="openViewDialog(vessel)">
-              </p-button>
-              <p-button 
-                label="Edit" 
-                icon="pi pi-pencil" 
-                styleClass="p-button-text p-button-sm" 
-                (onClick)="openEditDialog(vessel)">
-              </p-button>
-              <p-button 
-                label="Delete" 
-                icon="pi pi-trash" 
-                styleClass="p-button-text p-button-sm" 
-                (onClick)="confirmDelete(vessel)">
-              </p-button>
-            </td>
           </tr>
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="6" class="text-center p-4">
+            <td colspan="5" class="text-center p-4">
               @if (!loading() && !error() && searchTerm()) {
                 No vessels found matching "{{ searchTerm() }}".
               } @else if (!loading() && !error()) {
@@ -196,141 +180,195 @@ import { DividerModule } from 'primeng/divider';
               <td><p-skeleton></p-skeleton></td>
               <td><p-skeleton></p-skeleton></td>
               <td><p-skeleton></p-skeleton></td>
-              <td><p-skeleton></p-skeleton></td>
-              <td><p-skeleton></p-skeleton></td>
             </tr>
           }
         </ng-template>
       </p-table>
-    </div>
+      </div>
+    }
 
-    <!-- View Dialog -->
-    <p-dialog
-      [(visible)]="viewDialogVisible"
-      [style]="{width: '80vw', 'max-width': '900px'}"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="false"
-      [closeOnEscape]="true"
-      [closable]="true"
-      header="View Vessel"
-      (onHide)="closeViewDialog()"
-    >
-      @if (selectedVessel()) {
-        <div class="view-dialog-content">
-          <!-- Basic Information Section -->
-          <div class="grid">
-            <div class="col-12 md:col-6">
-              <div class="detail-item">
-                <span class="detail-label">ID:</span>
-                <span class="detail-value">{{ selectedVessel()?.id }}</span>
-              </div>
-            </div>
-
-            <div class="col-12 md:col-6">
-              <div class="detail-item">
-                <span class="detail-label">Name:</span>
-                <span class="detail-value">{{ selectedVessel()?.name }}</span>
-              </div>
-            </div>
-
-            <div class="col-12 md:col-6">
-              <div class="detail-item">
-                <span class="detail-label">Type:</span>
-                <span [class]="selectedVessel()?.type === 'Canoe' ? 'type-badge type-cannoo' : 'type-badge type-vessel'">
-                  {{ selectedVessel()?.type }}
-                </span>
-              </div>
-            </div>
-
-            <div class="col-12 md:col-6">
-              <div class="detail-item">
-                <span class="detail-label">Enabled:</span>
-                <span [class]="selectedVessel()?.enabled ? 'status-badge status-enabled' : 'status-badge status-disabled'">
-                  {{ selectedVessel()?.enabled ? 'Yes' : 'No' }}
-                </span>
-              </div>
-            </div>
-
-            <div class="col-12">
-              <div class="detail-item">
-                <span class="detail-label">Created:</span>
-                <span class="detail-value">{{ selectedVessel()?.created | date:'dd/MM/yyyy HH:mm:ss' }}</span>
-              </div>
-            </div>
+    <!-- Vessel Details View -->
+    @if (vesselDialogVisible && selectedVessel()) {
+      <div class="vessel-details-container">
+        <!-- Header with Back Button -->
+        <div class="vessel-details-header">
+          <div class="mb-3">
+            <p-button 
+              label="Back to Vessels" 
+              icon="pi pi-arrow-left" 
+              styleClass="p-button-secondary" 
+              (onClick)="closeVesselDialog()">
+            </p-button>
           </div>
+          <h4 class="mb-3">{{ selectedVessel()?.name }} ({{ selectedVessel()?.type }})</h4>
+        </div>
+      @if (selectedVessel()) {
+        <p-tabView [(activeIndex)]="activeTabIndex" (onChange)="onTabChange($event)" styleClass="vessel-tabs">
+          <!-- Info Tab -->
+          <p-tabPanel header="Info" leftIcon="pi pi-info-circle">
+            <div class="view-dialog-content">
+              <!-- Basic Information Section -->
+              <div class="vessel-info-section">
+                <h5 class="section-title">Vessel Information</h5>
+            <form [formGroup]="vesselForm" class="vessel-details-form">
+              <div class="info-rows">
+                <!-- Name with rename button -->
+                <div class="info-row">
+                  <label class="field-label">Name</label>
+                  <div class="field-content">
+                    <input 
+                      type="text" 
+                      pInputText 
+                      formControlName="name" 
+                      class="field-input"
+                      placeholder="Enter vessel name"
+                    />
+                    <p-button 
+                      label="Rename" 
+                      styleClass="p-button-sm"
+                      (onClick)="saveName()"
+                      [loading]="savingName()"
+                    ></p-button>
+                    @if (nameUpdateStatus() === 'success') {
+                      <i class="pi pi-check status-icon success-icon"></i>
+                    } @else if (nameUpdateStatus() === 'error') {
+                      <i class="pi pi-times status-icon error-icon"></i>
+                    }
+                  </div>
+                </div>
 
-          <p-divider></p-divider>
+                <!-- Type -->
+                <div class="info-row">
+                  <label for="vessel-type" class="field-label">Type</label>
+                  <div class="field-content">
+                    <p-dropdown
+                      id="vessel-type"
+                      formControlName="type"
+                      [options]="vesselTypes"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Select type"
+                      class="inline-dropdown"
+                      (onChange)="updateType()"
+                    ></p-dropdown>
+                    @if (typeUpdateStatus() === 'saving') {
+                      <p-progressSpinner styleClass="status-spinner"></p-progressSpinner>
+                    } @else if (typeUpdateStatus() === 'success') {
+                      <i class="pi pi-check status-icon success-icon"></i>
+                    } @else if (typeUpdateStatus() === 'error') {
+                      <i class="pi pi-times status-icon error-icon"></i>
+                    }
+                  </div>
+                </div>
 
-          <!-- Device Token Management Section -->
-          <div class="device-token-section">
-            <div class="device-token-header">
-              <h5>Device Tokens</h5>
+                <!-- Status -->
+                <div class="info-row">
+                  <label for="vessel-enabled" class="field-label">Status</label>
+                  <div class="field-content">
+                    <div class="checkbox-wrapper">
+                      <p-checkbox
+                        id="vessel-enabled"
+                        formControlName="enabled"
+                        [binary]="true"
+                        (onChange)="updateEnabled()"
+                      ></p-checkbox>
+                      <label for="vessel-enabled" class="checkbox-label">Enabled</label>
+                    </div>
+                    @if (enabledUpdateStatus() === 'saving') {
+                      <p-progressSpinner styleClass="status-spinner"></p-progressSpinner>
+                    } @else if (enabledUpdateStatus() === 'success') {
+                      <i class="pi pi-check status-icon success-icon"></i>
+                    } @else if (enabledUpdateStatus() === 'error') {
+                      <i class="pi pi-times status-icon error-icon"></i>
+                    }
+                  </div>
+                </div>
+
+                <!-- Created -->
+                <div class="info-row">
+                  <label class="field-label">Created</label>
+                  <div class="field-content">
+                    <span class="field-value readonly">{{ selectedVessel()?.created | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+            </div>
+          </p-tabPanel>
+          
+          <!-- Device Tab -->
+          <p-tabPanel header="Device" leftIcon="pi pi-mobile">
+            <div class="view-dialog-content">
+              <!-- Device Management Section -->
+              <div class="device-section">
+            <div class="section-header">
+              <h5 class="section-title">Devices</h5>
               <p-button 
-                label="Create Device Token" 
+                label="Add Device" 
                 icon="pi pi-plus" 
-                styleClass="p-button-sm p-button-success"
-                (onClick)="createDeviceToken()"
-                [disabled]="loadingDeviceTokens()"
+                styleClass="p-button-success action-button"
+                (onClick)="createDevice()"
+                [disabled]="loadingDevices()"
               ></p-button>
             </div>
             
-            @if (loadingDeviceTokens()) {
+            @if (loadingDevices()) {
               <div class="text-center">
                 <p-progressSpinner styleClass="w-4rem h-4rem"></p-progressSpinner>
               </div>
-            } @else if (deviceTokens().length === 0) {
-              <div class="no-tokens-message">
+            } @else if (devices().length === 0) {
+              <div class="no-devices-message">
                 <i class="pi pi-mobile"></i>
-                <p>No device tokens created yet.</p>
-                <p class="text-muted">Create a device token to allow mobile devices to report vessel positions.</p>
+                <p>No devices created yet.</p>
+                <p class="text-muted">Create a device to allow mobile devices to report vessel positions.</p>
               </div>
             } @else {
-              <div class="device-tokens-list">
-                @for (token of deviceTokens(); track token.device_id) {
+              <div class="devices-list">
+                @for (device of devices(); track device.device_id) {
                   <p-card>
-                    <div class="token-info">
-                      <div class="token-row">
-                        <span class="token-label">Status:</span>
+                    <div class="device-info">
+                      <div class="device-row">
+                        <span class="device-label">Status:</span>
                         <span 
-                          class="token-status"
-                          [ngClass]="getTokenStatusClass(token)"
+                          class="device-status"
+                          [ngClass]="getDeviceStatusClass(device)"
                         >
-                          {{ getTokenStatus(token) }}
+                          {{ getDeviceStatus(device) }}
                         </span>
-                        @if (!isTokenExpired(token) && !token.is_activated) {
+                        @if (!isDeviceExpired(device) && !device.is_activated) {
                           <span class="time-remaining ml-2">
-                            Expires {{ token.expires_at | date:'dd/MM/yyyy HH:mm' }}
+                            Expires {{ device.expires_at | date:'dd/MM/yyyy HH:mm' }}
                           </span>
                         }
                       </div>
                       
-                      <div class="token-row">
-                        <span class="token-label">Device ID:</span>
-                        <span class="detail-value font-mono">{{ token.device_id }}</span>
+                      <div class="device-row">
+                        <span class="device-label">Device ID:</span>
+                        <span class="detail-value font-mono">{{ device.device_id }}</span>
                       </div>
                       
-                      @if (!token.is_activated && !isTokenExpired(token)) {
-                        <div class="token-row activation-url-row">
-                          <span class="token-label">Simple Link:</span>
+                      @if (!device.is_activated && !isDeviceExpired(device)) {
+                        <div class="device-row activation-url-row">
+                          <span class="device-label">Activation Link:</span>
                           <div class="url-container">
                             <input 
                               type="text" 
                               class="url-input" 
-                              [value]="getPublicActivationUrl(token)" 
+                              [value]="getPublicActivationUrl(device)" 
                               readonly
                             />
                             <p-button 
                               icon="pi pi-copy" 
                               styleClass="p-button-sm p-button-outlined"
-                              (onClick)="copyToClipboard(getPublicActivationUrl(token))"
-                              pTooltip="Copy simple activation link"
+                              (onClick)="copyToClipboard(getPublicActivationUrl(device))"
+                              pTooltip="Copy activation link"
                             ></p-button>
                             <a 
-                              [href]="getPublicActivationUrl(token)"
+                              [href]="getPublicActivationUrl(device)"
                               target="_blank"
                               class="activation-link-button"
-                              pTooltip="Open simple activation page"
+                              pTooltip="Open activation page"
                             >
                               <p-button 
                                 icon="pi pi-external-link" 
@@ -340,109 +378,115 @@ import { DividerModule } from 'primeng/divider';
                             </a>
                           </div>
                         </div>
-                        
-                        <div class="token-row">
-                          <span class="token-label">App URL:</span>
-                          <div class="url-container">
-                            <input 
-                              type="text" 
-                              class="url-input" 
-                              [value]="getActivationUrl(token)" 
-                              readonly
-                            />
-                            <p-button 
-                              icon="pi pi-copy" 
-                              styleClass="p-button-sm p-button-outlined"
-                              (onClick)="copyToClipboard(getActivationUrl(token))"
-                              pTooltip="Copy direct app activation URL"
-                            ></p-button>
-                          </div>
+                      }
+                      
+                      @if (device.is_activated && device.activated_at) {
+                        <div class="device-row">
+                          <span class="device-label">Activated:</span>
+                          <span class="detail-value">{{ device.activated_at | date:'dd/MM/yyyy HH:mm:ss' }}</span>
                         </div>
                       }
                       
-                      @if (token.is_activated && token.activated_at) {
-                        <div class="token-row">
-                          <span class="token-label">Activated:</span>
-                          <span class="detail-value">{{ token.activated_at | date:'dd/MM/yyyy HH:mm:ss' }}</span>
-                        </div>
-                      }
-                      
-                      <div class="token-actions">
-                        @if (!isTokenExpired(token)) {
+                      <div class="device-actions">
+                        @if (!isDeviceExpired(device)) {
                           <p-button 
                             label="Regenerate" 
                             icon="pi pi-refresh" 
                             styleClass="p-button-sm p-button-warning"
-                            (onClick)="regenerateToken(token)"
-                            [disabled]="loadingDeviceTokens()"
+                            (onClick)="regenerateDevice(device)"
+                            [disabled]="loadingDevices()"
                           ></p-button>
                         }
                         <p-button 
                           label="Delete" 
                           icon="pi pi-trash" 
                           styleClass="p-button-sm p-button-danger"
-                          (onClick)="deleteDeviceToken(token)"
-                          [disabled]="loadingDeviceTokens()"
+                          (onClick)="deleteDevice(device)"
+                          [disabled]="loadingDevices()"
                         ></p-button>
                       </div>
                     </div>
                   </p-card>
                 }
               </div>
-            }
-          </div>
-
-          <p-divider></p-divider>
-
-          <!-- Position Information Section -->
-          <h5>Position Information</h5>
-          <div class="grid">
-            <div class="col-12 md:col-6">
-              <div class="detail-item">
-                <span class="detail-label">Last Report:</span>
-                <span class="detail-value">
-                  {{ selectedVessel()?.last_seen | date:'dd/MM/yyyy HH:mm:ss' }}
-                  <span class="text-muted"> ({{ selectedVessel()?.last_seen | timeAgo }})</span>
-                </span>
+              }
               </div>
             </div>
+          </p-tabPanel>
+          
+          <!-- Track Tab -->
+          <p-tabPanel header="Track" leftIcon="pi pi-map-marker">
+            <div class="tracking-dialog-content">
+              <!-- Tracking Header with Key Info -->
+              <div class="tracking-header">
+                <div class="vessel-summary">
+                  <div class="vessel-title">
+                    <h4>{{ selectedVessel()?.name }}</h4>
+                    <span class="vessel-type-badge" [class.type-canoe]="selectedVessel()?.type === 'Canoe'" [class.type-vessel]="selectedVessel()?.type === 'Vessel'">
+                      {{ selectedVessel()?.type }}
+                    </span>
+                  </div>
+                  <div class="tracking-stats">
+                    <div class="stat-item">
+                      <span class="stat-label">Last Report:</span>
+                      <span class="stat-value">
+                        {{ selectedVessel()?.last_seen | date:'dd/MM/yyyy HH:mm:ss' }}
+                        <span class="time-ago">({{ selectedVessel()?.last_seen | timeAgo }})</span>
+                      </span>
+                    </div>
+                    <div class="stat-item">
+                      <span class="stat-label">Coordinates:</span>
+                      <span class="stat-value coordinates">
+                        {{ selectedVessel()?.last_position?.latitude?.toFixed(6) || 'N/A' }}, 
+                        {{ selectedVessel()?.last_position?.longitude?.toFixed(6) || 'N/A' }}
+                      </span>
+                    </div>
+                    <div class="stat-item">
+                      <p-button 
+                        label="Show Nearby Vessels" 
+                        icon="pi pi-map-marker" 
+                        styleClass="p-button-secondary action-button"
+                        (onClick)="openNearbyDialog()"
+                        [badge]="nearbyVessels().length > 0 ? nearbyVessels().length.toString() : undefined"
+                      ></p-button>
+                      <span class="nearby-info">Within {{ NEARBY_RADIUS_KM }}km in last {{ NEARBY_TIME_WINDOW_DAYS }} days</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            <div class="col-12 md:col-6">
-              <div class="detail-item">
-                <span class="detail-label">Coordinates:</span>
-                <span class="detail-value">
-                  {{ selectedVessel()?.last_position?.latitude?.toFixed(6) || 'N/A' }}, 
-                  {{ selectedVessel()?.last_position?.longitude?.toFixed(6) || 'N/A' }}
-                </span>
+              <!-- Map Container -->
+              <div class="tracking-map-container">
+                <div #trackingMapContainer class="tracking-map"></div>
               </div>
             </div>
-
-            <div class="col-12">
-              <div class="mb-3">
-                <p-button 
-                  label="Show Nearby Vessels" 
-                  icon="pi pi-map-marker" 
-                  styleClass="p-button-secondary p-button-sm"
-                  (onClick)="openNearbyDialog()"
-                  [badge]="nearbyVessels().length > 0 ? nearbyVessels().length.toString() : undefined"
-                ></p-button>
-                <span class="ml-2 text-muted">Within {{ NEARBY_RADIUS_KM }}km in last {{ NEARBY_TIME_WINDOW_DAYS }} days</span>
+          </p-tabPanel>
+          
+          <!-- Danger Zone Tab -->
+          <p-tabPanel header="Danger Zone" leftIcon="pi pi-exclamation-triangle">
+            <div class="view-dialog-content">
+              <div class="danger-zone-section">
+                <h5 class="section-title danger-zone-title">Danger Zone</h5>
+                <div class="danger-zone">
+                  <p class="danger-zone-description">
+                    Permanently delete this vessel and all associated data. This action cannot be undone.
+                  </p>
+                  <p-button 
+                    label="Delete Vessel Permanently" 
+                    icon="pi pi-trash" 
+                    styleClass="p-button-danger action-button" 
+                    (onClick)="confirmDelete(selectedVessel()!)">
+                  </p-button>
+                </div>
               </div>
-              <div #mapContainer class="map-container"></div>
             </div>
-          </div>
-        </div>
+          </p-tabPanel>
+        </p-tabView>
       }
+      </div>
+    }
 
-      <ng-template pTemplate="footer">
-        <div class="flex justify-content-between">
-          <p-button label="Back to List" icon="pi pi-arrow-left" styleClass="p-button-secondary" (onClick)="closeViewDialog()"></p-button>
-          <p-button label="Edit" icon="pi pi-pencil" styleClass="p-button-success" (onClick)="openEditDialog(selectedVessel())"></p-button>
-        </div>
-      </ng-template>
-    </p-dialog>
-
-    <!-- Edit/Create Dialog -->
+    <!-- Create Dialog (for new vessels only) -->
     <p-dialog
       [(visible)]="formDialogVisible"
       [style]="{width: '70vw', 'max-width': '800px'}"
@@ -451,7 +495,7 @@ import { DividerModule } from 'primeng/divider';
       [resizable]="false"
       [closeOnEscape]="true"
       [closable]="true"
-      [header]="isEditMode() ? 'Edit Vessel' : 'Create New Vessel'"
+      header="Create New Vessel"
       (onHide)="closeFormDialog()"
     >
       <form [formGroup]="vesselForm" class="form-container">
@@ -491,7 +535,6 @@ import { DividerModule } from 'primeng/divider';
           }
         </div>
 
-
         <div class="form-group">
           <label for="enabled" class="form-label">Status</label>
           <div class="p-field-checkbox">
@@ -508,7 +551,7 @@ import { DividerModule } from 'primeng/divider';
       <ng-template pTemplate="footer">
         <p-button
           icon="pi pi-save"
-          label="Save"
+          label="Create"
           styleClass="p-button-success mr-2"
           (onClick)="saveVessel()"
           [disabled]="vesselForm.invalid || saving()"
@@ -523,6 +566,7 @@ import { DividerModule } from 'primeng/divider';
         ></p-button>
       </ng-template>
     </p-dialog>
+
 
     <!-- Nearby Vessels Dialog -->
     <p-dialog
@@ -568,12 +612,16 @@ import { DividerModule } from 'primeng/divider';
                   </div>
                   <div class="vessel-info-row">
                     <i class="pi pi-compass"></i>
-                    <span>{{ calculateDistance(
-                      selectedVessel()!.last_position!.latitude,
-                      selectedVessel()!.last_position!.longitude,
-                      vessel.last_position!.latitude,
-                      vessel.last_position!.longitude
-                    ).toFixed(1) }} km away</span>
+                    @if (selectedVessel()?.last_position?.latitude && selectedVessel()?.last_position?.longitude && vessel.last_position?.latitude && vessel.last_position?.longitude) {
+                      <span>{{ calculateDistance(
+                        selectedVessel()!.last_position!.latitude,
+                        selectedVessel()!.last_position!.longitude,
+                        vessel.last_position!.latitude,
+                        vessel.last_position!.longitude
+                      ).toFixed(1) }} km away</span>
+                    } @else {
+                      <span>Distance unavailable</span>
+                    }
                   </div>
                 </div>
               }
@@ -593,7 +641,9 @@ import { DividerModule } from 'primeng/divider';
   `,
   styles: [`
     :host { display: block; }
-    .vessel-list-container { margin-top: 1rem; }
+    .vessel-list-container { margin-top: 0; }
+    .vessel-details-container { margin-top: 0; }
+    .vessel-details-header { margin-top: 0; }
     .font-mono { font-family: monospace; background-color: var(--surface-100); padding: 0.1rem 0.3rem; border-radius: 3px; }
     
     /* PrimeNG datatable styling */
@@ -671,6 +721,7 @@ import { DividerModule } from 'primeng/divider';
       flex-shrink: 0;
     }
     .detail-value {
+      font-size: 0.875rem;
       word-break: break-word;
     }
 
@@ -802,60 +853,61 @@ import { DividerModule } from 'primeng/divider';
     .mb-3 { margin-bottom: 1rem; }
     .mt-3 { margin-top: 1rem; }
     
-    /* Device Token Styles */
-    .device-token-section {
+    /* Device Styles */
+    .device-section {
       margin-top: 1rem;
     }
     
-    .device-token-header {
+    .device-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
     }
     
-    .device-tokens-list {
+    .devices-list {
       display: flex;
       flex-direction: column;
       gap: 1rem;
     }
     
-    .token-info {
+    .device-info {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
     }
     
-    .token-row {
+    .device-row {
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
     
-    .token-label {
+    .device-label {
       font-weight: 600;
+      font-size: 0.875rem;
       min-width: 80px;
       flex-shrink: 0;
     }
     
-    .token-status {
+    .device-status {
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
       font-size: 0.8rem;
       font-weight: 600;
     }
     
-    .token-status.pending {
+    .device-status.pending {
       background-color: var(--orange-100);
       color: var(--orange-700);
     }
     
-    .token-status.activated {
+    .device-status.activated {
       background-color: var(--green-100);
       color: var(--green-700);
     }
     
-    .token-status.expired {
+    .device-status.expired {
       background-color: var(--red-100);
       color: var(--red-700);
     }
@@ -874,14 +926,15 @@ import { DividerModule } from 'primeng/divider';
     .url-input {
       flex: 1;
       padding: 0.5rem;
-      border: 1px solid var(--surface-300);
+      border: 1px solid var(--surface-border);
       border-radius: 4px;
       font-family: monospace;
       font-size: 0.9rem;
-      background: var(--surface-100);
+      background: var(--surface-ground);
+      color: var(--text-color);
     }
     
-    .token-actions {
+    .device-actions {
       display: flex;
       gap: 0.5rem;
       margin-top: 0.5rem;
@@ -892,15 +945,15 @@ import { DividerModule } from 'primeng/divider';
       opacity: 0.7;
     }
     
-    .no-tokens-message {
+    .no-devices-message {
       text-align: center;
       padding: 2rem;
       color: var(--text-color-secondary);
-      background: var(--surface-100);
+      background: var(--surface-ground);
       border-radius: 4px;
     }
     
-    .no-tokens-message i {
+    .no-devices-message i {
       font-size: 2rem;
       margin-bottom: 0.5rem;
       display: block;
@@ -917,13 +970,367 @@ import { DividerModule } from 'primeng/divider';
       background-color: var(--surface-100) !important;
     }
     
-    .actions-column {
-      cursor: default !important;
-    }
-    
     .activation-link-button {
       text-decoration: none;
       margin-left: 0.5rem;
+    }
+    
+    /* Dialog footer styles */
+    :host ::ng-deep .p-dialog-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--surface-300);
+    }
+    
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      width: 100%;
+    }
+    
+    .footer-right {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+    
+    /* Consistent button styling */
+    .action-button {
+      height: 40px;
+      padding: 0 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    
+    /* Section styling */
+    .vessel-info-section,
+    .device-section,
+    .position-section {
+      margin-bottom: 1.5rem;
+    }
+    
+    .section-title {
+      margin: 0 0 1rem 0;
+      color: var(--text-color);
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    /* Info rows layout */
+    .info-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .info-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .field-label {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--text-color);
+      min-width: 80px;
+      flex-shrink: 0;
+    }
+    
+    .field-content {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+    }
+    
+    .field-value {
+      font-size: 0.875rem;
+      color: var(--text-color);
+    }
+    
+    .field-value.readonly {
+      color: var(--text-color-secondary);
+      font-style: italic;
+    }
+    
+    /* Field input styles */
+    .field-input {
+      width: 200px;
+      height: 32px;
+      padding: 0 0.5rem;
+      border: 1px solid var(--surface-border);
+      border-radius: 4px;
+      background: var(--surface-card);
+      color: var(--text-color);
+      font-size: 0.875rem;
+    }
+    
+    .field-input:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px var(--primary-color-transparent);
+      outline: none;
+    }
+    
+    .inline-dropdown {
+      flex: 1;
+      max-width: 200px;
+    }
+    
+    :host ::ng-deep .inline-dropdown .p-dropdown {
+      height: 32px;
+      width: 100%;
+    }
+    
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .checkbox-label {
+      font-size: 0.875rem;
+      color: var(--text-color);
+      margin: 0;
+    }
+    
+    /* Status indicators */
+    .status-icon {
+      font-size: 1rem;
+      margin-left: 0.5rem;
+    }
+    
+    .success-icon {
+      color: var(--green-500);
+    }
+    
+    .error-icon {
+      color: var(--red-500);
+    }
+    
+    .status-spinner {
+      width: 16px !important;
+      height: 16px !important;
+      margin-left: 0.5rem;
+    }
+    
+    :host ::ng-deep .status-spinner .p-progress-spinner-circle {
+      stroke-width: 4;
+    }
+    
+    /* Tracking Dialog Styles */
+    .tracking-dialog-content {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .tracking-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--surface-300);
+      background: var(--surface-50);
+    }
+    
+    .vessel-summary {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .vessel-title {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .vessel-title h4 {
+      margin: 0;
+      color: var(--text-color);
+      font-size: 1.5rem;
+    }
+    
+    .vessel-type-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+    
+    .vessel-type-badge.type-canoe {
+      background: var(--blue-100);
+      color: var(--blue-700);
+    }
+    
+    .vessel-type-badge.type-vessel {
+      background: var(--orange-100);
+      color: var(--orange-700);
+    }
+    
+    .tracking-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      align-items: center;
+    }
+    
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    
+    .stat-item:last-child {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .stat-label {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--text-color-secondary);
+    }
+    
+    .stat-value {
+      font-size: 1rem;
+      color: var(--text-color);
+    }
+    
+    .coordinates {
+      font-family: monospace;
+      background: var(--surface-ground);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      color: var(--text-color);
+    }
+    
+    .time-ago {
+      color: var(--text-color-secondary);
+      font-size: 0.875rem;
+    }
+    
+    .nearby-info {
+      color: var(--text-color-secondary);
+      font-size: 0.875rem;
+    }
+    
+    .tracking-map-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .tracking-map {
+      width: 100%;
+      height: 100%;
+      min-height: 500px;
+    }
+
+    /* Danger Zone Styles */
+    .danger-zone-section {
+      margin-bottom: 1.5rem;
+    }
+    
+    .danger-zone {
+      padding: 1rem;
+      border: 1px solid var(--red-400);
+      border-radius: 8px;
+      background: var(--red-50);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .danger-zone-title {
+      color: var(--red-700);
+    }
+    
+    .danger-zone-description {
+      margin: 0;
+      color: var(--red-600);
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
+    
+    /* Dark mode adjustments for danger zone */
+    @media (prefers-color-scheme: dark) {
+      .danger-zone {
+        background: rgba(var(--red-500-rgb), 0.1);
+        border-color: var(--red-400);
+      }
+      
+      .danger-zone-title {
+        color: var(--red-400);
+      }
+      
+      .danger-zone-description {
+        color: var(--red-300);
+      }
+    }
+
+    /* Confirm dialog size */
+    :host ::ng-deep .p-confirmdialog {
+      width: 50vw !important;
+      max-width: 600px !important;
+    }
+    
+    :host ::ng-deep .p-confirmdialog .p-dialog-content {
+      white-space: pre-line;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    
+    /* Tab Styles */
+    .vessel-tabs {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    :host ::ng-deep .vessel-tabs .p-tabview-nav {
+      border-bottom: 2px solid var(--surface-300);
+      background: var(--surface-50);
+      padding: 0;
+    }
+    
+    :host ::ng-deep .vessel-tabs .p-tabview-panels {
+      flex: 1;
+      overflow: hidden;
+      padding: 0;
+    }
+    
+    :host ::ng-deep .vessel-tabs .p-tabview-panel {
+      height: 100%;
+      overflow: auto;
+      padding: 0;
+    }
+    
+    /* Tab content padding */
+    .vessel-tabs .view-dialog-content {
+      padding: 1.5rem;
+      height: 100%;
+      overflow: auto;
+    }
+    
+    /* Track tab special handling */
+    .vessel-tabs .tracking-dialog-content {
+      height: 100%;
+      overflow: hidden;
+      padding: 0;
     }
   `]
 })
@@ -932,10 +1339,11 @@ export class VesselListComponent implements OnInit {
   readonly NEARBY_RADIUS_KM = 100; // Distance in kilometers
   readonly NEARBY_TIME_WINDOW_DAYS = 31; // Time window in days
   
-  @ViewChild('mapContainer') mapContainer!: ElementRef<HTMLDivElement>;
   @ViewChild('nearbyMapContainer') nearbyMapContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('trackingMapContainer') trackingMapContainer!: ElementRef<HTMLDivElement>;
   private map: any;
   private nearbyMap: any;
+  private trackingMap: any;
   private marker: any;
   private maplibregl: any;
   private nearbyMarkers: any[] = [];
@@ -956,25 +1364,37 @@ export class VesselListComponent implements OnInit {
   // Computed signal for filtered datasets
   filteredDatasets = computed(() => {
     const term = this.searchTerm().toLowerCase().trim();
+    const allVessels = this.datasets();
+    console.log('Search term:', term, 'Total vessels:', allVessels.length);
+    
     if (!term) {
-      return this.datasets();
+      return allVessels;
     }
-    return this.datasets().filter(vessel => 
+    
+    const filtered = allVessels.filter(vessel => 
       vessel.name?.toLowerCase().includes(term)
     );
+    console.log('Filtered vessels:', filtered.length);
+    return filtered;
   });
 
   // Dialog control properties
-  viewDialogVisible = false;
+  vesselDialogVisible = false;
   formDialogVisible = false;
   nearbyDialogVisible = false;
+  activeTabIndex = 0; // 0 for info, 1 for device, 2 for track, 3 for danger zone
 
   // Other signals
-  isEditMode = signal<boolean>(false);
   selectedVessel = signal<VesselDataset | null>(null);
   nearbyVessels = signal<VesselDataset[]>([]);
-  deviceTokens = signal<DeviceToken[]>([]);
-  loadingDeviceTokens = signal<boolean>(false);
+  devices = signal<Device[]>([]);
+  loadingDevices = signal<boolean>(false);
+  
+  // Real-time editing signals
+  savingName = signal<boolean>(false);
+  nameUpdateStatus = signal<'idle' | 'saving' | 'success' | 'error'>('idle');
+  typeUpdateStatus = signal<'idle' | 'saving' | 'success' | 'error'>('idle');
+  enabledUpdateStatus = signal<'idle' | 'saving' | 'success' | 'error'>('idle');
 
   // Dropdown options
   vesselTypes = [
@@ -995,6 +1415,11 @@ export class VesselListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadVessels();
+  }
+
+  onSearchChange(value: string): void {
+    console.log('Search input changed:', value);
+    this.searchTerm.set(value);
   }
 
   loadVessels(): void {
@@ -1023,13 +1448,26 @@ export class VesselListComponent implements OnInit {
     });
   }
 
-  // --- View Dialog Methods ---
+  // --- Vessel Dialog Methods ---
   openViewDialog(vessel: VesselDataset): void {
     this.selectedVessel.set(vessel);
-    this.viewDialogVisible = true;
     
-    // Load device tokens for this vessel
-    this.loadDeviceTokens(vessel.id);
+    // Initialize the form with vessel data
+    const formData = {
+      name: vessel.name || '',
+      type: vessel.type,
+      enabled: vessel.enabled
+    };
+    this.vesselForm.patchValue(formData);
+    
+    this.activeTabIndex = 0; // Open on vessel info tab
+    this.vesselDialogVisible = true;
+    
+    // Load devices for this vessel
+    this.loadDevices(vessel.id);
+    
+    // Find nearby vessels
+    this.findNearbyVessels();
     
     // Initialize map after dialog is shown
     setTimeout(() => {
@@ -1037,19 +1475,29 @@ export class VesselListComponent implements OnInit {
     }, 100);
   }
 
-  closeViewDialog(): void {
-    this.viewDialogVisible = false;
+  closeVesselDialog(): void {
+    this.vesselDialogVisible = false;
+    this.selectedVessel.set(null);
     
-    // Clean up map
+    // Reset editing states
+    this.savingName.set(false);
+    this.nameUpdateStatus.set('idle');
+    this.typeUpdateStatus.set('idle');
+    this.enabledUpdateStatus.set('idle');
+    
+    // Clean up maps
     if (this.map) {
       this.map.remove();
       this.map = null;
+    }
+    if (this.trackingMap) {
+      this.trackingMap.remove();
+      this.trackingMap = null;
     }
   }
 
   // --- Form Dialog Methods ---
   openNewDialog(): void {
-    this.isEditMode.set(false);
     this.selectedVessel.set(null);
     this.vesselForm.reset({
       name: '',
@@ -1059,29 +1507,12 @@ export class VesselListComponent implements OnInit {
     this.formDialogVisible = true;
   }
 
-  openEditDialog(vessel: VesselDataset | null): void {
-    if (!vessel) return;
-
-    this.isEditMode.set(true);
-    this.selectedVessel.set(vessel);
-    this.vesselForm.patchValue({
-      name: vessel.name || '',
-      type: vessel.type,
-      enabled: vessel.enabled
-    });
-    this.formDialogVisible = true;
-
-    if (this.viewDialogVisible) {
-      this.viewDialogVisible = false;
-    }
-  }
 
   closeFormDialog(): void {
     this.formDialogVisible = false;
-    this.selectedVessel.set(null);
   }
 
-  // --- Save Data Method ---
+  // --- Save Data Method (for new vessels only) ---
   saveVessel(): void {
     if (this.vesselForm.invalid) {
       this.vesselForm.markAllAsTouched();
@@ -1104,85 +1535,47 @@ export class VesselListComponent implements OnInit {
       enabled: formValue.enabled
     };
 
-    if (this.isEditMode() && this.selectedVessel()) {
-      const vesselId = this.selectedVessel()?.id;
-
-      if (vesselId) {
-        this.vesselDatasetService.update(vesselId, vesselData).subscribe({
-          next: (updatedData) => {
-            console.log('Vessel updated:', updatedData);
-            this.datasets.update(currentDatasets =>
-              currentDatasets.map(item =>
-                item.id === updatedData.id ? updatedData : item
-              )
-            );
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Success',
-              detail: 'Vessel updated successfully',
-              life: 3000
-            });
-            this.closeFormDialog();
-          },
-          error: (err) => {
-            console.error('Error updating vessel:', err);
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Update Error',
-              detail: err.error?.message || 'Failed to update vessel',
-              life: 5000
-            });
-          },
-          complete: () => {
-            this.saving.set(false);
-          }
+    this.vesselDatasetService.create(vesselData).subscribe({
+      next: (newData) => {
+        console.log('Vessel created:', newData);
+        this.datasets.update(currentDatasets =>
+          [...currentDatasets, newData]
+        );
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Vessel created successfully',
+          life: 3000
         });
-      } else {
-        console.error("Save error: Edit mode is true but vessel ID is missing.");
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Cannot update vessel: ID missing.' });
+        this.closeFormDialog();
+      },
+      error: (err) => {
+        console.error('Error creating vessel:', err);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Create Error',
+          detail: err.error?.message || 'Failed to create vessel',
+          life: 5000
+        });
+      },
+      complete: () => {
         this.saving.set(false);
       }
-    } else {
-      this.vesselDatasetService.create(vesselData).subscribe({
-        next: (newData) => {
-          console.log('Vessel created:', newData);
-          this.datasets.update(currentDatasets =>
-            [...currentDatasets, newData]
-          );
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Vessel created successfully',
-            life: 3000
-          });
-          this.closeFormDialog();
-        },
-        error: (err) => {
-          console.error('Error creating vessel:', err);
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Create Error',
-            detail: err.error?.message || 'Failed to create vessel',
-            life: 5000
-          });
-        },
-        complete: () => {
-          this.saving.set(false);
-        }
-      });
-    }
+    });
   }
 
   // --- Delete Confirmation ---
   confirmDelete(vessel: VesselDataset): void {
     if (!vessel || vessel.id === undefined) return;
 
+    const warningMessage = `Are you sure you want to delete the vessel "${vessel.name}" (ID: ${vessel.id})?<br><br>This will permanently delete:<br><br><ul style="margin: 0; padding-left: 20px;"><li>The vessel record and all its information</li><li>All associated devices and their authentication tokens</li><li>All tracking data and position history</li></ul><br><strong>⚠️ This action cannot be undone and all data will be lost forever.</strong>`;
+
     this.confirmationService.confirm({
-      message: `Are you sure you want to delete the vessel "${vessel.name}" (ID: ${vessel.id})? This action cannot be undone.`,
-      header: 'Confirm Deletion',
+      message: warningMessage,
+      header: 'Delete Vessel - Permanent Action',
       icon: 'pi pi-exclamation-triangle',
       acceptButtonStyleClass: 'p-button-danger',
-      acceptLabel: 'Delete',
+      acceptLabel: 'Delete Permanently',
       rejectLabel: 'Cancel',
       accept: () => this.deleteVessel(vessel.id),
     });
@@ -1198,13 +1591,15 @@ export class VesselListComponent implements OnInit {
         console.log('Vessel deleted:', id);
         this.messageService.add({
           severity: 'success',
-          summary: 'Deleted',
-          detail: 'Vessel deleted successfully',
-          life: 3000
+          summary: 'Vessel Deleted',
+          detail: 'Vessel and all associated data have been permanently deleted',
+          life: 4000
         });
+        
+        // Close the view dialog if we're currently viewing the deleted vessel
         if (this.selectedVessel()?.id === id) {
-            this.selectedVessel.set(null);
-            this.closeViewDialog();
+          this.selectedVessel.set(null);
+          this.closeVesselDialog();
         }
       },
       error: (err) => {
@@ -1212,7 +1607,7 @@ export class VesselListComponent implements OnInit {
         this.messageService.add({
           severity: 'error',
           summary: 'Delete Error',
-          detail: err.error?.message || 'Failed to delete vessel',
+          detail: err.error?.message || 'Failed to delete vessel. Please try again.',
           life: 5000
         });
       },
@@ -1220,6 +1615,43 @@ export class VesselListComponent implements OnInit {
          this.loading.set(false);
       }
     });
+  }
+
+  private async initializeTrackingMap(vessel: VesselDataset): Promise<void> {
+    if (!vessel.last_position?.latitude || !vessel.last_position?.longitude) {
+      return;
+    }
+
+    // Dynamically import MapLibre
+    const maplibregl = await import('maplibre-gl');
+
+    // Initialize tracking map
+    this.trackingMap = new maplibregl.Map({
+      container: this.trackingMapContainer.nativeElement,
+      style: OSM_STYLE as any,
+      center: [vessel.last_position.longitude, vessel.last_position.latitude],
+      zoom: 12
+    });
+
+    // Add navigation controls
+    this.trackingMap.addControl(new maplibregl.NavigationControl());
+
+    // Add marker for vessel position
+    new maplibregl.Marker({
+      color: vessel.type === 'Canoe' ? '#1565C0' : '#E65100'
+    })
+      .setLngLat([vessel.last_position.longitude, vessel.last_position.latitude])
+      .setPopup(
+        new maplibregl.Popup().setHTML(
+          `<strong>${vessel.name}</strong><br/>
+           Type: ${vessel.type}<br/>
+           Last seen: ${new Date(vessel.last_seen).toLocaleString('en-GB', { hour12: false })}`
+        )
+      )
+      .addTo(this.trackingMap);
+
+    // Store maplibregl for later use
+    this.maplibregl = maplibregl;
   }
 
   private async initializeMap(vessel: VesselDataset): Promise<void> {
@@ -1232,7 +1664,7 @@ export class VesselListComponent implements OnInit {
 
     // Initialize map
     this.map = new maplibregl.Map({
-      container: this.mapContainer.nativeElement,
+      container: this.trackingMapContainer.nativeElement,
       style: OSM_STYLE as any,
       center: [vessel.last_position.longitude, vessel.last_position.latitude],
       zoom: 12
@@ -1384,8 +1816,8 @@ export class VesselListComponent implements OnInit {
       if (!vessel.last_position?.latitude || !vessel.last_position?.longitude) return false;
       
       const distance = this.calculateDistance(
-        currentVessel.last_position.latitude,
-        currentVessel.last_position.longitude,
+        currentVessel.last_position!.latitude,
+        currentVessel.last_position!.longitude,
         vessel.last_position.latitude,
         vessel.last_position.longitude
       );
@@ -1413,37 +1845,47 @@ export class VesselListComponent implements OnInit {
     return deg * (Math.PI / 180);
   }
   
-  // Device Token Management Methods
-  loadDeviceTokens(vesselId: number): void {
-    this.loadingDeviceTokens.set(true);
+  // Device Management Methods
+  loadDevices(vesselId: number): void {
+    this.loadingDevices.set(true);
+    console.log(`Loading devices for vessel ID: ${vesselId}`);
     
-    // Call API to get device tokens for this vessel
-    fetch(`/api/device-tokens?vessel_id=${vesselId}`)
-      .then(response => response.json())
-      .then(tokens => {
-        this.deviceTokens.set(tokens);
+    // Call API to get devices for this vessel
+    fetch(`/api/devices?vessel_id=${vesselId}`)
+      .then(response => {
+        console.log(`Device API response status: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(devices => {
+        console.log('Devices loaded:', devices);
+        // Ensure devices is an array
+        this.devices.set(Array.isArray(devices) ? devices : []);
       })
       .catch(error => {
-        console.error('Error loading device tokens:', error);
+        console.error('Error loading devices:', error);
+        this.devices.set([]); // Set empty array on error
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'Failed to load device tokens',
+          detail: `Failed to load devices: ${error.message}`,
           life: 3000
         });
       })
       .finally(() => {
-        this.loadingDeviceTokens.set(false);
+        this.loadingDevices.set(false);
       });
   }
   
-  createDeviceToken(): void {
+  createDevice(): void {
     const vessel = this.selectedVessel();
     if (!vessel) return;
     
-    this.loadingDeviceTokens.set(true);
+    this.loadingDevices.set(true);
     
-    fetch('/api/device-tokens', {
+    fetch('/api/devices', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1453,89 +1895,105 @@ export class VesselListComponent implements OnInit {
         expires_in_days: 3
       })
     })
-      .then(response => response.json())
-      .then(newToken => {
-        this.deviceTokens.update(tokens => [...tokens, newToken]);
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(newDevice => {
+        this.devices.update(devices => [...devices, newDevice]);
         this.messageService.add({
           severity: 'success',
           summary: 'Success',
-          detail: 'Device token created successfully',
+          detail: 'Device created successfully',
           life: 3000
         });
       })
       .catch(error => {
-        console.error('Error creating device token:', error);
+        console.error('Error creating device:', error);
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'Failed to create device token',
+          detail: `Failed to create device: ${error.message}`,
           life: 3000
         });
       })
       .finally(() => {
-        this.loadingDeviceTokens.set(false);
+        this.loadingDevices.set(false);
       });
   }
   
-  regenerateToken(token: DeviceToken): void {
-    this.loadingDeviceTokens.set(true);
+  regenerateDevice(device: Device): void {
+    this.loadingDevices.set(true);
     
-    fetch(`/api/device-tokens/${token.device_id}/regenerate`, {
+    fetch(`/api/devices/${device.device_id}/regenerate`, {
       method: 'POST'
     })
-      .then(response => response.json())
-      .then(updatedToken => {
-        this.deviceTokens.update(tokens => 
-          tokens.map(t => t.device_id === token.device_id ? updatedToken : t)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(updatedDevice => {
+        this.devices.update(devices => 
+          devices.map(d => d.device_id === device.device_id ? updatedDevice : d)
         );
         this.messageService.add({
           severity: 'success',
           summary: 'Success',
-          detail: 'Device token regenerated successfully',
+          detail: 'Device regenerated successfully',
           life: 3000
         });
       })
       .catch(error => {
-        console.error('Error regenerating token:', error);
+        console.error('Error regenerating device:', error);
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'Failed to regenerate token',
+          detail: `Failed to regenerate device: ${error.message}`,
           life: 3000
         });
       })
       .finally(() => {
-        this.loadingDeviceTokens.set(false);
+        this.loadingDevices.set(false);
       });
   }
   
-  deleteDeviceToken(token: DeviceToken): void {
+  deleteDevice(device: Device): void {
     this.confirmationService.confirm({
-      message: 'Are you sure you want to delete this device token? This action cannot be undone.',
+      message: 'Are you sure you want to delete this device? This action cannot be undone.',
       header: 'Confirm Deletion',
       icon: 'pi pi-exclamation-triangle',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
-        fetch(`/api/device-tokens/${token.device_id}`, {
+        fetch(`/api/devices/${device.device_id}`, {
           method: 'DELETE'
         })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
           .then(() => {
-            this.deviceTokens.update(tokens => 
-              tokens.filter(t => t.device_id !== token.device_id)
+            this.devices.update(devices => 
+              devices.filter(d => d.device_id !== device.device_id)
             );
             this.messageService.add({
               severity: 'success',
               summary: 'Success',
-              detail: 'Device token deleted successfully',
+              detail: 'Device deleted successfully',
               life: 3000
             });
           })
           .catch(error => {
-            console.error('Error deleting token:', error);
+            console.error('Error deleting device:', error);
             this.messageService.add({
               severity: 'error',
               summary: 'Error',
-              detail: 'Failed to delete token',
+              detail: `Failed to delete device: ${error.message}`,
               life: 3000
             });
           });
@@ -1543,31 +2001,41 @@ export class VesselListComponent implements OnInit {
     });
   }
   
-  getTokenStatus(token: DeviceToken): string {
-    if (this.isTokenExpired(token)) {
+  getDeviceStatus(device: Device): string {
+    if (this.isDeviceExpired(device)) {
       return 'Expired';
     }
-    return token.is_activated ? 'Activated' : 'Pending';
+    return device.is_activated ? 'Activated' : 'Pending';
   }
   
-  getTokenStatusClass(token: DeviceToken): string {
-    if (this.isTokenExpired(token)) {
+  getDeviceStatusClass(device: Device): string {
+    if (this.isDeviceExpired(device)) {
       return 'expired';
     }
-    return token.is_activated ? 'activated' : 'pending';
+    return device.is_activated ? 'activated' : 'pending';
   }
   
-  isTokenExpired(token: DeviceToken): boolean {
-    return new Date(token.expires_at) < new Date();
+  isDeviceExpired(device: Device): boolean {
+    return new Date(device.expires_at) < new Date();
   }
   
-  getActivationUrl(token: DeviceToken): string {
-    return `ghmaritimeapp://auth?token=${token.activation_token}`;
+  getActivationUrl(device: Device): string {
+    return `ghmaritimeapp://auth?token=${device.activation_token}`;
   }
   
-  getPublicActivationUrl(token: DeviceToken): string {
+  getPublicActivationUrl(device: Device): string {
     // Frontend runs on port 4200, accessible from phone's IP
-    return `http://192.168.1.247:4200/activate?token=${token.activation_token}`;
+    return `http://192.168.1.247:4200/activate?token=${device.activation_token}`;
+  }
+  
+
+  onTabChange(event: any): void {
+    if (event.index === 2 && this.selectedVessel()) {
+      // When switching to track tab (index 2), initialize tracking map
+      setTimeout(() => {
+        this.initializeTrackingMap(this.selectedVessel()!);
+      }, 100);
+    }
   }
   
   copyToClipboard(text: string): void {
@@ -1587,4 +2055,112 @@ export class VesselListComponent implements OnInit {
       });
     });
   }
+
+  // Real-time editing methods
+
+  saveName(): void {
+    const vessel = this.selectedVessel();
+    if (!vessel || this.vesselForm.controls['name'].invalid) return;
+
+    this.savingName.set(true);
+    this.nameUpdateStatus.set('saving');
+    
+    const newName = this.vesselForm.value.name;
+    
+    this.vesselDatasetService.update(vessel.id, { name: newName }).subscribe({
+      next: (updatedVessel) => {
+        this.datasets.update(datasets =>
+          datasets.map(v => v.id === vessel.id ? updatedVessel : v)
+        );
+        this.selectedVessel.set(updatedVessel);
+        this.nameUpdateStatus.set('success');
+        
+        // Clear success status after 2 seconds
+        setTimeout(() => this.nameUpdateStatus.set('idle'), 2000);
+      },
+      error: (err) => {
+        this.nameUpdateStatus.set('error');
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Update Error',
+          detail: 'Failed to update vessel name',
+          life: 3000
+        });
+        // Clear error status after 3 seconds
+        setTimeout(() => this.nameUpdateStatus.set('idle'), 3000);
+      },
+      complete: () => {
+        this.savingName.set(false);
+      }
+    });
+  }
+
+  updateType(): void {
+    const vessel = this.selectedVessel();
+    if (!vessel) return;
+
+    this.typeUpdateStatus.set('saving');
+    const newType = this.vesselForm.value.type;
+    
+    this.vesselDatasetService.update(vessel.id, { type: newType }).subscribe({
+      next: (updatedVessel) => {
+        this.datasets.update(datasets =>
+          datasets.map(v => v.id === vessel.id ? updatedVessel : v)
+        );
+        this.selectedVessel.set(updatedVessel);
+        this.typeUpdateStatus.set('success');
+        
+        // Clear success status after 2 seconds
+        setTimeout(() => this.typeUpdateStatus.set('idle'), 2000);
+      },
+      error: (err) => {
+        this.typeUpdateStatus.set('error');
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Update Error',
+          detail: 'Failed to update vessel type',
+          life: 3000
+        });
+        // Reset form to original value
+        this.vesselForm.patchValue({ type: vessel.type });
+        // Clear error status after 3 seconds
+        setTimeout(() => this.typeUpdateStatus.set('idle'), 3000);
+      }
+    });
+  }
+
+  updateEnabled(): void {
+    const vessel = this.selectedVessel();
+    if (!vessel) return;
+
+    this.enabledUpdateStatus.set('saving');
+    const newEnabled = this.vesselForm.value.enabled;
+    
+    this.vesselDatasetService.update(vessel.id, { enabled: newEnabled }).subscribe({
+      next: (updatedVessel) => {
+        this.datasets.update(datasets =>
+          datasets.map(v => v.id === vessel.id ? updatedVessel : v)
+        );
+        this.selectedVessel.set(updatedVessel);
+        this.enabledUpdateStatus.set('success');
+        
+        // Clear success status after 2 seconds
+        setTimeout(() => this.enabledUpdateStatus.set('idle'), 2000);
+      },
+      error: (err) => {
+        this.enabledUpdateStatus.set('error');
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Update Error',
+          detail: 'Failed to update vessel status',
+          life: 3000
+        });
+        // Reset form to original value
+        this.vesselForm.patchValue({ enabled: vessel.enabled });
+        // Clear error status after 3 seconds
+        setTimeout(() => this.enabledUpdateStatus.set('idle'), 3000);
+      }
+    });
+  }
+
 }

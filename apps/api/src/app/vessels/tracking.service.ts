@@ -1,15 +1,21 @@
 // tracking.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { TrackingPoint } from './tracking-point.entity';
 import { CreateTrackingPointDto } from './tracking-point.dto';
+import { TrackingGateway } from './tracking.gateway';
+import { VesselService } from './vessel.service';
 
 @Injectable()
 export class TrackingService {
   constructor(
     @InjectRepository(TrackingPoint)
     private trackingRepository: Repository<TrackingPoint>,
+    @Inject(forwardRef(() => TrackingGateway))
+    private trackingGateway: TrackingGateway,
+    @Inject(forwardRef(() => VesselService))
+    private vesselService: VesselService,
   ) {}
 
   async findAll(): Promise<TrackingPoint[]> {
@@ -90,10 +96,34 @@ export class TrackingService {
         ]
       );
       
-      return result[0];
+      const savedPoint = result[0];
+      
+      // Emit WebSocket event for real-time updates
+      try {
+        const vessel = await this.vesselService.findOne(savedPoint.vessel_id);
+        if (vessel && this.trackingGateway.server) {
+          this.trackingGateway.broadcastPosition(savedPoint, vessel);
+        }
+      } catch (error) {
+        console.error('Failed to broadcast position update:', error);
+      }
+      
+      return savedPoint;
     }
     
-    return this.trackingRepository.save(point);
+    const savedPoint = await this.trackingRepository.save(point);
+    
+    // Emit WebSocket event for real-time updates
+    try {
+      const vessel = await this.vesselService.findOne(savedPoint.vessel_id);
+      if (vessel && this.trackingGateway.server) {
+        this.trackingGateway.broadcastPosition(savedPoint, vessel);
+      }
+    } catch (error) {
+      console.error('Failed to broadcast position update:', error);
+    }
+    
+    return savedPoint;
   }
 
   async getLatestPositions(): Promise<TrackingPoint[]> {

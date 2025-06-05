@@ -173,7 +173,7 @@ import { RouteFormComponent } from './route-form.component';
   `,
   styles: [`
     .route-list-container {
-      padding: 1.5rem;
+      padding: 0 1.5rem 1.5rem 1.5rem;
     }
 
     :host ::ng-deep .p-dialog .p-dialog-content {

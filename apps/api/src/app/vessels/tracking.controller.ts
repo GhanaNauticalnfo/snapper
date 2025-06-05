@@ -112,11 +112,11 @@ import {
     @Post('report')
     @UseGuards(DeviceAuthGuard)
     async reportPosition(@Body() body: any, @Req() req: any): Promise<TrackingPoint> {
-      const deviceToken = req.deviceToken;
+      const device = req.device;
       
       // Map Android format to our format
       const trackingData: CreateTrackingPointDto = {
-        vessel_id: deviceToken.vessel_id,
+        vessel_id: device.vessel_id,
         latitude: body.latitude,
         longitude: body.longitude,
         timestamp: new Date(body.timestamp),

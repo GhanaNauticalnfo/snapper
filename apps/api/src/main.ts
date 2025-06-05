@@ -21,7 +21,7 @@ async function bootstrap() {
     .addBearerAuth()
     .addTag('vessels', 'Vessel management and tracking')
     .addTag('tracking', 'Real-time vessel tracking')
-    .addTag('device-tokens', 'Device authentication tokens')
+    .addTag('devices', 'Device management and authentication')
     .addTag('kml-datasets', 'KML dataset management')
     .addTag('volta-depth', 'Volta Lake depth tiles')
     .addTag('routes', 'Navigation routes')

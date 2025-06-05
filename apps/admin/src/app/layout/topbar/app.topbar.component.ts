@@ -1,6 +1,6 @@
 import { AppConfigService } from '../../service/appconfigservice';
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { afterNextRender, booleanAttribute, Component, computed, ElementRef, Inject, Input, OnDestroy, Renderer2 } from '@angular/core';
+import { afterNextRender, booleanAttribute, Component, computed, ElementRef, Inject, Input, OnDestroy, Renderer2, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DomHandler } from 'primeng/dom';
@@ -43,6 +43,11 @@ import { StyleClass } from 'primeng/styleclass';
                     </a>
                 </li>
 -->
+                <li>
+                    <button type="button" class="topbar-item" (click)="toggleDebugConsole()" title="Debug Console">
+                        <i class="pi pi-hammer"></i>
+                    </button>
+                </li>
                 <li>
                     <button type="button" class="topbar-item" (click)="toggleDarkMode()">
                         <i class="pi" [ngClass]="{ 'pi-moon': isDarkMode(), 'pi-sun': !isDarkMode() }"></i>
@@ -117,6 +122,11 @@ export class AppTopBarComponent implements OnDestroy {
 
     toggleDarkMode() {
         this.configService.appState.update((state) => ({ ...state, darkTheme: !state.darkTheme }));
+    }
+
+    toggleDebugConsole() {
+        // Dispatch a custom event to toggle the debug console
+        this.window.dispatchEvent(new CustomEvent('toggle-debug-console'));
     }
 
     bindScrollListener() {

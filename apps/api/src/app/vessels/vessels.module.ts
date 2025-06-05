@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vessel } from './vessel.entity';
 import { TrackingPoint } from './tracking-point.entity';
-import { DeviceToken } from './device-token.entity';
+import { Device } from './device.entity';
 import { VesselService } from './vessel.service';
 import { TrackingService } from './tracking.service';
 import { MqttTrackingService } from './mqtt-tracking.service';
@@ -11,31 +11,34 @@ import { DeviceAuthService } from './device-auth.service';
 import { VesselController } from './vessel.controller';
 import { TrackingController } from './tracking.controller';
 import { QgisController } from './qgis.controller';
-import { DeviceTokenController } from './device-token.controller';
+import { DeviceController } from './device.controller';
+import { TrackingGateway } from './tracking.gateway';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Vessel,
       TrackingPoint,
-      DeviceToken
+      Device
     ])
   ],
   providers: [
     VesselService,
     TrackingService,
     MqttTrackingService,
-    DeviceAuthService
+    DeviceAuthService,
+    TrackingGateway
   ],
   controllers: [
     VesselController,
     TrackingController,
     QgisController,
-    DeviceTokenController
+    DeviceController
   ],
   exports: [
     VesselService,
-    TrackingService
+    TrackingService,
+    TrackingGateway
   ],
 })
 export class VesselsModule {}

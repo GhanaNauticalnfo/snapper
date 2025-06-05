@@ -143,13 +143,39 @@ import {
     }
   
     @Delete(':id')
-    async remove(@Param('id') id: string): Promise<void> {
+    @ApiOperation({ 
+      summary: 'Delete vessel and all associated data', 
+      description: 'Permanently deletes a vessel and all related devices, tracking data, and other associated information' 
+    })
+    @ApiParam({ name: 'id', description: 'Vessel ID', type: Number })
+    @ApiResponse({ status: 200, description: 'Vessel and all associated data deleted successfully' })
+    @ApiResponse({ status: 404, description: 'Vessel not found' })
+    @ApiResponse({ status: 500, description: 'Error deleting vessel' })
+    async remove(@Param('id') id: string): Promise<{ message: string; deletedData: string[] }> {
       const vessel = await this.vesselService.findOne(+id);
       
       if (!vessel) {
         throw new HttpException('Vessel not found', HttpStatus.NOT_FOUND);
       }
       
-      await this.vesselService.remove(+id);
+      try {
+        await this.vesselService.remove(+id);
+        
+        return {
+          message: `Vessel "${vessel.name}" (ID: ${id}) and all associated data have been permanently deleted`,
+          deletedData: [
+            'Vessel record',
+            'All associated devices and authentication tokens',
+            'All tracking data and position history',
+            'Any navigation data linked to this vessel'
+          ]
+        };
+      } catch (error) {
+        console.error(`Error deleting vessel ${id}:`, error);
+        throw new HttpException(
+          'Failed to delete vessel and associated data',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
     }
   }

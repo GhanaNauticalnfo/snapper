@@ -15,7 +15,7 @@ import { VesselListComponent } from './components/vessel-list.component';
   `,
   styles: [`
     .vessel-container {
-      padding: 20px;
+      padding: 0 20px 20px 20px;
     }
   `]
 })

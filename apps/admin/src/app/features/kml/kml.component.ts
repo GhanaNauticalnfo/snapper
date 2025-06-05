@@ -15,7 +15,7 @@ import { KmlListComponent } from './components/kml-list.component';
   `,
   styles: [`
     .kml-container {
-      padding: 20px;
+      padding: 0 20px 20px 20px;
     }
   `]
 })

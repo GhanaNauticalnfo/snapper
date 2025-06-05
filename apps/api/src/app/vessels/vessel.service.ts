@@ -3,12 +3,18 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vessel } from './vessel.entity';
+import { Device } from './device.entity';
+import { TrackingPoint } from './tracking-point.entity';
 
 @Injectable()
 export class VesselService {
   constructor(
     @InjectRepository(Vessel)
     private vesselRepository: Repository<Vessel>,
+    @InjectRepository(Device)
+    private deviceRepository: Repository<Device>,
+    @InjectRepository(TrackingPoint)
+    private trackingRepository: Repository<TrackingPoint>,
   ) {}
 
   async findAll(): Promise<Vessel[]> {
@@ -52,6 +58,25 @@ export class VesselService {
   }
 
   async remove(id: number): Promise<void> {
-    await this.vesselRepository.delete(id);
+    // Use a transaction to ensure all related data is deleted atomically
+    await this.vesselRepository.manager.transaction(async manager => {
+      // First, count and delete all tracking points for this vessel
+      const trackingCount = await manager.count(TrackingPoint, { where: { vessel_id: id } });
+      if (trackingCount > 0) {
+        await manager.delete(TrackingPoint, { vessel_id: id });
+        console.log(`Deleted ${trackingCount} tracking points for vessel ${id}`);
+      }
+      
+      // Then, count and delete all devices associated with this vessel
+      const deviceCount = await manager.count(Device, { where: { vessel_id: id } });
+      if (deviceCount > 0) {
+        await manager.delete(Device, { vessel_id: id });
+        console.log(`Deleted ${deviceCount} devices for vessel ${id}`);
+      }
+      
+      // Finally, delete the vessel itself
+      await manager.delete(Vessel, { id });
+      console.log(`Deleted vessel ${id} and all associated data`);
+    });
   }
 }

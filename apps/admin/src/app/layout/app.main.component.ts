@@ -9,6 +9,7 @@ import { AppMenuComponent } from './menu/app.menu.component';
 import { DomHandler } from 'primeng/dom';
 import { PrimeNG } from 'primeng/config';
 import { AppConfigService } from '../service/appconfigservice';
+import { DebugPanelComponent } from '@snapper/map';
 
 @Component({
   selector: 'app-main',
@@ -19,7 +20,8 @@ import { AppConfigService } from '../service/appconfigservice';
     AppFooterComponent,
     AppNewsComponent,
     AppTopBarComponent,
-    AppMenuComponent
+    AppMenuComponent,
+    DebugPanelComponent
   ],
   template: `
         <div class="layout-wrapper" [ngClass]="containerClass()">
@@ -40,6 +42,7 @@ import { AppConfigService } from '../service/appconfigservice';
                 </div>
             </div>
             <app-footer />
+            <lib-debug-panel></lib-debug-panel>
         </div>
   `
 })

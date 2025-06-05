@@ -6,6 +6,11 @@
             "routerLink": "/home"
         },
         {
+            "name": "Vessels",
+            "icon": "pi pi-compass",
+            "routerLink": "/vessels"
+        },
+        {
             "name": "KML",
             "icon": "pi pi-map",
             "routerLink": "/kml"
@@ -14,11 +19,6 @@
             "name": "Volta Depths",
             "icon": "pi pi-chart-line",
             "routerLink": "/volta-depth"
-        },
-        {
-            "name": "Vessels",
-            "icon": "pi pi-compass",
-            "routerLink": "/vessels"
         },
         {
             "name": "Routes",
