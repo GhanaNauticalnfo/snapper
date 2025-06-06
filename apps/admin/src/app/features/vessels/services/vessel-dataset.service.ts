@@ -1,91 +1,123 @@
 // features/vessels/services/vessel-dataset.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { VesselDataset } from '../models/vessel-dataset.model';
-import { MOCK_VESSELS } from '../mock-vessel-data';
+
+interface ApiVessel {
+  id: number;
+  name: string;
+  registration_number: string;
+  vessel_type: string;
+  length_meters: number;
+  owner_name: string;
+  owner_contact: string;
+  home_port: string;
+  active: boolean;
+  created: string;
+  last_updated: string;
+  tracking_points?: Array<{
+    id: number;
+    created: string;
+    timestamp: string;
+    vessel_id: number;
+    position: {
+      type: 'Point';
+      coordinates: [number, number]; // [longitude, latitude]
+    };
+    speed_knots: string;
+    heading_degrees: string;
+    battery_level: string | null;
+    signal_strength: string | null;
+    device_id: string | null;
+    status: string | null;
+  }>;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class VesselDatasetService {
-  private apiUrl = '/api/vessel-datasets'; // Keep this for future API implementation
-  private mockData = MOCK_VESSELS;
-  private nextId = 26; // Start after the last mock vessel ID
+  private apiUrl = '/api/vessels';
 
   constructor(private http: HttpClient) {}
 
+  private mapApiVesselToVesselDataset(apiVessel: ApiVessel): VesselDataset {
+    // Get latest tracking point if available
+    const latestTrackingPoint = apiVessel.tracking_points && apiVessel.tracking_points.length > 0 
+      ? apiVessel.tracking_points[0] // API should return latest first
+      : null;
+    
+    const lastPosition = latestTrackingPoint 
+      ? {
+          latitude: latestTrackingPoint.position.coordinates[1], // latitude is second in GeoJSON
+          longitude: latestTrackingPoint.position.coordinates[0] // longitude is first in GeoJSON
+        }
+      : { latitude: 0, longitude: 0 }; // Default when no tracking data
+    
+    return {
+      id: apiVessel.id,
+      name: apiVessel.name,
+      type: apiVessel.vessel_type === 'Fishing' ? 'Canoe' : 'Vessel',
+      last_seen: latestTrackingPoint ? new Date(latestTrackingPoint.timestamp) : new Date(apiVessel.last_updated),
+      last_position: lastPosition,
+      created: new Date(apiVessel.created),
+      last_updated: new Date(apiVessel.last_updated),
+      enabled: apiVessel.active
+    };
+  }
+
   getAll(): Observable<VesselDataset[]> {
-    // Return mock data instead of HTTP request
-    return of([...this.mockData]);
+    return this.http.get<ApiVessel[]>(this.apiUrl).pipe(
+      map(vessels => vessels.map(vessel => this.mapApiVesselToVesselDataset(vessel)))
+    );
   }
 
   getOne(id: number): Observable<VesselDataset> {
-    // Find vessel by ID in mock data
-    const vessel = this.mockData.find(v => v.id === id);
-    if (!vessel) {
-      throw new Error(`Vessel with ID ${id} not found`);
-    }
-    return of({...vessel});
+    return this.http.get<ApiVessel>(`${this.apiUrl}/${id}`).pipe(
+      map(vessel => this.mapApiVesselToVesselDataset(vessel))
+    );
   }
 
   getEnabled(): Observable<{ id: number; last_updated: Date }[]> {
-    // Return only enabled vessels IDs and last_updated dates
-    const enabledVessels = this.mockData
-      .filter(v => v.enabled)
-      .map(v => ({ id: v.id, last_updated: v.last_updated }));
-    return of(enabledVessels);
+    return this.http.get<ApiVessel[]>(this.apiUrl).pipe(
+      map(vessels => 
+        vessels
+          .filter(v => v.active)
+          .map(v => ({ id: v.id, last_updated: new Date(v.last_updated) }))
+      )
+    );
   }
 
   create(data: { name: string, type: 'Canoe' | 'Vessel', last_seen?: Date, last_position?: { latitude: number, longitude: number }, enabled?: boolean }): Observable<VesselDataset> {
-    // Create a new vessel with mock data
-    const newVessel: VesselDataset = {
-      id: this.nextId++,
+    const createData = {
       name: data.name,
-      type: data.type,
-      last_seen: data.last_seen || new Date(),
-      last_position: data.last_position || { latitude: 0, longitude: 0 },
-      enabled: data.enabled !== undefined ? data.enabled : true,
-      created: new Date(),
-      last_updated: new Date()
+      registration_number: `GH-${Date.now()}`, // Generate a unique registration number
+      vessel_type: data.type === 'Canoe' ? 'Fishing' : 'Passenger',
+      length_meters: 15.0,
+      owner_name: 'Unknown',
+      owner_contact: '',
+      home_port: 'Unknown',
+      active: data.enabled !== undefined ? data.enabled : true
     };
     
-    // Add to mock data array
-    this.mockData.push(newVessel);
-    
-    return of({...newVessel});
+    return this.http.post<ApiVessel>(this.apiUrl, createData).pipe(
+      map(vessel => this.mapApiVesselToVesselDataset(vessel))
+    );
   }
 
   update(id: number, data: { name?: string, type?: 'Canoe' | 'Vessel', last_seen?: Date, last_position?: { latitude: number, longitude: number }, enabled?: boolean }): Observable<VesselDataset> {
-    // Find vessel by ID
-    const index = this.mockData.findIndex(v => v.id === id);
-    if (index === -1) {
-      throw new Error(`Vessel with ID ${id} not found`);
-    }
+    const updateData: any = {};
+    if (data.name) updateData.name = data.name;
+    if (data.type) updateData.vessel_type = data.type === 'Canoe' ? 'Fishing' : 'Passenger';
+    if (data.enabled !== undefined) updateData.active = data.enabled;
     
-    // Update vessel data
-    const updatedVessel: VesselDataset = {
-      ...this.mockData[index],
-      ...data,
-      last_updated: new Date()
-    };
-    
-    // Update in mock data array
-    this.mockData[index] = updatedVessel;
-    
-    return of({...updatedVessel});
+    return this.http.patch<ApiVessel>(`${this.apiUrl}/${id}`, updateData).pipe(
+      map(vessel => this.mapApiVesselToVesselDataset(vessel))
+    );
   }
 
   delete(id: number): Observable<void> {
-    // Find vessel by ID
-    const index = this.mockData.findIndex(v => v.id === id);
-    if (index === -1) {
-      throw new Error(`Vessel with ID ${id} not found`);
-    }
-    
-    // Remove from mock data array
-    this.mockData.splice(index, 1);
-    
-    return of(void 0);
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }

@@ -1,7 +1,7 @@
 // libs/map/src/lib/layers/ais/ais-ships-layer.service.ts
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Map as MapLibreMap, GeoJSONSource } from 'maplibre-gl';
+import { Map as MapLibreMap, GeoJSONSource, Popup } from 'maplibre-gl';
 import { BaseLayerService } from '../base-layer.service';
 import { firstValueFrom } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
@@ -85,6 +85,40 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       }
     });
     
+    // Add click event listener for vessel popups (same as symbol layer)
+    this.map.on('click', this.layerId, (e) => {
+      if (e.features && e.features.length > 0) {
+        const feature = e.features[0];
+        const coordinates = (feature.geometry as any).coordinates.slice();
+        const properties = feature.properties;
+        
+        // Ensure that if the map is zoomed out such that multiple
+        // copies of the feature are visible, the popup appears
+        // over the copy being pointed to.
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
+        
+        // Create popup content with vessel information
+        const popupContent = this.createVesselPopupContent(properties);
+        
+        new Popup()
+          .setLngLat(coordinates)
+          .setHTML(popupContent)
+          .addTo(this.map!);
+      }
+    });
+    
+    // Change the cursor to a pointer when hovering over a vessel
+    this.map.on('mouseenter', this.layerId, () => {
+      this.map!.getCanvas().style.cursor = 'pointer';
+    });
+    
+    // Change it back to default when leaving
+    this.map.on('mouseleave', this.layerId, () => {
+      this.map!.getCanvas().style.cursor = '';
+    });
+    
     // Start periodic updates
     this.beginUpdates();
   }
@@ -111,6 +145,40 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       }
     });
     
+    // Add click event listener for vessel popups
+    this.map.on('click', this.layerId, (e) => {
+      if (e.features && e.features.length > 0) {
+        const feature = e.features[0];
+        const coordinates = (feature.geometry as any).coordinates.slice();
+        const properties = feature.properties;
+        
+        // Ensure that if the map is zoomed out such that multiple
+        // copies of the feature are visible, the popup appears
+        // over the copy being pointed to.
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
+        
+        // Create popup content with vessel information
+        const popupContent = this.createVesselPopupContent(properties);
+        
+        new Popup()
+          .setLngLat(coordinates)
+          .setHTML(popupContent)
+          .addTo(this.map!);
+      }
+    });
+    
+    // Change the cursor to a pointer when hovering over a vessel
+    this.map.on('mouseenter', this.layerId, () => {
+      this.map!.getCanvas().style.cursor = 'pointer';
+    });
+    
+    // Change it back to default when leaving
+    this.map.on('mouseleave', this.layerId, () => {
+      this.map!.getCanvas().style.cursor = '';
+    });
+    
     // Start periodic updates
     this.beginUpdates();
   }
@@ -131,11 +199,14 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       if (response && Array.isArray(response)) {
         this.debugLog.success('AIS Layer', `Received ${response.length} vessel positions from API`);
         for (const trackingPoint of response) {
-          // Extract coordinates from PostGIS geography format
+          // Extract coordinates from the new coordinates field or fallback to position parsing
           let coordinates: [number, number] | null = null;
           
-          if (trackingPoint.position) {
-            // Handle different possible formats of PostGIS data
+          if (trackingPoint.coordinates) {
+            // Use the new coordinates field returned by the API
+            coordinates = [trackingPoint.coordinates.longitude, trackingPoint.coordinates.latitude];
+          } else if (trackingPoint.position) {
+            // Fallback: Handle different possible formats of PostGIS data
             if (typeof trackingPoint.position === 'string') {
               // Parse WKT format: POINT(longitude latitude)
               const match = trackingPoint.position.match(/POINT\(([^ ]+) ([^ ]+)\)/);
@@ -148,7 +219,10 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           }
           
           // If we couldn't extract coordinates, skip this vessel
-          if (!coordinates) continue;
+          if (!coordinates) {
+            this.debugLog.warn('AIS Layer', `Skipping vessel ${trackingPoint.vessel_id} - no valid coordinates found`);
+            continue;
+          }
           
           const vesselId = trackingPoint.vessel?.id || trackingPoint.vessel_id;
           const positionUpdate: PositionUpdate = {
@@ -207,6 +281,45 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   toggleVisibility(visible: boolean): void {
     if (!this.map) return;
     this.map.setLayoutProperty(this.layerId, 'visibility', visible ? 'visible' : 'none');
+  }
+  
+  private createVesselPopupContent(properties: any): string {
+    const lastUpdate = properties.lastUpdate ? new Date(properties.lastUpdate).toLocaleString() : 'Unknown';
+    const speed = properties.speed ? `${properties.speed} knots` : 'Unknown';
+    const heading = properties.heading ? `${properties.heading}°` : 'Unknown';
+    const status = properties.status || 'Unknown';
+    
+    return `
+      <div style="font-family: Arial, sans-serif; min-width: 200px;">
+        <div style="background: #2c3e50; color: white; padding: 8px 12px; margin: -8px -12px 8px -12px; border-radius: 4px 4px 0 0;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: bold;">${properties.name || 'Unknown Vessel'}</h3>
+          <div style="font-size: 12px; opacity: 0.9;">ID: ${properties.id || 'N/A'}</div>
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Type:</strong> ${properties.type || 'Unknown'}
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Speed:</strong> ${speed}
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Heading:</strong> ${heading}
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Status:</strong> 
+          <span style="padding: 2px 6px; border-radius: 3px; background: ${status === 'Active' ? '#27ae60' : '#95a5a6'}; color: white; font-size: 11px;">
+            ${status}
+          </span>
+        </div>
+        
+        <div style="font-size: 11px; color: #7f8c8d; border-top: 1px solid #ecf0f1; padding-top: 6px; margin-top: 8px;">
+          <strong>Last Update:</strong> ${lastUpdate}
+        </div>
+      </div>
+    `;
   }
   
   private beginUpdates(): void {

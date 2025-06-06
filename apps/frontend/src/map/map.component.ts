@@ -1,6 +1,6 @@
 // map.component.ts
 import { Component, ElementRef, OnDestroy, ViewChild, AfterViewInit, input, effect } from '@angular/core';
-import { Map, NavigationControl, ScaleControl,GeolocateControl } from 'maplibre-gl';
+import { Map, NavigationControl, ScaleControl, GeolocateControl, Popup } from 'maplibre-gl';
 
 @Component({
   selector: 'app-map',
@@ -94,6 +94,26 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     // Handle map load event
     this.map.on('load', () => {
       console.log('Map loaded successfully');
+    });
+
+    // Add right-click event listener for coordinate popup
+    this.map.on('contextmenu', (e) => {
+      const coordinates = e.lngLat;
+      const popup = new Popup()
+        .setLngLat(coordinates)
+        .setHTML(`
+          <div style="font-family: monospace; font-size: 12px;">
+            <strong>Coordinates:</strong><br>
+            Longitude: ${coordinates.lng.toFixed(6)}°<br>
+            Latitude: ${coordinates.lat.toFixed(6)}°
+          </div>
+        `)
+        .addTo(this.map!);
+      
+      // Auto-close popup after 5 seconds
+      setTimeout(() => {
+        popup.remove();
+      }, 5000);
     });
   }
 }

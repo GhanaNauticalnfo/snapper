@@ -127,7 +127,7 @@ export class TrackingService {
   }
 
   async getLatestPositions(): Promise<TrackingPoint[]> {
-    // Use a raw SQL query with proper aliases to get the latest position for each vessel
+    // Use a raw SQL query to get the latest position for each vessel with extracted coordinates
     const query = `
       WITH latest_positions AS (
         SELECT DISTINCT ON (vessel_id)
@@ -136,24 +136,49 @@ export class TrackingService {
         FROM tracking_point
         ORDER BY vessel_id, timestamp DESC
       )
-      SELECT tp.*
+      SELECT 
+        tp.*,
+        ST_X(tp.position::geometry) as longitude,
+        ST_Y(tp.position::geometry) as latitude,
+        vessel.id as vessel_id,
+        vessel.created as vessel_created,
+        vessel.last_updated as vessel_last_updated,
+        vessel.name as vessel_name,
+        vessel.registration_number as vessel_registration_number,
+        vessel.vessel_type as vessel_vessel_type,
+        vessel.length_meters as vessel_length_meters,
+        vessel.owner_name as vessel_owner_name,
+        vessel.owner_contact as vessel_owner_contact,
+        vessel.home_port as vessel_home_port,
+        vessel.active as vessel_active
       FROM tracking_point tp
       JOIN latest_positions lp ON tp.id = lp.id
+      JOIN vessel ON vessel.id = tp.vessel_id
       ORDER BY tp.vessel_id
     `;
 
     const trackingPoints = await this.trackingRepository.query(query);
     
-    // Load vessels for each tracking point to maintain relation
-    for (const point of trackingPoints) {
-      point.vessel = await this.trackingRepository
-        .createQueryBuilder('tp')
-        .select('vessel')
-        .from('vessel', 'vessel')
-        .where('vessel.id = :vesselId', { vesselId: point.vessel_id })
-        .getRawOne();
-    }
-    
-    return trackingPoints;
+    // Transform the results to include coordinates and vessel relation
+    return trackingPoints.map(point => ({
+      ...point,
+      coordinates: {
+        longitude: point.longitude,
+        latitude: point.latitude
+      },
+      vessel: {
+        id: point.vessel_id,
+        created: point.vessel_created,
+        last_updated: point.vessel_last_updated,
+        name: point.vessel_name,
+        registration_number: point.vessel_registration_number,
+        vessel_type: point.vessel_vessel_type,
+        length_meters: point.vessel_length_meters,
+        owner_name: point.vessel_owner_name,
+        owner_contact: point.vessel_owner_contact,
+        home_port: point.vessel_home_port,
+        active: point.vessel_active
+      }
+    }));
   }
 }

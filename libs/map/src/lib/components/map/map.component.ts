@@ -3,7 +3,7 @@ import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, inj
 import { CommonModule } from '@angular/common';
 import { MapService } from '../../core/map.service';
 import { LayerManagerService } from '../../core/layer-manager.service';
-import { Map, LngLatLike, NavigationControl } from 'maplibre-gl';
+import { Map, LngLatLike, NavigationControl, Popup } from 'maplibre-gl';
 import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
 
 @Component({
@@ -214,6 +214,26 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
             this.layerManager.activateLayer(layerId);
           });
         }
+      });
+
+      // Add right-click event listener for coordinate popup
+      this._map.on('contextmenu', (e) => {
+        const coordinates = e.lngLat;
+        const popup = new Popup()
+          .setLngLat(coordinates)
+          .setHTML(`
+            <div style="font-family: monospace; font-size: 12px;">
+              <strong>Coordinates:</strong><br>
+              Longitude: ${coordinates.lng.toFixed(6)}°<br>
+              Latitude: ${coordinates.lat.toFixed(6)}°
+            </div>
+          `)
+          .addTo(this._map!);
+        
+        // Auto-close popup after 5 seconds
+        setTimeout(() => {
+          popup.remove();
+        }, 5000);
       });
     }
   }

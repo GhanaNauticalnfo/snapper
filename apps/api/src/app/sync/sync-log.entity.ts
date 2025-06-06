@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, Index } from 
 
 @Entity('sync_log')
 @Index(['created_at', 'is_latest'], { where: 'is_latest = true' })
+@Index(['entity_id', 'entity_type', 'is_latest'])
 export class SyncLog {
   @PrimaryGeneratedColumn()
   id: number;

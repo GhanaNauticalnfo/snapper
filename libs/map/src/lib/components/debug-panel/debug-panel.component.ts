@@ -64,11 +64,18 @@ import { Subject, takeUntil } from 'rxjs';
                [class.warn]="log.level === 'warn'"
                [class.error]="log.level === 'error'"
                [class.success]="log.level === 'success'">
-            <span class="log-time">{{ formatTime(log.timestamp) }}</span>
-            <span class="log-level" [class]="log.level">{{ log.level.toUpperCase() }}</span>
-            <span class="log-category">[{{ log.category }}]</span>
-            <span class="log-message">{{ log.message }}</span>
-            <pre class="log-details" *ngIf="log.details">{{ formatDetails(log.details) }}</pre>
+            <div class="log-content">
+              <span class="log-time">{{ formatTime(log.timestamp) }}</span>
+              <span class="log-level" [class]="log.level">{{ log.level.toUpperCase() }}</span>
+              <span class="log-category">[{{ log.category }}]</span>
+              <span class="log-message">{{ log.message }}</span>
+              <pre class="log-details" *ngIf="log.details">{{ formatDetails(log.details) }}</pre>
+            </div>
+            <button class="copy-btn" 
+                    (click)="copyLogEntry(log)" 
+                    title="Copy log entry">
+              📋
+            </button>
           </div>
           
           <div class="no-logs" *ngIf="filteredLogs.length === 0">
@@ -221,8 +228,23 @@ import { Subject, takeUntil } from 'rxjs';
       margin-bottom: 2px;
       display: flex;
       align-items: flex-start;
+      justify-content: space-between;
       gap: 8px;
       word-break: break-word;
+      user-select: text;
+      cursor: text;
+    }
+
+    .log-entry:hover .copy-btn {
+      opacity: 1;
+    }
+
+    .log-content {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .log-entry.info {
@@ -288,6 +310,33 @@ import { Subject, takeUntil } from 'rxjs';
       font-size: 11px;
       color: var(--text-color-secondary);
       overflow-x: auto;
+      user-select: text;
+      cursor: text;
+      width: 100%;
+    }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 3px;
+      opacity: 0.6;
+      transition: opacity 0.2s ease, background-color 0.2s ease;
+      font-size: 12px;
+      line-height: 1;
+      user-select: none;
+      flex-shrink: 0;
+      height: fit-content;
+    }
+
+    .copy-btn:hover {
+      opacity: 1;
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .copy-btn:active {
+      transform: scale(0.95);
     }
 
     .no-logs {
@@ -584,5 +633,63 @@ export class DebugPanelComponent implements OnInit, OnDestroy {
   formatDetails(details: any): string {
     if (typeof details === 'string') return details;
     return JSON.stringify(details, null, 2);
+  }
+
+  async copyLogEntry(log: DebugLogEntry) {
+    const logText = this.formatLogEntryForCopy(log);
+    
+    try {
+      await navigator.clipboard.writeText(logText);
+      
+      // Show brief feedback
+      this.debugLogService.success('Debug Panel', 'Log entry copied to clipboard');
+    } catch (error) {
+      console.warn('Failed to copy to clipboard:', error);
+      
+      // Fallback for older browsers
+      this.fallbackCopyTextToClipboard(logText);
+    }
+  }
+
+  private formatLogEntryForCopy(log: DebugLogEntry): string {
+    const time = this.formatTime(log.timestamp);
+    const level = log.level.toUpperCase();
+    const category = log.category;
+    const message = log.message;
+    
+    let result = `[${time}] ${level} [${category}] ${message}`;
+    
+    if (log.details) {
+      const details = this.formatDetails(log.details);
+      result += `\nDetails:\n${details}`;
+    }
+    
+    return result;
+  }
+
+  private fallbackCopyTextToClipboard(text: string) {
+    const textArea = this.document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+
+    this.document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      const successful = this.document.execCommand('copy');
+      if (successful) {
+        this.debugLogService.success('Debug Panel', 'Log entry copied to clipboard');
+      } else {
+        this.debugLogService.warn('Debug Panel', 'Failed to copy log entry');
+      }
+    } catch (err) {
+      this.debugLogService.error('Debug Panel', 'Copy operation failed', err);
+    }
+
+    this.document.body.removeChild(textArea);
   }
 }

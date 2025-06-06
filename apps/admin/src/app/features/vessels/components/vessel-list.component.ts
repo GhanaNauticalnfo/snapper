@@ -1450,6 +1450,7 @@ export class VesselListComponent implements OnInit {
 
   // --- Vessel Dialog Methods ---
   openViewDialog(vessel: VesselDataset): void {
+    // Initially set the vessel from list data
     this.selectedVessel.set(vessel);
     
     // Initialize the form with vessel data
@@ -1462,6 +1463,25 @@ export class VesselListComponent implements OnInit {
     
     this.activeTabIndex = 0; // Open on vessel info tab
     this.vesselDialogVisible = true;
+    
+    // Fetch complete vessel data with tracking points for accurate coordinates
+    this.vesselDatasetService.getOne(vessel.id).subscribe({
+      next: (completeVessel) => {
+        this.selectedVessel.set(completeVessel);
+        
+        // Update form with complete data
+        const updatedFormData = {
+          name: completeVessel.name || '',
+          type: completeVessel.type,
+          enabled: completeVessel.enabled
+        };
+        this.vesselForm.patchValue(updatedFormData);
+      },
+      error: (error) => {
+        console.error('Error loading complete vessel data:', error);
+        // Continue with list data if fetch fails
+      }
+    });
     
     // Load devices for this vessel
     this.loadDevices(vessel.id);
