@@ -1,12 +1,15 @@
 // features/vessels/components/vessel-list.component.ts
-import { Component, OnInit, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { VesselDatasetService } from '../services/vessel-dataset.service';
 import { VesselDataset } from '../models/vessel-dataset.model';
-import { OSM_STYLE } from '@snapper/map';
+import { OSM_STYLE, MapComponent, AisShipLayerService, LayerManagerService } from '@snapper/map';
 import { TimeAgoPipe } from '@snapper/shared';
+import { HttpClient } from '@angular/common/http';
+import { Marker, Popup } from 'maplibre-gl';
+import { io, Socket } from 'socket.io-client';
 
 interface Device {
   device_id: string;
@@ -69,9 +72,10 @@ import { TabViewModule } from 'primeng/tabview';
     InputIconModule,
     DividerModule,
     TabViewModule,
-    TimeAgoPipe
+    TimeAgoPipe,
+    MapComponent
   ],
-  providers: [ConfirmationService, MessageService],
+  providers: [ConfirmationService, MessageService, AisShipLayerService],
   template: `
     <p-toast></p-toast>
     <p-confirmDialog
@@ -451,13 +455,67 @@ import { TabViewModule } from 'primeng/tabview';
                       ></p-button>
                       <span class="nearby-info">Within {{ NEARBY_RADIUS_KM }}km in last {{ NEARBY_TIME_WINDOW_DAYS }} days</span>
                     </div>
+                    <div class="stat-item">
+                      <span class="stat-label">Live Tracking:</span>
+                      <span class="stat-value">
+                        @if (isTrackingLive()) {
+                          <i class="pi pi-circle-fill live-indicator"></i>
+                          <span class="live-status">Connected</span>
+                          @if (lastUpdateTime()) {
+                            <span class="time-ago">Message received: {{ lastUpdateTime()! | timeAgo }}</span>
+                          }
+                        } @else {
+                          <i class="pi pi-circle offline-indicator"></i>
+                          <span class="offline-status">Offline</span>
+                        }
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Map Container -->
+              <!-- Dummy Positions Controls -->
+              <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <p-button 
+                  [label]="fakeMovementActive() ? 'Stop sending dummy positions' : 'Send Dummy Positions'"
+                  [icon]="fakeMovementActive() ? 'pi pi-stop' : 'pi pi-play'"
+                  [styleClass]="(fakeMovementActive() ? 'p-button-danger' : 'p-button-success') + ' p-button-sm'"
+                  (onClick)="toggleFakeMovement()"
+                  [loading]="togglingMovement()"
+                ></p-button>
+                @if (fakeMovementActive()) {
+                  <span>{{ updatesSent() }} Updates</span>
+                }
+              </div>
+
+              <!-- Map Container using shared Map component -->
               <div class="tracking-map-container">
-                <div #trackingMapContainer class="tracking-map"></div>
+                @if (hasValidPosition()) {
+                  <lib-map 
+                    #trackingMap
+                    [center]="getVesselCenter()"
+                    [zoom]="12"
+                    [height]="'500px'"
+                    [showControls]="false"
+                    [showFullscreenControl]="true"
+                    [showCoordinateDisplay]="true"
+                    [showZoomControls]="false"
+                    [showCompass]="false"
+                    [vesselFilter]="selectedVessel()?.id || null"
+                    [availableLayers]="['ais-ships']"
+                    [initialActiveLayers]="['ais-ships']"
+                  >
+                  </lib-map>
+                } @else {
+                  <div class="no-position-message">
+                    <div class="no-position-content">
+                      <i class="pi pi-map-marker text-4xl mb-3 text-gray-400"></i>
+                      <h5>No Position Data Available</h5>
+                      <p class="text-muted">This vessel has not reported its position yet.</p>
+                      <p class="text-muted">Position data will appear here once the vessel starts transmitting location updates.</p>
+                    </div>
+                  </div>
+                }
               </div>
             </div>
           </p-tabPanel>
@@ -642,7 +700,12 @@ import { TabViewModule } from 'primeng/tabview';
   styles: [`
     :host { display: block; }
     .vessel-list-container { margin-top: 0; }
-    .vessel-details-container { margin-top: 0; }
+    .vessel-details-container { 
+      margin-top: 0; 
+      height: 100vh; 
+      display: flex; 
+      flex-direction: column; 
+    }
     .vessel-details-header { margin-top: 0; }
     .font-mono { font-family: monospace; background-color: var(--surface-100); padding: 0.1rem 0.3rem; border-radius: 3px; }
     
@@ -1232,12 +1295,85 @@ import { TabViewModule } from 'primeng/tabview';
       flex: 1;
       position: relative;
       overflow: hidden;
+      min-height: 500px;
     }
     
     .tracking-map {
       width: 100%;
       height: 100%;
       min-height: 500px;
+    }
+
+    /* Live tracking status indicators */
+    .live-indicator {
+      color: #4caf50;
+      font-size: 0.75rem;
+      margin-right: 0.25rem;
+      animation: pulse 2s infinite;
+    }
+    
+    .offline-indicator {
+      color: #f44336;
+      font-size: 0.75rem;
+      margin-right: 0.25rem;
+    }
+    
+    .live-status {
+      color: #4caf50;
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    
+    .offline-status {
+      color: #f44336;
+      font-weight: 600;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    /* No position message */
+    .no-position-message {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 500px;
+      background: var(--surface-50);
+      border: 2px dashed var(--surface-300);
+      border-radius: 8px;
+    }
+    
+    .no-position-content {
+      text-align: center;
+      max-width: 400px;
+      padding: 2rem;
+    }
+    
+    .no-position-content h5 {
+      color: var(--text-color);
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+    }
+    
+    .no-position-content p {
+      margin-bottom: 0.5rem;
+      line-height: 1.5;
+    }
+    
+    .text-4xl {
+      font-size: 2.25rem;
+    }
+    
+    .mb-3 {
+      margin-bottom: 1rem;
+    }
+    
+    .text-gray-400 {
+      color: #9ca3af;
     }
 
     /* Danger Zone Styles */
@@ -1296,7 +1432,7 @@ import { TabViewModule } from 'primeng/tabview';
     
     /* Tab Styles */
     .vessel-tabs {
-      height: 100%;
+      flex: 1;
       display: flex;
       flex-direction: column;
     }
@@ -1334,25 +1470,30 @@ import { TabViewModule } from 'primeng/tabview';
     }
   `]
 })
-export class VesselListComponent implements OnInit {
+export class VesselListComponent implements OnInit, OnDestroy {
   // Configurable values for nearby vessels feature
   readonly NEARBY_RADIUS_KM = 100; // Distance in kilometers
   readonly NEARBY_TIME_WINDOW_DAYS = 31; // Time window in days
   
   @ViewChild('nearbyMapContainer') nearbyMapContainer!: ElementRef<HTMLDivElement>;
-  @ViewChild('trackingMapContainer') trackingMapContainer!: ElementRef<HTMLDivElement>;
-  private map: any;
+  @ViewChild('trackingMap') trackingMapRef!: MapComponent;
   private nearbyMap: any;
-  private trackingMap: any;
-  private marker: any;
   private maplibregl: any;
   private nearbyMarkers: any[] = [];
+  private vesselMarker: any; // MapLibre marker for vessel tracking
+  private trackingSocket: Socket | null = null;
+  private pollingInterval: number | null = null;
   selectedNearbyVessel = signal<VesselDataset | null>(null);
+  
+  // Tracking status (managed by shared AIS layer)
+  isTrackingLive = signal<boolean>(false);
+  lastUpdateTime = signal<Date | null>(null);
   
   private vesselDatasetService = inject(VesselDatasetService);
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
   private fb = inject(FormBuilder);
+  private layerManager = inject(LayerManagerService);
 
   // Data signals
   datasets = signal<VesselDataset[]>([]);
@@ -1396,6 +1537,15 @@ export class VesselListComponent implements OnInit {
   typeUpdateStatus = signal<'idle' | 'saving' | 'success' | 'error'>('idle');
   enabledUpdateStatus = signal<'idle' | 'saving' | 'success' | 'error'>('idle');
 
+  // Fake movement signals
+  fakeMovementActive = signal<boolean>(false);
+  togglingMovement = signal<boolean>(false);
+  currentSpeed = signal<number>(0);
+  currentHeading = signal<number>(0);
+  updatesSent = signal<number>(0);
+  private movementIntervalId: number | null = null;
+  private currentPosition: { latitude: number; longitude: number } | null = null;
+
   // Dropdown options
   vesselTypes = [
     { label: 'Canoe', value: 'Canoe' },
@@ -1414,6 +1564,9 @@ export class VesselListComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Register the AIS ships layer
+    this.layerManager.registerLayer('ais-ships', AisShipLayerService);
+    
     this.loadVessels();
   }
 
@@ -1488,11 +1641,6 @@ export class VesselListComponent implements OnInit {
     
     // Find nearby vessels
     this.findNearbyVessels();
-    
-    // Initialize map after dialog is shown
-    setTimeout(() => {
-      this.initializeMap(vessel);
-    }, 100);
   }
 
   closeVesselDialog(): void {
@@ -1505,15 +1653,12 @@ export class VesselListComponent implements OnInit {
     this.typeUpdateStatus.set('idle');
     this.enabledUpdateStatus.set('idle');
     
-    // Clean up maps
-    if (this.map) {
-      this.map.remove();
-      this.map = null;
+    // Clean up nearby map
+    if (this.nearbyMap) {
+      this.nearbyMap.remove();
+      this.nearbyMap = null;
     }
-    if (this.trackingMap) {
-      this.trackingMap.remove();
-      this.trackingMap = null;
-    }
+    // The lib-map component handles its own cleanup automatically
   }
 
   // --- Form Dialog Methods ---
@@ -1637,82 +1782,6 @@ export class VesselListComponent implements OnInit {
     });
   }
 
-  private async initializeTrackingMap(vessel: VesselDataset): Promise<void> {
-    if (!vessel.last_position?.latitude || !vessel.last_position?.longitude) {
-      return;
-    }
-
-    // Dynamically import MapLibre
-    const maplibregl = await import('maplibre-gl');
-
-    // Initialize tracking map
-    this.trackingMap = new maplibregl.Map({
-      container: this.trackingMapContainer.nativeElement,
-      style: OSM_STYLE as any,
-      center: [vessel.last_position.longitude, vessel.last_position.latitude],
-      zoom: 12
-    });
-
-    // Add navigation controls
-    this.trackingMap.addControl(new maplibregl.NavigationControl());
-
-    // Add marker for vessel position
-    new maplibregl.Marker({
-      color: vessel.type === 'Canoe' ? '#1565C0' : '#E65100'
-    })
-      .setLngLat([vessel.last_position.longitude, vessel.last_position.latitude])
-      .setPopup(
-        new maplibregl.Popup().setHTML(
-          `<strong>${vessel.name}</strong><br/>
-           Type: ${vessel.type}<br/>
-           Last seen: ${new Date(vessel.last_seen).toLocaleString('en-GB', { hour12: false })}`
-        )
-      )
-      .addTo(this.trackingMap);
-
-    // Store maplibregl for later use
-    this.maplibregl = maplibregl;
-  }
-
-  private async initializeMap(vessel: VesselDataset): Promise<void> {
-    if (!vessel.last_position?.latitude || !vessel.last_position?.longitude) {
-      return;
-    }
-
-    // Dynamically import MapLibre
-    const maplibregl = await import('maplibre-gl');
-
-    // Initialize map
-    this.map = new maplibregl.Map({
-      container: this.trackingMapContainer.nativeElement,
-      style: OSM_STYLE as any,
-      center: [vessel.last_position.longitude, vessel.last_position.latitude],
-      zoom: 12
-    });
-
-    // Add navigation controls
-    this.map.addControl(new maplibregl.NavigationControl());
-
-    // Add marker for vessel position
-    this.marker = new maplibregl.Marker({
-      color: vessel.type === 'Canoe' ? '#1565C0' : '#E65100'
-    })
-      .setLngLat([vessel.last_position.longitude, vessel.last_position.latitude])
-      .setPopup(
-        new maplibregl.Popup().setHTML(
-          `<strong>${vessel.name}</strong><br/>
-           Type: ${vessel.type}<br/>
-           Last seen: ${new Date(vessel.last_seen).toLocaleString('en-GB', { hour12: false })}`
-        )
-      )
-      .addTo(this.map);
-
-    // Show popup by default
-    this.marker.togglePopup();
-    
-    // Store maplibregl for later use
-    this.maplibregl = maplibregl;
-  }
   
   openNearbyDialog(): void {
     this.findNearbyVessels();
@@ -1742,7 +1811,9 @@ export class VesselListComponent implements OnInit {
     if (this.nearbyMap && vessel.last_position) {
       this.nearbyMap.flyTo({
         center: [vessel.last_position.longitude, vessel.last_position.latitude],
-        zoom: 14
+        zoom: 14,
+        speed: 1.5,
+        curve: 1.2
       });
     }
   }
@@ -2051,11 +2122,482 @@ export class VesselListComponent implements OnInit {
 
   onTabChange(event: any): void {
     if (event.index === 2 && this.selectedVessel()) {
-      // When switching to track tab (index 2), initialize tracking map
+      // When switching to track tab (index 2), ensure map is properly displayed
       setTimeout(() => {
-        this.initializeTrackingMap(this.selectedVessel()!);
-      }, 100);
+        // Set tracking status - the shared AIS layer will handle vessel filtering automatically
+        this.isTrackingLive.set(true);
+        
+        // Force map resize after initialization to ensure proper display
+        const mapInstance = this.trackingMapRef?.map;
+        if (mapInstance) {
+          mapInstance.resize();
+        }
+      }, 300);
+    } else {
+      // Clear tracking status when leaving track tab
+      this.isTrackingLive.set(false);
+      this.lastUpdateTime.set(null);
     }
+  }
+
+  getVesselCenter(): [number, number] {
+    const vessel = this.selectedVessel();
+    
+    // First try to use the processed last_position
+    if (vessel?.last_position?.longitude && vessel?.last_position?.latitude && 
+        vessel.last_position.longitude !== 0 && vessel.last_position.latitude !== 0) {
+      return [vessel.last_position.longitude, vessel.last_position.latitude];
+    }
+    
+    // If no processed last_position but we have tracking points, use the latest one
+    if (vessel?.tracking_points && vessel.tracking_points.length > 0) {
+      const latest = vessel.tracking_points.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+      return [latest.position.coordinates[0], latest.position.coordinates[1]];
+    }
+    
+    return [0, 6]; // Default center (Ghana coast) when no valid position data
+  }
+
+  hasValidPosition(): boolean {
+    const vessel = this.selectedVessel();
+    
+    // If we have tracking points, we can show the map
+    if (vessel?.tracking_points && vessel.tracking_points.length > 0) {
+      return true;
+    }
+    
+    // Otherwise check if we have valid last_position data
+    return !!(vessel?.last_position?.longitude && vessel?.last_position?.latitude && 
+              vessel.last_position.longitude !== 0 && vessel.last_position.latitude !== 0);
+  }
+
+  startVesselTracking(): void {
+    const vessel = this.selectedVessel();
+    const mapInstance = this.trackingMapRef?.map;
+    
+    if (!vessel || !mapInstance || !this.hasValidPosition()) {
+      return;
+    }
+
+    // Stop any existing tracking
+    this.stopVesselTracking();
+
+    // Add initial vessel marker
+    this.addVesselMarker(mapInstance, vessel);
+
+    // Initialize WebSocket connection with robust configuration (same as AIS layer)
+    this.trackingSocket = io('/tracking', {
+      path: '/socket.io/',
+      transports: ['polling', 'websocket'], // Try polling first, then WebSocket
+      autoConnect: true,
+      forceNew: true,
+      timeout: 5000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+
+    this.trackingSocket.on('connect', () => {
+      console.log('Connected to vessel tracking WebSocket, ID:', this.trackingSocket?.id);
+      this.isTrackingLive.set(true);
+      
+      // Subscribe to updates for this specific vessel
+      this.trackingSocket!.emit('subscribe-vessel', vessel.id);
+    });
+
+    this.trackingSocket.on('disconnect', (reason: string) => {
+      console.log('Disconnected from vessel tracking WebSocket, reason:', reason);
+      this.isTrackingLive.set(false);
+    });
+
+    this.trackingSocket.on('reconnect', (attemptNumber: number) => {
+      console.log('WebSocket reconnected after', attemptNumber, 'attempts');
+      this.isTrackingLive.set(true);
+      // Re-subscribe after reconnection
+      const currentVessel = this.selectedVessel();
+      if (currentVessel) {
+        this.trackingSocket!.emit('subscribe-vessel', currentVessel.id);
+      }
+    });
+
+    this.trackingSocket.on('reconnecting', (attemptNumber: number) => {
+      console.log('WebSocket reconnecting, attempt:', attemptNumber);
+      this.isTrackingLive.set(false);
+    });
+
+    this.trackingSocket.on('position-update', (data: any) => {
+      // Check both vesselId and vessel_id (API uses vesselId, but be safe)
+      if (data.vesselId === vessel.id || data.vessel_id === vessel.id) {
+        this.updateVesselPosition(data);
+      }
+    });
+
+    this.trackingSocket.on('connect_error', (error: any) => {
+      console.error('WebSocket connection error:', error);
+      this.isTrackingLive.set(false);
+    });
+
+    // Start HTTP polling fallback (every 60 seconds)
+    this.startPollingFallback(vessel.id);
+  }
+
+  private startPollingFallback(vesselId: number): void {
+    // Clear any existing polling
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+    }
+
+    // Poll for vessel position every 60 seconds as fallback
+    this.pollingInterval = setInterval(() => {
+      this.vesselDatasetService.getOne(vesselId).subscribe({
+        next: (vessel) => {
+          if (vessel?.last_position?.latitude && vessel.last_position.longitude) {
+            // Only update if WebSocket hasn't updated recently (more than 90 seconds ago)
+            const lastWsUpdate = this.lastUpdateTime();
+            const now = new Date();
+            const shouldUpdate = !lastWsUpdate || (now.getTime() - lastWsUpdate.getTime()) > 90000;
+            
+            if (shouldUpdate) {
+              console.log('Using HTTP polling fallback for vessel position');
+              // Convert to the same format as WebSocket updates
+              const fallbackData = {
+                vesselId: vessel.id,
+                lng: vessel.last_position.longitude,
+                lat: vessel.last_position.latitude,
+                speed: null,
+                heading: null,
+                timestamp: vessel.last_seen || new Date()
+              };
+              this.updateVesselPosition(fallbackData);
+            }
+          }
+        },
+        error: (err) => {
+          console.warn('HTTP polling fallback failed:', err);
+        }
+      });
+    }, 60000); // 60 seconds
+  }
+
+  stopVesselTracking(): void {
+    if (this.trackingSocket) {
+      const vessel = this.selectedVessel();
+      if (vessel) {
+        this.trackingSocket.emit('unsubscribe-vessel', vessel.id);
+      }
+      this.trackingSocket.disconnect();
+      this.trackingSocket = null;
+    }
+    
+    // Clear HTTP polling fallback
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+    
+    this.isTrackingLive.set(false);
+    this.lastUpdateTime.set(null);
+    
+    // Remove vessel layer and source
+    const mapInstance = this.trackingMapRef?.map;
+    if (mapInstance) {
+      if (mapInstance.getLayer('vessel-tracking-layer')) {
+        mapInstance.removeLayer('vessel-tracking-layer');
+      }
+      if (mapInstance.getSource('vessel-tracking-source')) {
+        mapInstance.removeSource('vessel-tracking-source');
+      }
+    }
+    
+    this.vesselMarker = null;
+  }
+
+  private addVesselMarker(mapInstance: any, vessel: VesselDataset): void {
+    if (!vessel.last_position?.latitude || !vessel.last_position?.longitude ||
+        vessel.last_position.longitude === 0 || vessel.last_position.latitude === 0) {
+      return;
+    }
+
+    // Remove existing layer if it exists
+    if (mapInstance.getLayer('vessel-tracking-layer')) {
+      mapInstance.removeLayer('vessel-tracking-layer');
+    }
+    if (mapInstance.getSource('vessel-tracking-source')) {
+      mapInstance.removeSource('vessel-tracking-source');
+    }
+
+    // Get the latest heading from vessel's tracking points
+    const heading = this.getLatestHeading(vessel);
+    console.log('Adding vessel marker with heading:', heading);
+
+    // Add ship icon to map if not already present
+    if (!mapInstance.hasImage('ship-icon')) {
+      // Create SVG ship icon
+      const shipSvg = `
+        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#007cbf" stroke="#ffffff" stroke-width="0.5">
+            <path d="M12 3 L16 8 L8 8 Z" fill="#004d7a"/>
+            <rect x="8" y="8" width="8" height="10" rx="1" fill="#007cbf"/>
+            <rect x="7" y="18" width="10" height="2" rx="1" fill="#004d7a"/>
+            <rect x="10" y="9" width="4" height="3" rx="0.5" fill="#ffffff"/>
+            <path d="M12 3 L13 5 L11 5 Z" fill="#ff4444"/>
+          </g>
+        </svg>
+      `;
+      
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      const img = new Image();
+      
+      img.onload = () => {
+        canvas.width = 24;
+        canvas.height = 24;
+        ctx.drawImage(img, 0, 0, 24, 24);
+        mapInstance.addImage('ship-icon', canvas);
+        this.addVesselLayer(mapInstance, vessel, heading);
+      };
+      
+      img.src = 'data:image/svg+xml;base64,' + btoa(shipSvg);
+    } else {
+      this.addVesselLayer(mapInstance, vessel, heading);
+    }
+  }
+
+  private addVesselLayer(mapInstance: any, vessel: VesselDataset, heading: number | null): void {
+    // Create GeoJSON feature for the vessel (same as live feature)
+    const feature = {
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [vessel.last_position!.longitude, vessel.last_position!.latitude]
+      },
+      properties: {
+        id: vessel.id,
+        name: vessel.name,
+        heading: heading || 0,
+        speed: 0,
+        type: vessel.type,
+        status: 'Active'
+      }
+    };
+
+    // Add source
+    mapInstance.addSource('vessel-tracking-source', {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: [feature]
+      }
+    });
+
+    // Add layer with rotation (same as live feature)
+    mapInstance.addLayer({
+      id: 'vessel-tracking-layer',
+      type: 'symbol',
+      source: 'vessel-tracking-source',
+      layout: {
+        'icon-image': 'ship-icon',
+        'icon-rotate': ['get', 'heading'], // This is the key - same as live feature!
+        'icon-size': 0.75,
+        'icon-allow-overlap': true
+      }
+    });
+
+    // Add click handler for popup
+    mapInstance.on('click', 'vessel-tracking-layer', (e: any) => {
+      const coordinates = e.features[0].geometry.coordinates.slice();
+      const properties = e.features[0].properties;
+      
+      new Popup()
+        .setLngLat(coordinates)
+        .setHTML(this.createVesselPopupContent(vessel))
+        .addTo(mapInstance);
+    });
+  }
+
+  private getLatestHeading(vessel: VesselDataset): number | null {
+    console.log('Getting heading for vessel:', vessel.id, 'tracking_points:', vessel.tracking_points?.length);
+    
+    // Try to get heading from the most recent tracking point
+    if (vessel.tracking_points && vessel.tracking_points.length > 0) {
+      const latestPoint = vessel.tracking_points[vessel.tracking_points.length - 1];
+      const heading = latestPoint.heading_degrees;
+      console.log('Latest tracking point heading:', heading, 'type:', typeof heading);
+      
+      // Convert string to number if needed
+      const headingNum = typeof heading === 'string' ? parseFloat(heading) : heading;
+      console.log('Converted heading:', headingNum);
+      
+      return headingNum || 0;
+    }
+    console.log('No tracking points for vessel', vessel.id);
+    return 0; // Default to North if no heading available
+  }
+
+  private createVesselIcon(vesselType: string): string {
+    // Create a directional ship icon using SVG (pointing up/north by default)
+    return `
+      <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <g fill="#007cbf" stroke="#ffffff" stroke-width="0.5">
+          <!-- Ship bow (pointed front) -->
+          <path d="M12 3 L16 8 L8 8 Z" fill="#004d7a"/>
+          <!-- Ship main body -->
+          <rect x="8" y="8" width="8" height="10" rx="1" fill="#007cbf"/>
+          <!-- Ship stern (flat back) -->
+          <rect x="7" y="18" width="10" height="2" rx="1" fill="#004d7a"/>
+          <!-- Bridge/superstructure -->
+          <rect x="10" y="9" width="4" height="3" rx="0.5" fill="#ffffff"/>
+          <!-- Direction indicator (small triangle at bow) -->
+          <path d="M12 3 L13 5 L11 5 Z" fill="#ff4444"/>
+        </g>
+      </svg>
+    `;
+  }
+
+  private createVesselPopupContent(vessel: VesselDataset): string {
+    const lastUpdate = vessel.last_seen ? new Date(vessel.last_seen).toLocaleString('en-GB', { hour12: false }) : 'Unknown';
+    const position = vessel.last_position ? 
+      `${vessel.last_position.latitude.toFixed(6)}°, ${vessel.last_position.longitude.toFixed(6)}°` : 
+      'Unknown';
+    
+    return `
+      <div style="font-family: Arial, sans-serif; min-width: 250px;">
+        <div style="background: #2c3e50; color: white; padding: 8px 12px; margin: -8px -12px 8px -12px; border-radius: 4px 4px 0 0;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: bold;">${vessel.name || 'Unknown Vessel'}</h3>
+          <div style="font-size: 12px; opacity: 0.9;">ID: ${vessel.id || 'N/A'}</div>
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Type:</strong> ${vessel.type || 'Unknown'}
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Position:</strong> ${position}
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Status:</strong> 
+          <span style="padding: 2px 6px; border-radius: 3px; background: ${vessel.enabled ? '#27ae60' : '#95a5a6'}; color: white; font-size: 11px;">
+            ${vessel.enabled ? 'Enabled' : 'Disabled'}
+          </span>
+        </div>
+        
+        <div style="font-size: 11px; color: #7f8c8d; border-top: 1px solid #ecf0f1; padding-top: 6px; margin-top: 8px;">
+          <strong>Last Update:</strong> ${lastUpdate}
+        </div>
+      </div>
+    `;
+  }
+
+  private updateVesselPosition(positionData: any): void {
+    const mapInstance = this.trackingMapRef?.map;
+    const vessel = this.selectedVessel();
+    
+    if (!mapInstance || !vessel) {
+      return;
+    }
+
+    console.log('Updating vessel position:', positionData);
+
+    // Extract coordinates (API sends lng/lat, not longitude/latitude)
+    const lng = positionData.lng || positionData.longitude;
+    const lat = positionData.lat || positionData.latitude;
+
+    if (!lng || !lat) {
+      console.warn('Invalid position data received:', positionData);
+      return;
+    }
+
+    // Extract heading and convert to number
+    const heading = positionData.heading || positionData.heading_degrees;
+    const headingNum = typeof heading === 'string' ? parseFloat(heading) : (heading || 0);
+    console.log('Position update - heading:', headingNum);
+
+    // Update the GeoJSON source (same approach as live feature)
+    const source = mapInstance.getSource('vessel-tracking-source') as any;
+    if (source && source.setData) {
+      const feature = {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [lng, lat]
+        },
+        properties: {
+          id: vessel.id,
+          name: vessel.name,
+          heading: headingNum, // This will be used by 'icon-rotate': ['get', 'heading']
+          speed: positionData.speed || positionData.speed_knots || 0,
+          type: vessel.type,
+          status: 'Active'
+        }
+      };
+
+      source.setData({
+        type: 'FeatureCollection',
+        features: [feature]
+      });
+    }
+
+    // Update vessel data with latest position info
+    const updatedVessel = {
+      ...vessel,
+      last_position: {
+        latitude: lat,
+        longitude: lng
+      },
+      last_seen: new Date(positionData.timestamp)
+    };
+
+    // Create enhanced popup content with live data
+    const popupContent = `
+      <div style="font-family: Arial, sans-serif; min-width: 250px;">
+        <div style="background: #2c3e50; color: white; padding: 8px 12px; margin: -8px -12px 8px -12px; border-radius: 4px 4px 0 0;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: bold;">${vessel.name || 'Unknown Vessel'}</h3>
+          <div style="font-size: 12px; opacity: 0.9;">ID: ${vessel.id || 'N/A'}</div>
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Type:</strong> ${vessel.type || 'Unknown'}
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Speed:</strong> ${positionData.speed || positionData.speed_knots || 0} knots
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Heading:</strong> ${positionData.heading || positionData.heading_degrees || 0}°
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Position:</strong> ${lat.toFixed(6)}°, ${lng.toFixed(6)}°
+        </div>
+        
+        <div style="margin-bottom: 8px;">
+          <strong style="color: #34495e;">Status:</strong> 
+          <span style="padding: 2px 6px; border-radius: 3px; background: #27ae60; color: white; font-size: 11px;">
+            <i class="pi pi-circle-fill" style="font-size: 8px; margin-right: 2px;"></i>LIVE
+          </span>
+        </div>
+        
+        <div style="font-size: 11px; color: #7f8c8d; border-top: 1px solid #ecf0f1; padding-top: 6px; margin-top: 8px;">
+          <strong>Last Update:</strong> ${new Date(positionData.timestamp).toLocaleString('en-GB', { hour12: false })}
+        </div>
+      </div>
+    `;
+
+    // Update popup content with new data
+    const popup = new Popup({ offset: 25 }).setHTML(popupContent);
+    this.vesselMarker.setPopup(popup);
+
+    // Update tracking status
+    this.lastUpdateTime.set(new Date(positionData.timestamp));
+
+    // Optionally center map on new position (smooth animation)
+    mapInstance.flyTo({
+      center: [lng, lat],
+      speed: 1.5,
+      curve: 1.2
+    });
   }
   
   copyToClipboard(text: string): void {
@@ -2181,6 +2723,163 @@ export class VesselListComponent implements OnInit {
         setTimeout(() => this.enabledUpdateStatus.set('idle'), 3000);
       }
     });
+  }
+
+  // Fake Movement Methods
+  toggleFakeMovement(): void {
+    if (this.fakeMovementActive()) {
+      this.stopFakeMovement();
+    } else {
+      this.startFakeMovement();
+    }
+  }
+
+  private startFakeMovement(): void {
+    const vessel = this.selectedVessel();
+    if (!vessel || !vessel.last_position) return;
+
+    this.togglingMovement.set(true);
+    
+    // Initialize movement parameters
+    this.currentPosition = {
+      latitude: vessel.last_position.latitude,
+      longitude: vessel.last_position.longitude
+    };
+    
+    // Set initial speed (between 5-15 knots for realistic vessel movement)
+    this.currentSpeed.set(8 + Math.random() * 7);
+    
+    // Set initial heading (random direction)
+    this.currentHeading.set(Math.random() * 360);
+    
+    this.updatesSent.set(0);
+    this.fakeMovementActive.set(true);
+    this.togglingMovement.set(false);
+
+    // Start sending position updates every 2 seconds
+    this.movementIntervalId = window.setInterval(() => {
+      this.generateRealisticMovement();
+    }, 2000);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Fake Movement Started',
+      detail: 'Realistic vessel movement simulation is now active',
+      life: 3000
+    });
+  }
+
+  private stopFakeMovement(): void {
+    this.togglingMovement.set(true);
+    
+    if (this.movementIntervalId) {
+      clearInterval(this.movementIntervalId);
+      this.movementIntervalId = null;
+    }
+    
+    this.fakeMovementActive.set(false);
+    this.togglingMovement.set(false);
+    this.currentSpeed.set(0);
+    this.currentHeading.set(0);
+    this.updatesSent.set(0);
+    this.currentPosition = null;
+
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Fake Movement Stopped',
+      detail: 'Vessel movement simulation has been stopped',
+      life: 3000
+    });
+  }
+
+  private generateRealisticMovement(): void {
+    const vessel = this.selectedVessel();
+    if (!vessel || !this.currentPosition) return;
+
+    // Simulate realistic vessel behavior
+    const random = Math.random();
+    
+    // 85% chance to maintain current course, 15% chance to change direction
+    if (random < 0.15) {
+      // Gradual course change (max 30 degrees at a time)
+      const courseChange = (Math.random() - 0.5) * 60; // -30 to +30 degrees
+      this.currentHeading.update(heading => {
+        let newHeading = heading + courseChange;
+        if (newHeading < 0) newHeading += 360;
+        if (newHeading >= 360) newHeading -= 360;
+        return newHeading;
+      });
+    }
+
+    // Slight speed variations (±2 knots) but keep within reasonable bounds
+    if (random < 0.3) {
+      this.currentSpeed.update(speed => {
+        const speedChange = (Math.random() - 0.5) * 4; // -2 to +2 knots
+        const newSpeed = speed + speedChange;
+        return Math.max(3, Math.min(18, newSpeed)); // Keep between 3-18 knots
+      });
+    }
+
+    // Calculate new position based on current heading and speed
+    const currentSpeed = this.currentSpeed();
+    const currentHeading = this.currentHeading();
+    
+    // Convert speed from knots to meters per second, then to degrees per 2 seconds
+    const speedMs = currentSpeed * 0.514444; // knots to m/s
+    const distanceMeters = speedMs * 2; // distance in 2 seconds
+    
+    // Convert to degrees (approximate, works for small distances)
+    const latChange = (distanceMeters * Math.cos(currentHeading * Math.PI / 180)) / 111320;
+    const lonChange = (distanceMeters * Math.sin(currentHeading * Math.PI / 180)) / (111320 * Math.cos(this.currentPosition.latitude * Math.PI / 180));
+    
+    // Update position
+    this.currentPosition.latitude += latChange;
+    this.currentPosition.longitude += lonChange;
+
+    // Send position update to API
+    this.sendPositionUpdate(vessel.id, this.currentPosition.latitude, this.currentPosition.longitude, currentSpeed, currentHeading);
+  }
+
+  private sendPositionUpdate(vesselId: number, latitude: number, longitude: number, speed: number, heading: number): void {
+    const updateData = {
+      vessel_id: vesselId,
+      latitude,
+      longitude,
+      speed,
+      heading
+    };
+
+    fetch('/api/tracking/test-update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updateData)
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        this.updatesSent.update(count => count + 1);
+        console.log(`Position update ${this.updatesSent()} sent:`, {
+          latitude: latitude.toFixed(6),
+          longitude: longitude.toFixed(6),
+          speed: speed.toFixed(1),
+          heading: heading.toFixed(0)
+        });
+      } else {
+        console.error('Failed to send position update:', result.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error sending position update:', error);
+    });
+  }
+
+  // Cleanup on component destroy
+  ngOnDestroy(): void {
+    if (this.movementIntervalId) {
+      clearInterval(this.movementIntervalId);
+    }
   }
 
 }

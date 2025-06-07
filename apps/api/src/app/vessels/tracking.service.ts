@@ -102,7 +102,11 @@ export class TrackingService {
       try {
         const vessel = await this.vesselService.findOne(savedPoint.vessel_id);
         if (vessel && this.trackingGateway.server) {
-          this.trackingGateway.broadcastPosition(savedPoint, vessel);
+          // Pass the coordinates we already have
+          this.trackingGateway.broadcastPosition(savedPoint, vessel, {
+            lat: trackingData.latitude,
+            lng: trackingData.longitude
+          });
         }
       } catch (error) {
         console.error('Failed to broadcast position update:', error);
@@ -113,15 +117,9 @@ export class TrackingService {
     
     const savedPoint = await this.trackingRepository.save(point);
     
-    // Emit WebSocket event for real-time updates
-    try {
-      const vessel = await this.vesselService.findOne(savedPoint.vessel_id);
-      if (vessel && this.trackingGateway.server) {
-        this.trackingGateway.broadcastPosition(savedPoint, vessel);
-      }
-    } catch (error) {
-      console.error('Failed to broadcast position update:', error);
-    }
+    // Note: WebSocket broadcast is skipped for points without lat/lng coordinates
+    // since we can't provide coordinates to the frontend
+    console.log('Tracking point saved without coordinates - WebSocket broadcast skipped');
     
     return savedPoint;
   }

@@ -1,16 +1,10 @@
-/* FILENAME: ./apps/frontend/src/styles.css */
-/* Tailwind directives - these are the correct way to include Tailwind */
+/* Import statements must come first */
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+/* Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* You can add global styles to this file, and also import other style files */
-/* Remove this line - it's not needed and likely causing issues */
-/* @import 'tailwindcss'; */ /* <<< REMOVE THIS LINE */
-
-/* Keep your other imports */
-@import 'tailwindcss-primeui'; /* Assuming this is installed and configured correctly */
-@import 'maplibre-gl/dist/maplibre-gl.css';
 
 body {
   margin: 0;

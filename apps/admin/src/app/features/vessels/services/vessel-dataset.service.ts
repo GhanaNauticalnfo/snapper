@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { VesselDataset } from '../models/vessel-dataset.model';
+import { VesselDataset, TrackingPoint } from '../models/vessel-dataset.model';
 
 interface ApiVessel {
   id: number;
@@ -16,22 +16,7 @@ interface ApiVessel {
   active: boolean;
   created: string;
   last_updated: string;
-  tracking_points?: Array<{
-    id: number;
-    created: string;
-    timestamp: string;
-    vessel_id: number;
-    position: {
-      type: 'Point';
-      coordinates: [number, number]; // [longitude, latitude]
-    };
-    speed_knots: string;
-    heading_degrees: string;
-    battery_level: string | null;
-    signal_strength: string | null;
-    device_id: string | null;
-    status: string | null;
-  }>;
+  tracking_points?: TrackingPoint[];
 }
 
 @Injectable({
@@ -43,9 +28,9 @@ export class VesselDatasetService {
   constructor(private http: HttpClient) {}
 
   private mapApiVesselToVesselDataset(apiVessel: ApiVessel): VesselDataset {
-    // Get latest tracking point if available
+    // Get latest tracking point if available - sort by timestamp to get most recent
     const latestTrackingPoint = apiVessel.tracking_points && apiVessel.tracking_points.length > 0 
-      ? apiVessel.tracking_points[0] // API should return latest first
+      ? apiVessel.tracking_points.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
       : null;
     
     const lastPosition = latestTrackingPoint 
@@ -55,6 +40,7 @@ export class VesselDatasetService {
         }
       : { latitude: 0, longitude: 0 }; // Default when no tracking data
     
+    
     return {
       id: apiVessel.id,
       name: apiVessel.name,
@@ -63,7 +49,8 @@ export class VesselDatasetService {
       last_position: lastPosition,
       created: new Date(apiVessel.created),
       last_updated: new Date(apiVessel.last_updated),
-      enabled: apiVessel.active
+      enabled: apiVessel.active,
+      tracking_points: apiVessel.tracking_points
     };
   }
 

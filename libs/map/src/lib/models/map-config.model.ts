@@ -14,6 +14,7 @@ export interface MapConfig {
   showFullscreenControl?: boolean;
   showZoomControls?: boolean;
   showCompass?: boolean;
+  showCoordinateDisplay?: boolean;
   
   // Layer options
   availableLayers?: string[];
@@ -32,6 +33,7 @@ export const DEFAULT_MAP_CONFIG: MapConfig = {
   showFullscreenControl: true,
   showZoomControls: true,
   showCompass: true,
+  showCoordinateDisplay: true,
   availableLayers: [],
   initialActiveLayers: [],
   layerNames: {

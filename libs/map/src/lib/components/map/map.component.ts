@@ -40,6 +40,19 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
           </button>
         </div>
       </div>
+      
+      <div class="coordinate-display" *ngIf="_config.showCoordinateDisplay">
+        <div class="coordinate-text">
+          <div class="coord-line">{{ getLatitudeDMS() }}</div>
+          <div class="coord-line">{{ getLongitudeDMS() }}</div>
+          <div class="coord-decimal">({{ getLatitudeDD() }}, {{ getLongitudeDD() }})</div>
+        </div>
+        <div class="zoom-controls">
+          <button class="zoom-btn" (click)="map?.zoomIn()">+</button>
+          <div class="zoom-level">{{ currentZoom().toFixed(0) }}</div>
+          <button class="zoom-btn" (click)="map?.zoomOut()">−</button>
+        </div>
+      </div>
       <ng-content></ng-content>
     </div>
   `,
@@ -130,6 +143,77 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
       padding-top: 10px;
       border-top: 1px solid #e0e0e0;
     }
+    .coordinate-display {
+      position: absolute;
+      bottom: 60px;
+      right: 10px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      z-index: 10000;
+      pointer-events: none;
+    }
+    .coordinate-text {
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.3;
+      text-align: center;
+      min-width: 140px;
+    }
+    .coord-line {
+      font-weight: 500;
+    }
+    .coord-decimal {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+    }
+    .zoom-controls {
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      pointer-events: auto;
+    }
+    .zoom-btn {
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: none;
+      color: #333;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .zoom-btn:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    .zoom-level {
+      width: 32px;
+      height: 24px;
+      background: transparent;
+      color: #333;
+      font-size: 12px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
   `]
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -169,14 +253,42 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this._config.availableLayers = value;
   }
   
+  @Input() set showCoordinateDisplay(value: boolean) {
+    this._config.showCoordinateDisplay = value;
+  }
+  
+  @Input() set initialActiveLayers(value: string[]) {
+    this._config.initialActiveLayers = value;
+  }
+  
+  @Input() set showZoomControls(value: boolean) {
+    this._config.showZoomControls = value;
+  }
+  
+  @Input() set showCompass(value: boolean) {
+    this._config.showCompass = value;
+  }
+  
+  // Vessel filtering for AIS layer
+  @Input() set vesselFilter(value: number | null) {
+    console.log('Map Component: vesselFilter set to', value);
+    this._vesselFilter = value;
+    this.applyVesselFilter();
+  }
+  
   // Default configuration
   _config: MapConfig = { ...DEFAULT_MAP_CONFIG };
+  private _vesselFilter: number | null = null;
   
   private mapService = inject(MapService);
   public layerManager = inject(LayerManagerService);
   
   // Fullscreen state
   isFullscreen = signal<boolean>(false);
+  
+  // Coordinate display state
+  currentCoordinates = signal<{lng: number, lat: number}>({lng: 0, lat: 0});
+  currentZoom = signal<number>(9);
   
   // Map instance for public access
   private _map: Map | null = null;
@@ -212,6 +324,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this._config.initialActiveLayers && this._config.initialActiveLayers.length > 0) {
           this._config.initialActiveLayers.forEach(layerId => {
             this.layerManager.activateLayer(layerId);
+            // Apply vessel filter if this is the AIS layer
+            if (layerId === 'ais-ships') {
+              this.applyVesselFilter();
+            }
           });
         }
       });
@@ -235,6 +351,26 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
           popup.remove();
         }, 5000);
       });
+
+      // Add mouse move event listener for coordinate display
+      this._map.on('mousemove', (e) => {
+        if (this._config.showCoordinateDisplay) {
+          this.currentCoordinates.set({
+            lng: e.lngLat.lng,
+            lat: e.lngLat.lat
+          });
+        }
+      });
+
+      // Add zoom event listeners to update zoom level display
+      this._map.on('zoom', () => {
+        if (this._map) {
+          this.currentZoom.set(this._map.getZoom());
+        }
+      });
+
+      // Set initial zoom level
+      this.currentZoom.set(this._map.getZoom());
     }
   }
   
@@ -243,11 +379,60 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
       this.layerManager.deactivateLayer(layerId);
     } else {
       this.layerManager.activateLayer(layerId);
+      // Apply vessel filter if this is the AIS layer
+      if (layerId === 'ais-ships') {
+        this.applyVesselFilter();
+      }
+    }
+  }
+  
+  private applyVesselFilter(): void {
+    console.log('Map Component: applyVesselFilter called with', this._vesselFilter);
+    // Get the AIS layer and apply vessel filter
+    const aisLayer = this.layerManager.getLayer('ais-ships');
+    console.log('Map Component: AIS layer found:', !!aisLayer);
+    if (aisLayer && 'setVesselFilter' in aisLayer) {
+      (aisLayer as any).setVesselFilter(this._vesselFilter);
+    } else {
+      console.log('Map Component: AIS layer not available for filtering');
     }
   }
   
   getLayerName(layerId: string): string {
     return this._config.layerNames?.[layerId] || layerId;
+  }
+  
+  getLatitudeDMS(): string {
+    const coords = this.currentCoordinates();
+    return this.decimalToDMS(coords.lat, 'lat');
+  }
+  
+  getLongitudeDMS(): string {
+    const coords = this.currentCoordinates();
+    return this.decimalToDMS(coords.lng, 'lng');
+  }
+  
+  getLatitudeDD(): string {
+    const coords = this.currentCoordinates();
+    return coords.lat.toFixed(4);
+  }
+  
+  getLongitudeDD(): string {
+    const coords = this.currentCoordinates();
+    return coords.lng.toFixed(4);
+  }
+  
+  private decimalToDMS(decimal: number, type: 'lat' | 'lng'): string {
+    const abs = Math.abs(decimal);
+    const degrees = Math.floor(abs);
+    const minutes = Math.floor((abs - degrees) * 60);
+    const seconds = ((abs - degrees) * 60 - minutes) * 60;
+    
+    const direction = type === 'lat' 
+      ? (decimal >= 0 ? 'N' : 'S')
+      : (decimal >= 0 ? 'E' : 'W');
+    
+    return `${direction}${degrees.toString().padStart(2, '0')}°${minutes.toString().padStart(2, '0')}'${seconds.toFixed(2).padStart(5, '0')}"`;
   }
   
   toggleFullscreen(): void {
@@ -334,6 +519,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     
     // Rest of your cleanup code
     this.layerManager.destroy();
-    this.mapService.removeMap();
+    
+    // Remove this specific map instance
+    if (this._map) {
+      this.mapService.removeMap(this._map);
+      this._map = null;
+    }
   }
 }

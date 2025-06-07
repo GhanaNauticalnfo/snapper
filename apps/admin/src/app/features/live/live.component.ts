@@ -1,5 +1,5 @@
 // In your component (e.g., LiveComponent)
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { 
   MapComponent, 
@@ -13,19 +13,118 @@ import {
   DebugPanelComponent,
   DebugLogService
 } from '@snapper/map';
+import { VesselSearchComponent, VesselWithLocation } from './components/vessel-search.component';
+import { VesselSearchService } from './services/vessel-search.service';
 
 @Component({
   selector: 'app-live',
   standalone: true,
-  imports: [CommonModule, MapComponent],
+  imports: [CommonModule, MapComponent, VesselSearchComponent],
   template: `
-    <lib-map [config]="mapConfig">
-    </lib-map>
+    <div class="live-container">
+      <div class="live-header">
+        <div class="header-content">
+          <h2>Live Vessel Tracking</h2>
+        </div>
+      </div>
+      <div class="map-container">
+        <lib-map #mapComponent [config]="mapConfig">
+          <div class="map-overlay">
+            <app-vessel-search 
+              (vesselSelected)="onVesselSelected($event)"
+              class="vessel-search-overlay">
+            </app-vessel-search>
+          </div>
+        </lib-map>
+      </div>
+    </div>
   `,
   styles: [`
     :host {
       display: block;
-      padding: 0 20px 20px 20px;
+      padding: 0;
+      height: 100%;
+    }
+    
+    .live-container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .live-header {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 20px;
+      flex-shrink: 0;
+    }
+    
+    .header-content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    h2 {
+      margin: 0;
+      color: #1f2937;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .map-container {
+      flex: 1;
+      padding: 20px;
+      min-height: 0;
+      position: relative;
+    }
+    
+    .map-overlay {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+      pointer-events: none;
+    }
+    
+    .vessel-search-overlay {
+      pointer-events: auto;
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 0;
+      overflow: hidden;
+    }
+    
+    .map-container ::ng-deep .map-container {
+      height: 100%;
+      min-height: 500px;
+    }
+    
+    @media (max-width: 768px) {
+      .header-content {
+        justify-content: center;
+      }
+      
+      h2 {
+        text-align: center;
+        font-size: 20px;
+      }
+      
+      .map-overlay {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+      }
+      
+      .vessel-search-overlay {
+        width: 100%;
+        box-sizing: border-box;
+      }
     }
   `],
   providers: [
@@ -35,9 +134,12 @@ import {
     NiordLayerService
   ]
 })
-export class LiveComponent implements OnInit {
+export class LiveComponent implements OnInit, AfterViewInit {
+  @ViewChild('mapComponent') mapComponent!: MapComponent;
+  
   private layerManager = inject(LayerManagerService);
   private debugLog = inject(DebugLogService);
+  private vesselSearchService = inject(VesselSearchService);
   
   constructor() {
     // Add some initial debug logs to ensure panel has content
@@ -56,8 +158,8 @@ export class LiveComponent implements OnInit {
     zoom: 7.5, // Adjusted zoom to show the full lake area
     height: '600px',
     showFullscreenControl: true,
-    showZoomControls: true,
-    showCompass: true,
+    showZoomControls: false,
+    showCompass: false,
     availableLayers: ['ais-ships', 'weather', 'niord', 'depth'],
     initialActiveLayers: ['ais-ships'], // Automatically activate this layer on load
     layerNames: {
@@ -78,5 +180,20 @@ export class LiveComponent implements OnInit {
     this.layerManager.registerLayer('depth', DepthLayerService);
     
     this.debugLog.success('Live Component', 'All layers registered successfully');
+  }
+  
+  ngAfterViewInit() {
+    // Set up the vessel search service with the map when it's ready
+    setTimeout(() => {
+      if (this.mapComponent?.map) {
+        this.vesselSearchService.setMap(this.mapComponent.map);
+        this.debugLog.info('Live Component', 'Vessel search service initialized with map');
+      }
+    }, 500);
+  }
+  
+  onVesselSelected(vessel: VesselWithLocation) {
+    this.debugLog.info('Live Component', `Vessel selected: ${vessel.name} (${vessel.registration_number})`);
+    this.vesselSearchService.zoomToVessel(vessel);
   }
 }

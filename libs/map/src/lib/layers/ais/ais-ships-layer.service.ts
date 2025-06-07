@@ -29,11 +29,25 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   private socket: Socket | null = null;
   private vesselPositions = new Map<number, PositionUpdate>();
   
+  // Vessel filtering configuration
+  private vesselFilter: number | null = null;
+  
   constructor(
     private http: HttpClient,
     private debugLog: DebugLogService
   ) {
     super();
+  }
+  
+  // Configure vessel filtering
+  setVesselFilter(vesselId: number | null): void {
+    this.vesselFilter = vesselId;
+    console.log('AIS Layer: vessel filter set to', vesselId);
+    
+    // Re-render existing data with new filter
+    if (this.map) {
+      this.updateMapDisplay();
+    }
   }
   
   initialize(map: MapLibreMap): void {
@@ -45,8 +59,8 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     
     // Add image for ship icon if not already added
     if (!map.hasImage('ship-icon')) {
-      // Use the Promise-based loadImage API
-      map.loadImage('/assets/sprites/ship.png')
+      // Create a simple ship icon using SVG data URL
+      this.createShipIcon()
         .then(response => {
           if (this.map) {
             this.map.addImage('ship-icon', response.data);
@@ -54,13 +68,53 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           }
         })
         .catch(error => {
-          console.error('Failed to load ship icon:', error);
+          console.error('Failed to create ship icon:', error);
           // Use a circle as fallback
           this.initializeWithFallbackIcon();
         });
     } else {
       this.initializeLayers();
     }
+  }
+  
+  private createShipIcon(): Promise<{data: HTMLImageElement | ImageBitmap | ImageData | {width: number, height: number, data: Uint8Array | Uint8ClampedArray}}> {
+    return new Promise((resolve, reject) => {
+      // Create a directional ship icon using SVG (pointing up/north by default)
+      const svgString = `
+        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#007cbf" stroke="#ffffff" stroke-width="0.5">
+            <!-- Ship bow (pointed front) -->
+            <path d="M12 3 L16 8 L8 8 Z" fill="#004d7a"/>
+            <!-- Ship main body -->
+            <rect x="8" y="8" width="8" height="10" rx="1" fill="#007cbf"/>
+            <!-- Ship stern (flat back) -->
+            <rect x="7" y="18" width="10" height="2" rx="1" fill="#004d7a"/>
+            <!-- Bridge/superstructure -->
+            <rect x="10" y="9" width="4" height="3" rx="0.5" fill="#ffffff"/>
+            <!-- Direction indicator (small triangle at bow) -->
+            <path d="M12 3 L13 5 L11 5 Z" fill="#ff4444"/>
+          </g>
+        </svg>
+      `;
+      
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 24;
+      canvas.height = 24;
+      
+      const img = new Image();
+      img.onload = () => {
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, 24, 24);
+          const imageData = ctx.getImageData(0, 0, 24, 24);
+          resolve({ data: imageData });
+        } else {
+          reject(new Error('Failed to get canvas context'));
+        }
+      };
+      img.onerror = () => reject(new Error('Failed to load SVG'));
+      img.src = 'data:image/svg+xml;base64,' + btoa(svgString);
+    });
   }
   
   private initializeWithFallbackIcon(): void {
@@ -231,14 +285,17 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
             vesselType: trackingPoint.vessel?.vessel_type || 'Unknown',
             lat: coordinates[1],
             lng: coordinates[0],
-            heading: trackingPoint.heading_degrees,
-            speed: trackingPoint.speed_knots,
+            heading: trackingPoint.heading_degrees ? Number(trackingPoint.heading_degrees) : null,
+            speed: trackingPoint.speed_knots ? Number(trackingPoint.speed_knots) : null,
             status: trackingPoint.status,
             timestamp: trackingPoint.timestamp
           };
           
           // Store in our local map
           this.vesselPositions.set(vesselId, positionUpdate);
+          
+          const heading = positionUpdate.heading || 0;
+          console.log(`🧭 Vessel ${positionUpdate.vesselName}: heading = ${heading}°`);
           
           features.push({
             type: 'Feature',
@@ -249,7 +306,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
             properties: {
               id: vesselId,
               name: positionUpdate.vesselName,
-              heading: positionUpdate.heading || 0,
+              heading: heading,
               speed: positionUpdate.speed || 0,
               type: positionUpdate.vesselType,
               status: positionUpdate.status || 'Active',
@@ -334,35 +391,90 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   }
   
   private initializeWebSocket(): void {
-    // Connect to the WebSocket server
+    console.log('🔧 Initializing WebSocket connection...');
+    
+    // Connect to the WebSocket server through Angular proxy
     this.socket = io('/tracking', {
       path: '/socket.io/',
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'], // Try polling first, then WebSocket
+      autoConnect: true,
+      forceNew: true,
+      timeout: 5000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+    
+    console.log('🔧 WebSocket instance created with config:', {
+      namespace: '/tracking', 
+      transports: ['polling', 'websocket'],
+      socketId: this.socket.id
     });
     
     this.socket.on('connect', () => {
       this.debugLog.success('WebSocket', 'Connected to vessel tracking WebSocket');
+      console.log('🔌 WebSocket connected to vessel tracking, ID:', this.socket?.id);
       // Subscribe to all vessel updates
       this.socket?.emit('subscribe-all');
     });
     
-    this.socket.on('disconnect', () => {
+    this.socket.on('connect_error', (error: any) => {
+      console.error('🔌 WebSocket connection error:', error);
+      this.debugLog.error('WebSocket', 'Connection failed', error);
+    });
+    
+    this.socket.on('disconnect', (reason: string) => {
       this.debugLog.warn('WebSocket', 'Disconnected from vessel tracking WebSocket');
+      console.log('🔌 WebSocket disconnected from vessel tracking, reason:', reason);
+    });
+    
+    this.socket.on('reconnect', (attemptNumber: number) => {
+      console.log('🔌 WebSocket reconnected after', attemptNumber, 'attempts');
+    });
+    
+    this.socket.on('reconnecting', (attemptNumber: number) => {
+      console.log('🔌 WebSocket reconnecting, attempt:', attemptNumber);
     });
     
     // Handle single position update
-    this.socket.on('position-update', (update: PositionUpdate) => {
-      this.handlePositionUpdate(update);
+    this.socket.on('position-update', (update: any) => {
+      // Ensure proper data types
+      const typedUpdate: PositionUpdate = {
+        ...update,
+        heading: update.heading ? Number(update.heading) : null,
+        speed: update.speed ? Number(update.speed) : null,
+        lat: Number(update.lat),
+        lng: Number(update.lng),
+        vesselId: Number(update.vesselId)
+      };
+      this.handlePositionUpdate(typedUpdate);
     });
     
     // Handle batch position updates
-    this.socket.on('positions-batch', (updates: PositionUpdate[]) => {
+    this.socket.on('positions-batch', (updates: any[]) => {
       this.debugLog.info('WebSocket', `Received batch of ${updates.length} position updates`);
-      updates.forEach(update => this.handlePositionUpdate(update));
+      console.log('📦 WebSocket batch update:', `${updates.length} position updates`);
+      updates.forEach(update => {
+        // Ensure proper data types
+        const typedUpdate: PositionUpdate = {
+          ...update,
+          heading: update.heading ? Number(update.heading) : null,
+          speed: update.speed ? Number(update.speed) : null,
+          lat: Number(update.lat),
+          lng: Number(update.lng),
+          vesselId: Number(update.vesselId)
+        };
+        this.handlePositionUpdate(typedUpdate);
+      });
+    });
+    
+    this.socket.on('subscribed', (data: any) => {
+      console.log('✅ WebSocket subscription confirmed:', data);
     });
     
     this.socket.on('error', (error: any) => {
       this.debugLog.error('WebSocket', 'WebSocket connection error', error);
+      console.error('❌ WebSocket error:', error);
     });
   }
   
@@ -370,39 +482,62 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     // Store the position update
     this.vesselPositions.set(update.vesselId, update);
     
-    this.debugLog.info('Position Update', 
-      `Vessel ${update.vesselName} (ID: ${update.vesselId}) - ` +
+    // Log to both debug service and browser console for debugging
+    const speed = update.speed ? Number(update.speed) : 0;
+    const heading = update.heading ? Number(update.heading) : 0;
+    const logMessage = `WebSocket Update: Vessel ${update.vesselName} (ID: ${update.vesselId}) - ` +
       `Lat: ${update.lat.toFixed(6)}, Lng: ${update.lng.toFixed(6)}, ` +
-      `Speed: ${update.speed?.toFixed(1) || 0} knots, ` +
-      `Heading: ${update.heading?.toFixed(0) || 0}°`);
+      `Speed: ${speed.toFixed(1)} knots, ` +
+      `Heading: ${heading.toFixed(0)}°`;
     
-    // Update the map if it's available
-    if (this.map) {
-      const source = this.map.getSource(this.layerId) as GeoJSONSource;
-      if (source) {
-        // Convert all vessel positions to GeoJSON
-        const features: GeoJSON.Feature[] = Array.from(this.vesselPositions.values()).map((pos: PositionUpdate) => ({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [pos.lng, pos.lat]
-          },
-          properties: {
-            id: pos.vesselId,
-            name: pos.vesselName,
-            heading: pos.heading || 0,
-            speed: pos.speed || 0,
-            type: pos.vesselType,
-            status: pos.status || 'Active',
-            lastUpdate: pos.timestamp
-          }
-        } as GeoJSON.Feature));
-        
-        source.setData({
-          type: 'FeatureCollection',
-          features
-        });
+    this.debugLog.info('Position Update', logMessage);
+    console.log('🚢', logMessage);  // Browser console with ship emoji for easy identification
+    
+    // Update the map display with filtering
+    this.updateMapDisplay();
+  }
+  
+  private updateMapDisplay(): void {
+    if (!this.map) return;
+    
+    const source = this.map.getSource(this.layerId) as GeoJSONSource;
+    if (source) {
+      // Filter vessel positions based on vesselFilter
+      const filteredPositions = this.vesselFilter 
+        ? Array.from(this.vesselPositions.values()).filter(pos => pos.vesselId === this.vesselFilter)
+        : Array.from(this.vesselPositions.values());
+      
+      console.log(`AIS Layer: Displaying ${filteredPositions.length} vessels (filter: ${this.vesselFilter || 'none'})`);
+      console.log('AIS Layer: Total positions available:', this.vesselPositions.size);
+      console.log('AIS Layer: All vessel IDs:', Array.from(this.vesselPositions.keys()));
+      if (this.vesselFilter) {
+        console.log('AIS Layer: Looking for vessel ID:', this.vesselFilter);
+        const matchingVessel = this.vesselPositions.get(this.vesselFilter);
+        console.log('AIS Layer: Found matching vessel:', matchingVessel);
       }
+      
+      // Convert filtered vessel positions to GeoJSON
+      const features: GeoJSON.Feature[] = filteredPositions.map((pos: PositionUpdate) => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [pos.lng, pos.lat]
+        },
+        properties: {
+          id: pos.vesselId,
+          name: pos.vesselName,
+          heading: pos.heading || 0,
+          speed: pos.speed || 0,
+          type: pos.vesselType,
+          status: pos.status || 'Active',
+          lastUpdate: pos.timestamp
+        }
+      } as GeoJSON.Feature));
+      
+      source.setData({
+        type: 'FeatureCollection',
+        features
+      });
     }
   }
   

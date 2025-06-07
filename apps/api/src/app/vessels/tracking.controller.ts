@@ -129,4 +129,31 @@ import {
 
       return await this.trackingService.create(trackingData);
     }
+
+    @Post('test-update')
+    async testPositionUpdate(@Body() body: { vessel_id: number; latitude: number; longitude: number; speed?: number; heading?: number }): Promise<{ success: boolean; message: string }> {
+      try {
+        const trackingData: CreateTrackingPointDto = {
+          vessel_id: body.vessel_id,
+          latitude: body.latitude,
+          longitude: body.longitude,
+          timestamp: new Date(),
+          speed_knots: body.speed || Math.random() * 20, // Random speed between 0-20 knots
+          heading_degrees: body.heading || Math.random() * 360, // Random heading
+          status: 'Active'
+        };
+
+        await this.trackingService.create(trackingData);
+        
+        return {
+          success: true,
+          message: `Position update sent for vessel ${body.vessel_id} at ${body.latitude}, ${body.longitude}`
+        };
+      } catch (error) {
+        return {
+          success: false,
+          message: `Failed to update position: ${error.message}`
+        };
+      }
+    }
   }

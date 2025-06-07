@@ -87,29 +87,16 @@ export class TrackingGateway
   }
 
   // Called by tracking service when new position is saved
-  broadcastPosition(trackingPoint: TrackingPoint, vessel: Vessel) {
-    // Extract coordinates from PostGIS geography
+  broadcastPosition(trackingPoint: TrackingPoint, vessel: Vessel, coordinates?: { lat: number; lng: number }) {
     let lat: number, lng: number;
     
-    if (trackingPoint.position) {
-      if (typeof trackingPoint.position === 'string') {
-        // Parse WKT format: POINT(longitude latitude)
-        const match = trackingPoint.position.match(/POINT\(([^ ]+) ([^ ]+)\)/);
-        if (match) {
-          lng = parseFloat(match[1]);
-          lat = parseFloat(match[2]);
-        } else {
-          this.logger.warn('Could not parse position from tracking point');
-          return;
-        }
-      } else if (trackingPoint.position.coordinates) {
-        [lng, lat] = trackingPoint.position.coordinates;
-      } else {
-        this.logger.warn('Unknown position format');
-        return;
-      }
+    if (coordinates) {
+      // Use provided coordinates (preferred method)
+      lat = coordinates.lat;
+      lng = coordinates.lng;
     } else {
-      this.logger.warn('No position data in tracking point');
+      // Fallback: try to parse PostGIS data (this probably won't work with binary format)
+      this.logger.warn('No coordinates provided to broadcastPosition, position update may fail');
       return;
     }
 
@@ -131,7 +118,7 @@ export class TrackingGateway
     // Broadcast to specific vessel room
     this.server.to(`vessel-${vessel.id}`).emit('position-update', update);
     
-    this.logger.log(`Broadcasted position update for vessel ${vessel.id}`);
+    this.logger.log(`Broadcasted position update for vessel ${vessel.id} at ${lng}, ${lat}`);
   }
 
   // Broadcast multiple position updates (e.g., initial load)

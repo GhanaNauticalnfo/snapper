@@ -28,6 +28,10 @@ export class LayerManagerService {
     return this.activeLayers.has(layerId);
   }
   
+  getLayer(layerId: string): BaseLayerService | undefined {
+    return this.activeLayers.get(layerId);
+  }
+  
   activateLayer(layerId: string): void {
     if (!this.map || this.activeLayers.has(layerId)) return;
     
