@@ -74,8 +74,7 @@ snapper/
 ├── apps/
 │   ├── admin/         # Admin dashboard (Angular + PrimeNG)
 │   ├── api/          # Backend API (NestJS)
-│   ├── frontend/     # Public map interface (Angular + MapLibre)
-│   └── tracker/      # Vessel tracker interface
+│   └── frontend/     # Public map interface (Angular + MapLibre)
 ├── libs/
 │   ├── map/          # Shared MapLibre components
 │   └── shared-models/ # Shared TypeScript models
