@@ -14,11 +14,7 @@ COPY . .
 
 # Build with specified environment
 ARG ENVIRONMENT=production
-RUN if [ "$ENVIRONMENT" = "test" ]; then \
-      npx nx build admin; \
-    else \
-      npx nx build admin --configuration=${ENVIRONMENT}; \
-    fi
+RUN npx nx build admin --configuration=${ENVIRONMENT}
 
 # Stage 2: Serve the app with Nginx
 FROM nginx:alpine

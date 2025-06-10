@@ -14,11 +14,7 @@ COPY . .
 
 # Build with specified environment
 ARG ENVIRONMENT=production
-RUN if [ "$ENVIRONMENT" = "test" ]; then \
-      npx nx build frontend; \
-    else \
-      npx nx build frontend --configuration=${ENVIRONMENT}; \
-    fi
+RUN npx nx build frontend --configuration=${ENVIRONMENT}
 
 # Stage 2: Serve the app with Nginx
 FROM nginx:alpine
