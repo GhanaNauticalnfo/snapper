@@ -175,7 +175,7 @@ jobs:
           fi
           
   build-and-push:
-    needs: [check-affected, setup-database]
+    needs: [check-affected]
     # Skip if not affected by changes and not production with manual trigger
     if: |
       needs.check-affected.outputs.is_affected == 'true' ||
@@ -215,7 +215,7 @@ jobs:
             ENVIRONMENT=${{ inputs.environment }}
           
   deploy:
-    needs: [check-affected, setup-database, build-and-push]
+    needs: [check-affected, build-and-push]
     # Only run if build was executed
     if: |
       needs.check-affected.outputs.is_affected == 'true' ||
