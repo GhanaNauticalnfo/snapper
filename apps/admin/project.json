@@ -62,6 +62,18 @@
               "with": "apps/admin/src/environments/environment.development.ts"
             }
           ]
+        },
+        "test": {
+          "optimization": true,
+          "outputHashing": "all",
+          "sourceMap": false,
+          "extractLicenses": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/admin/src/environments/environment.ts",
+              "with": "apps/admin/src/environments/environment.test.ts"
+            }
+          ]
         }
       },
       "defaultConfiguration": "production"
