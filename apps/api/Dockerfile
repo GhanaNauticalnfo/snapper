@@ -1,7 +1,7 @@
 #apps/api/Dockerfile
 
 # Stage 1: Build
-FROM node:18 AS build
+FROM node:22 AS build
 WORKDIR /app
 
 COPY package.json package-lock.json nx.json ./
@@ -23,7 +23,7 @@ RUN echo "--- Contents of /app/dist/apps/api after nx build ---"
 RUN ls -lR /app/dist/apps/api || echo "/app/dist/apps/api not found"
 
 # Stage 2: Run
-FROM node:18-alpine
+FROM node:22-alpine
 WORKDIR /app
 
 COPY package.json package-lock.json ./
