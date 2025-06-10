@@ -3,12 +3,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { KmlDataset } from '../models/kml-dataset.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class KmlDatasetService {
-  private apiUrl = '/api/kml-datasets';
+  private apiUrl = `${environment.apiUrl}/kml-datasets`;
 
   constructor(private http: HttpClient) {}
 

@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { VesselDataset, TrackingPoint } from '../models/vessel-dataset.model';
+import { environment } from '../../../../environments/environment';
 
 interface ApiVessel {
   id: number;
@@ -23,7 +24,7 @@ interface ApiVessel {
   providedIn: 'root'
 })
 export class VesselDatasetService {
-  private apiUrl = '/api/vessels';
+  private apiUrl = `${environment.apiUrl}/vessels`;
 
   constructor(private http: HttpClient) {}
 
