@@ -3,7 +3,7 @@
  * This is only a minimal API to get started.
  */
 
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app/app.module';
@@ -12,6 +12,16 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
+
+  // Enable validation for DTOs
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+  }));
 
   // Enable CORS for cross-origin requests
   app.enableCors({
@@ -40,7 +50,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('vessels', 'Vessel management and tracking')
-    .addTag('tracking', 'Real-time vessel tracking')
+    .addTag('vessel-telemetry', 'Real-time vessel telemetry')
     .addTag('devices', 'Device management and authentication')
     .addTag('kml-datasets', 'KML dataset management')
     .addTag('volta-depth', 'Volta Lake depth tiles')

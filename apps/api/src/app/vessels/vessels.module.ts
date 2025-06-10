@@ -1,44 +1,51 @@
-// vessels.module.ts (updated)
+// vessels.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vessel } from './vessel.entity';
-import { TrackingPoint } from './tracking-point.entity';
-import { Device } from './device.entity';
+import { VesselType } from './type/vessel-type.entity';
+import { Device, DeviceAuthService, DeviceController } from './device';
 import { VesselService } from './vessel.service';
-import { TrackingService } from './tracking.service';
-import { MqttTrackingService } from './mqtt-tracking.service';
-import { DeviceAuthService } from './device-auth.service';
 import { VesselController } from './vessel.controller';
-import { TrackingController } from './tracking.controller';
-import { QgisController } from './qgis.controller';
-import { DeviceController } from './device.controller';
-import { TrackingGateway } from './tracking.gateway';
+import { QgisTrackingController } from './tracking/qgis-tracking.controller';
+import { VesselTypeController } from './type/vessel-type.controller';
+import { VesselTypeService } from './type/vessel-type.service';
+import { VesselTelemetry } from './tracking/vessel-telemetry.entity';
+import { TrackingService } from './tracking/tracking.service';
+import { TrackingController } from './tracking/tracking.controller';
+import { TrackingGateway } from './tracking/tracking.gateway';
+import { MqttTrackingService } from './tracking/mqtt-tracking.service';
+import { TelemetryExportService } from './tracking/telemetry-export.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       Vessel,
-      TrackingPoint,
-      Device
-    ])
+      VesselType,
+      Device,
+      VesselTelemetry,
+    ]),
   ],
   providers: [
     VesselService,
-    TrackingService,
-    MqttTrackingService,
     DeviceAuthService,
-    TrackingGateway
+    VesselTypeService,
+    TrackingService,
+    TrackingGateway,
+    MqttTrackingService,
+    TelemetryExportService,
   ],
   controllers: [
+    VesselTypeController,
     VesselController,
     TrackingController,
-    QgisController,
+    QgisTrackingController,
     DeviceController
   ],
   exports: [
     VesselService,
+    VesselTypeService,
     TrackingService,
-    TrackingGateway
+    TrackingGateway,
   ],
 })
 export class VesselsModule {}

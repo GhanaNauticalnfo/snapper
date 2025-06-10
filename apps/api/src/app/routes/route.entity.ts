@@ -1,12 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-
-export interface Waypoint {
-  id?: string;
-  lat: number;
-  lng: number;
-  name?: string;
-  order: number;
-}
+import { Waypoint } from '@snapper/shared-models';
 
 @Entity('routes')
 export class Route {
@@ -22,8 +15,6 @@ export class Route {
   @Column('jsonb', { default: [] })
   waypoints: Waypoint[];
 
-  @Column({ default: '#FF0000' })
-  color: string;
 
   @Column({ default: true })
   enabled: boolean;

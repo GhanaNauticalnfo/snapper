@@ -7,18 +7,16 @@ import { SearchDropdownComponent, SearchDropdownConfig, SearchDropdownItem } fro
 export interface Vessel {
   id: number;
   name: string;
-  registration_number: string;
   vessel_type: string;
   length_meters?: number;
   owner_name?: string;
   owner_contact?: string;
   home_port?: string;
-  active: boolean;
   created: Date;
   last_updated: Date;
 }
 
-export interface TrackingPoint {
+export interface VesselTelemetry {
   id: number;
   vessel_id: number;
   latitude?: number;
@@ -56,12 +54,8 @@ export interface VesselWithLocation extends Vessel {
     <ng-template #vesselItemTemplate let-vessel let-selected="selected">
       <div class="vessel-header">
         <span class="vessel-name">{{ vessel.name }}</span>
-        <span class="vessel-status" [class.active]="vessel.active">
-          {{ vessel.active ? 'Active' : 'Inactive' }}
-        </span>
       </div>
       <div class="vessel-details">
-        <span class="registration">{{ vessel.registration_number }}</span>
         <span class="type">{{ vessel.vessel_type }}</span>
         @if (vessel.home_port) {
           <span class="port">{{ vessel.home_port }}</span>
@@ -92,19 +86,6 @@ export interface VesselWithLocation extends Vessel {
       font-size: 15px;
     }
     
-    .vessel-status {
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 500;
-      text-transform: uppercase;
-      background-color: #ef4444;
-      color: white;
-    }
-    
-    .vessel-status.active {
-      background-color: #10b981;
-    }
     
     .vessel-details {
       display: flex;
@@ -112,11 +93,6 @@ export interface VesselWithLocation extends Vessel {
       margin-bottom: 6px;
       font-size: 13px;
       color: #6b7280;
-    }
-    
-    .registration {
-      font-weight: 500;
-      color: #374151;
     }
     
     .type {
@@ -150,6 +126,7 @@ export interface VesselWithLocation extends Vessel {
     .timestamp {
       color: #6b7280;
       margin-left: auto;
+      white-space: nowrap;
     }
   `]
 })
@@ -164,8 +141,8 @@ export class VesselSearchComponent implements OnInit {
   vesselSelected = output<VesselWithLocation>();
   
   searchConfig: SearchDropdownConfig = {
-    placeholder: 'Search vessels by name or registration...',
-    searchFields: ['name', 'registration_number'],
+    placeholder: 'Search vessels by name...',
+    searchFields: ['name'],
     maxResults: 10,
     showKeyboardHints: true,
     noResultsText: 'No vessels found matching',
@@ -178,7 +155,7 @@ export class VesselSearchComponent implements OnInit {
   }
   
   onVesselSelected(vessel: VesselWithLocation) {
-    console.log('Vessel selected:', vessel.name, vessel.registration_number);
+    console.log('Vessel selected:', vessel.name);
     this.vesselSelected.emit(vessel);
   }
   
@@ -212,26 +189,26 @@ export class VesselSearchComponent implements OnInit {
       next: (vessels) => {
         console.log('Received vessels from API:', vessels.length, 'vessels');
         
-        // Load latest tracking for each vessel
-        const trackingRequests = vessels.map(vessel => 
-          this.getVesselTracking(vessel.id, 1).pipe(
-            map(tracking => {
-              console.log(`Tracking for vessel ${vessel.name}:`, tracking);
+        // Load latest telemetry for each vessel
+        const telemetryRequests = vessels.map(vessel => 
+          this.getVesselTelemetry(vessel.id, 1).pipe(
+            map(telemetry => {
+              console.log(`Telemetry for vessel ${vessel.name}:`, telemetry);
               return { 
                 ...vessel, 
-                latitude: tracking[0]?.position?.coordinates?.[1] || tracking[0]?.latitude,
-                longitude: tracking[0]?.position?.coordinates?.[0] || tracking[0]?.longitude,
-                lastSeen: tracking[0]?.timestamp ? new Date(tracking[0].timestamp) : undefined
+                latitude: telemetry[0]?.position?.coordinates?.[1] || telemetry[0]?.latitude,
+                longitude: telemetry[0]?.position?.coordinates?.[0] || telemetry[0]?.longitude,
+                lastSeen: telemetry[0]?.timestamp ? new Date(telemetry[0].timestamp) : undefined
               };
             }),
             catchError((error) => {
-              console.warn(`Error loading tracking for vessel ${vessel.name}:`, error);
+              console.warn(`Error loading telemetry for vessel ${vessel.name}:`, error);
               return of({ ...vessel });
             })
           )
         );
         
-        forkJoin(trackingRequests).subscribe(vesselsWithLocation => {
+        forkJoin(telemetryRequests).subscribe(vesselsWithLocation => {
           console.log('Final vessels with location data:', vesselsWithLocation);
           this.vessels.set(vesselsWithLocation);
           this.isLoading.set(false);
@@ -257,10 +234,10 @@ export class VesselSearchComponent implements OnInit {
   }
   
   private getActiveVessels(): Observable<Vessel[]> {
-    return this.http.get<Vessel[]>('/api/vessels?active=true');
+    return this.http.get<Vessel[]>('/api/vessels');
   }
   
-  private getVesselTracking(vesselId: number, limit: number = 1): Observable<TrackingPoint[]> {
-    return this.http.get<TrackingPoint[]>(`/api/vessels/${vesselId}/tracking?limit=${limit}`);
+  private getVesselTelemetry(vesselId: number, limit: number = 1): Observable<VesselTelemetry[]> {
+    return this.http.get<VesselTelemetry[]>(`/api/vessels/${vesselId}/telemetry?limit=${limit}`);
   }
 }

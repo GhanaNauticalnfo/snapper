@@ -14,7 +14,7 @@ This document describes the integration between the Android tracking app and the
 ### 2. Device Activation (Android App)
 - User clicks/scans the activation URL
 - Android app intercepts the URL and extracts the token
-- App sends POST to `/api/tracking/activate` with the activation token
+- App sends POST to `/api/devices/activate` with the activation token
 - Server validates token and returns:
   - `auth_token`: Permanent authentication token
   - `device_token`: Unique device identifier
@@ -22,7 +22,7 @@ This document describes the integration between the Android tracking app and the
   - `vessel`: Optional vessel name
 
 ### 3. Position Reporting (Android App)
-- App sends POST to `/api/tracking/report` with Bearer token
+- App sends POST to `/api/vessels/telemetry/report` with Bearer token
 - Includes position data:
   - `device_token`: Device identifier
   - `latitude`, `longitude`: GPS coordinates
@@ -41,8 +41,8 @@ This document describes the integration between the Android tracking app and the
 - `POST /api/device-tokens/:id/revoke` - Revoke activated device
 
 ### Tracking (Android)
-- `POST /api/tracking/activate` - Activate device with token
-- `POST /api/tracking/report` - Report position (requires auth)
+- `POST /api/devices/activate` - Activate device with token
+- `POST /api/vessels/telemetry/report` - Report position (requires auth)
 
 ## Database Schema
 

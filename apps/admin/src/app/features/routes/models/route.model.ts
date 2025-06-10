@@ -11,7 +11,6 @@ export interface Route {
   name: string;
   description?: string;
   waypoints: Waypoint[];
-  color?: string;
   created?: Date;
   last_updated?: Date;
   enabled: boolean;

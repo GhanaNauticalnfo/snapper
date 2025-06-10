@@ -75,8 +75,6 @@ export class HomeComponent {
     height: '100%',
     showCoordinateDisplay: true, // Enable coordinate display
     showFullscreenControl: true,
-    showZoomControls: false, // Disable default zoom controls since we have custom ones
-    showCompass: true,
     showControls: false // Disable layer controls for simpler view
   };
 

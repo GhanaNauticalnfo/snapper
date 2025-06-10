@@ -1,5 +1,5 @@
 // features/vessel/models/vessel-dataset.model.ts
-export interface TrackingPoint {
+export interface VesselTelemetry {
   id: number;
   created: string;
   timestamp: string;
@@ -19,14 +19,14 @@ export interface TrackingPoint {
 export interface VesselDataset {
     id: number;
     name: string;
-    type: 'Canoe' | 'Vessel';
-    last_seen: Date;
+    type: string;
+    vessel_type_id: number;
+    last_seen: Date | null;
     last_position: {
       latitude: number;
       longitude: number;
-    };
+    } | null;
     created: Date;
     last_updated: Date;
-    enabled: boolean;
-    tracking_points?: TrackingPoint[];
+    vessel_telemetry?: VesselTelemetry[];
   }

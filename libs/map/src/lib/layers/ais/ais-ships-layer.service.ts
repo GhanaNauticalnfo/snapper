@@ -57,24 +57,24 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     // Initialize WebSocket connection
     this.initializeWebSocket();
     
-    // Add image for ship icon if not already added
-    if (!map.hasImage('ship-icon')) {
-      // Create a simple ship icon using SVG data URL
-      this.createShipIcon()
-        .then(response => {
-          if (this.map) {
-            this.map.addImage('ship-icon', response.data);
-            this.initializeLayers();
-          }
-        })
-        .catch(error => {
-          console.error('Failed to create ship icon:', error);
-          // Use a circle as fallback
-          this.initializeWithFallbackIcon();
-        });
-    } else {
-      this.initializeLayers();
+    // Remove existing ship icon if it exists and add new one
+    if (map.hasImage('ship-icon')) {
+      map.removeImage('ship-icon');
     }
+    
+    // Create a simple ship icon using SVG data URL
+    this.createShipIcon()
+      .then(response => {
+        if (this.map) {
+          this.map.addImage('ship-icon', response.data);
+          this.initializeLayers();
+        }
+      })
+      .catch(error => {
+        console.error('Failed to create ship icon:', error);
+        // Use a circle as fallback
+        this.initializeWithFallbackIcon();
+      });
   }
   
   private createShipIcon(): Promise<{data: HTMLImageElement | ImageBitmap | ImageData | {width: number, height: number, data: Uint8Array | Uint8ClampedArray}}> {
@@ -82,18 +82,12 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       // Create a directional ship icon using SVG (pointing up/north by default)
       const svgString = `
         <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <g fill="#007cbf" stroke="#ffffff" stroke-width="0.5">
-            <!-- Ship bow (pointed front) -->
-            <path d="M12 3 L16 8 L8 8 Z" fill="#004d7a"/>
-            <!-- Ship main body -->
-            <rect x="8" y="8" width="8" height="10" rx="1" fill="#007cbf"/>
-            <!-- Ship stern (flat back) -->
-            <rect x="7" y="18" width="10" height="2" rx="1" fill="#004d7a"/>
-            <!-- Bridge/superstructure -->
-            <rect x="10" y="9" width="4" height="3" rx="0.5" fill="#ffffff"/>
-            <!-- Direction indicator (small triangle at bow) -->
-            <path d="M12 3 L13 5 L11 5 Z" fill="#ff4444"/>
-          </g>
+          <!-- Simple triangular arrow pointing up -->
+          <path d="M12 3 L20 16 L12 13 L4 16 Z" 
+                fill="#22c55e" 
+                stroke="#000000" 
+                stroke-width="1.5" 
+                stroke-linejoin="round"/>
         </svg>
       `;
       
@@ -243,7 +237,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     try {
       // Fetch real vessel positions from the API
       this.debugLog.info('AIS Layer', 'Fetching latest vessel positions from API');
-      const response = await firstValueFrom(this.http.get<any[]>('/api/tracking/latest'));
+      const response = await firstValueFrom(this.http.get<any[]>('/api/vessels/telemetry/latest'));
       
       const source = this.map.getSource(this.layerId) as GeoJSONSource;
       
@@ -252,43 +246,43 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       
       if (response && Array.isArray(response)) {
         this.debugLog.success('AIS Layer', `Received ${response.length} vessel positions from API`);
-        for (const trackingPoint of response) {
+        for (const vesselTelemetry of response) {
           // Extract coordinates from the new coordinates field or fallback to position parsing
           let coordinates: [number, number] | null = null;
           
-          if (trackingPoint.coordinates) {
+          if (vesselTelemetry.coordinates) {
             // Use the new coordinates field returned by the API
-            coordinates = [trackingPoint.coordinates.longitude, trackingPoint.coordinates.latitude];
-          } else if (trackingPoint.position) {
+            coordinates = [vesselTelemetry.coordinates.longitude, vesselTelemetry.coordinates.latitude];
+          } else if (vesselTelemetry.position) {
             // Fallback: Handle different possible formats of PostGIS data
-            if (typeof trackingPoint.position === 'string') {
+            if (typeof vesselTelemetry.position === 'string') {
               // Parse WKT format: POINT(longitude latitude)
-              const match = trackingPoint.position.match(/POINT\(([^ ]+) ([^ ]+)\)/);
+              const match = vesselTelemetry.position.match(/POINT\(([^ ]+) ([^ ]+)\)/);
               if (match) {
                 coordinates = [parseFloat(match[1]), parseFloat(match[2])];
               }
-            } else if (trackingPoint.position.coordinates) {
-              coordinates = trackingPoint.position.coordinates;
+            } else if (vesselTelemetry.position.coordinates) {
+              coordinates = vesselTelemetry.position.coordinates;
             }
           }
           
           // If we couldn't extract coordinates, skip this vessel
           if (!coordinates) {
-            this.debugLog.warn('AIS Layer', `Skipping vessel ${trackingPoint.vessel_id} - no valid coordinates found`);
+            this.debugLog.warn('AIS Layer', `Skipping vessel ${vesselTelemetry.vessel_id} - no valid coordinates found`);
             continue;
           }
           
-          const vesselId = trackingPoint.vessel?.id || trackingPoint.vessel_id;
+          const vesselId = vesselTelemetry.vessel?.id || vesselTelemetry.vessel_id;
           const positionUpdate: PositionUpdate = {
             vesselId: vesselId,
-            vesselName: trackingPoint.vessel?.name || `Vessel ${trackingPoint.vessel_id}`,
-            vesselType: trackingPoint.vessel?.vessel_type || 'Unknown',
+            vesselName: vesselTelemetry.vessel?.name || `Vessel ${vesselTelemetry.vessel_id}`,
+            vesselType: vesselTelemetry.vessel?.vessel_type || 'Unknown',
             lat: coordinates[1],
             lng: coordinates[0],
-            heading: trackingPoint.heading_degrees ? Number(trackingPoint.heading_degrees) : null,
-            speed: trackingPoint.speed_knots ? Number(trackingPoint.speed_knots) : null,
-            status: trackingPoint.status,
-            timestamp: trackingPoint.timestamp
+            heading: vesselTelemetry.heading_degrees ? Number(vesselTelemetry.heading_degrees) : null,
+            speed: vesselTelemetry.speed_knots ? Number(vesselTelemetry.speed_knots) : null,
+            status: vesselTelemetry.status,
+            timestamp: vesselTelemetry.timestamp
           };
           
           // Store in our local map
@@ -438,14 +432,17 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     
     // Handle single position update
     this.socket.on('position-update', (update: any) => {
-      // Ensure proper data types
+      // Ensure proper data types - update now comes with flat lat/lng structure
       const typedUpdate: PositionUpdate = {
-        ...update,
-        heading: update.heading ? Number(update.heading) : null,
-        speed: update.speed ? Number(update.speed) : null,
+        vesselId: Number(update.vesselId),
+        vesselName: update.vesselName,
+        vesselType: update.vesselType,
         lat: Number(update.lat),
         lng: Number(update.lng),
-        vesselId: Number(update.vesselId)
+        heading: update.heading ? Number(update.heading) : null,
+        speed: update.speed ? Number(update.speed) : null,
+        status: update.status,
+        timestamp: update.timestamp
       };
       this.handlePositionUpdate(typedUpdate);
     });
@@ -455,14 +452,17 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       this.debugLog.info('WebSocket', `Received batch of ${updates.length} position updates`);
       console.log('📦 WebSocket batch update:', `${updates.length} position updates`);
       updates.forEach(update => {
-        // Ensure proper data types
+        // Ensure proper data types - updates now come with flat lat/lng structure
         const typedUpdate: PositionUpdate = {
-          ...update,
-          heading: update.heading ? Number(update.heading) : null,
-          speed: update.speed ? Number(update.speed) : null,
+          vesselId: Number(update.vesselId),
+          vesselName: update.vesselName,
+          vesselType: update.vesselType,
           lat: Number(update.lat),
           lng: Number(update.lng),
-          vesselId: Number(update.vesselId)
+          heading: update.heading ? Number(update.heading) : null,
+          speed: update.speed ? Number(update.speed) : null,
+          status: update.status,
+          timestamp: update.timestamp
         };
         this.handlePositionUpdate(typedUpdate);
       });

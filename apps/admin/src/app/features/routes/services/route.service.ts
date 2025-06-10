@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Route } from '../models/route.model';
 import { environment } from '../../../../environments/environment';
 
@@ -13,7 +14,13 @@ export class RouteService {
   constructor(private http: HttpClient) {}
 
   getAll(): Observable<Route[]> {
-    return this.http.get<Route[]>(this.apiUrl);
+    return this.http.get<Route[]>(this.apiUrl).pipe(
+      catchError(error => {
+        console.error('Error fetching routes:', error);
+        console.error('Error details:', error.error);
+        return throwError(() => error);
+      })
+    );
   }
 
   getOne(id: number): Observable<Route> {

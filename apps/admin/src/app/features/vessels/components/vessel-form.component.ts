@@ -5,11 +5,12 @@ import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { VesselDatasetService } from '../services/vessel-dataset.service';
 import { VesselDataset } from '../models/vessel-dataset.model';
+import { VesselTypeService, VesselType } from '../../settings/services/vessel-type.service';
 
 // PrimeNG imports
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -21,13 +22,12 @@ import { InputNumberModule } from 'primeng/inputnumber';
 
 interface VesselFormData {
   name: string;
-  type: 'Canoe' | 'Vessel';
+  vessel_type_id: number;
   last_seen: Date;
   last_position: {
     latitude: number;
     longitude: number;
   };
-  enabled: boolean;
 }
 
 @Component({
@@ -39,7 +39,7 @@ interface VesselFormData {
     FormsModule, 
     CardModule, 
     InputTextModule,
-    DropdownModule,
+    SelectModule,
     CheckboxModule,
     ButtonModule,
     ProgressSpinnerModule,
@@ -102,16 +102,20 @@ interface VesselFormData {
             </div>
             
             <div class="form-group">
-              <label for="type" class="form-label">Type <span class="required-asterisk">*</span></label>
-              <p-dropdown
-                id="type"
-                [(ngModel)]="formData().type"
-                [options]="vesselTypes"
-                optionLabel="label"
-                optionValue="value"
+              <label for="vessel_type_id" class="form-label">Type <span class="required-asterisk">*</span></label>
+              <p-select
+                id="vessel_type_id"
+                [(ngModel)]="formData().vessel_type_id"
+                [options]="vesselTypes()"
+                optionLabel="name"
+                optionValue="id"
                 placeholder="Select vessel type"
                 [style]="{'width':'100%'}"
-              ></p-dropdown>
+                [loading]="loadingVesselTypes()"
+                appendTo="body"
+                [showClear]="false"
+                [filter]="false"
+              ></p-select>
             </div>
             
             <div class="form-group">
@@ -153,18 +157,6 @@ interface VesselFormData {
                     [style]="{'width':'100%'}"
                   ></p-inputNumber>
                 </div>
-              </div>
-            </div>
-            
-            <div class="form-group">
-              <label for="enabled" class="form-label">Status</label>
-              <div class="p-field-checkbox">
-                <p-checkbox 
-                  [(ngModel)]="formData().enabled" 
-                  [binary]="true" 
-                  inputId="enabled"
-                ></p-checkbox>
-                <label for="enabled" class="ml-2">Enabled</label>
               </div>
             </div>
           </div>
@@ -230,6 +222,7 @@ interface VesselFormData {
 })
 export class VesselFormComponent implements OnInit {
   private vesselDatasetService = inject(VesselDatasetService);
+  private vesselTypeService = inject(VesselTypeService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private messageService = inject(MessageService);
@@ -239,29 +232,57 @@ export class VesselFormComponent implements OnInit {
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
   
-  vesselTypes = [
-    { label: 'Canoe', value: 'Canoe' },
-    { label: 'Vessel', value: 'Vessel' }
-  ];
+  vesselTypes = signal<VesselType[]>([]);
+  loadingVesselTypes = signal<boolean>(false);
   
   formData = signal<VesselFormData>({
     name: '',
-    type: 'Vessel',
+    vessel_type_id: 1, // Default to first vessel type, will be updated when types are loaded
     last_seen: new Date(),
     last_position: {
       latitude: 0,
       longitude: 0
     },
-    enabled: true
   });
 
   ngOnInit(): void {
+    this.loadVesselTypes();
+    
     const id = this.route.snapshot.paramMap.get('id');
     
     if (id) {
       this.isEditMode.set(true);
       this.loadVessel(+id);
     }
+  }
+
+  loadVesselTypes(): void {
+    this.loadingVesselTypes.set(true);
+    
+    this.vesselTypeService.getAll().subscribe({
+      next: (types) => {
+        this.vesselTypes.set(types);
+        
+        // Set Unspecified vessel type (ID 1) if not in edit mode
+        if (!this.isEditMode() && types.length > 0) {
+          this.formData.update(current => ({
+            ...current,
+            vessel_type_id: 1 // Default to Unspecified
+          }));
+        }
+        
+        this.loadingVesselTypes.set(false);
+      },
+      error: (err) => {
+        this.loadingVesselTypes.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Load Error',
+          detail: 'Failed to load vessel types',
+          life: 3000
+        });
+      }
+    });
   }
 
   updateFormData(partial: Partial<VesselFormData>): void {
@@ -278,15 +299,15 @@ export class VesselFormComponent implements OnInit {
     this.vesselDatasetService.getOne(id).subscribe({
       next: (data) => {
         this.vessel.set(data);
+        
         this.formData.set({
           name: data.name || '',
-          type: data.type,
+          vessel_type_id: data.vessel_type_id || 1, // Now vessel_type_id is properly typed
           last_seen: new Date(data.last_seen),
           last_position: {
             latitude: data.last_position.latitude,
             longitude: data.last_position.longitude
           },
-          enabled: data.enabled
         });
         this.loading.set(false);
       },
@@ -306,7 +327,7 @@ export class VesselFormComponent implements OnInit {
   saveVessel(): void {
     const currentFormData = this.formData();
     
-    if (!currentFormData.name || !currentFormData.type) {
+    if (!currentFormData.name || !currentFormData.vessel_type_id) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Validation Error',

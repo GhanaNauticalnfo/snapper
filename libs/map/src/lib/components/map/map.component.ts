@@ -1,5 +1,5 @@
 // libs/map/src/lib/components/map/map.component.ts
-import { Component, OnInit, AfterViewInit, OnDestroy, ElementRef, ViewChild, inject, signal, Input } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, ViewChild, inject, signal, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MapService } from '../../core/map.service';
 import { LayerManagerService } from '../../core/layer-manager.service';
@@ -48,9 +48,9 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
           <div class="coord-decimal">({{ getLatitudeDD() }}, {{ getLongitudeDD() }})</div>
         </div>
         <div class="zoom-controls">
-          <button class="zoom-btn" (click)="map?.zoomIn()">+</button>
+          <button class="zoom-btn" (click)="zoomIn()">+</button>
           <div class="zoom-level">{{ currentZoom().toFixed(0) }}</div>
-          <button class="zoom-btn" (click)="map?.zoomOut()">−</button>
+          <button class="zoom-btn" (click)="zoomOut()">−</button>
         </div>
       </div>
       <ng-content></ng-content>
@@ -151,7 +151,7 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
       align-items: flex-end;
       gap: 8px;
       z-index: 10000;
-      pointer-events: none;
+      pointer-events: auto;
     }
     .coordinate-text {
       background: rgba(255, 255, 255, 0.9);
@@ -165,6 +165,7 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
       line-height: 1.3;
       text-align: center;
       min-width: 140px;
+      pointer-events: none;
     }
     .coord-line {
       font-weight: 500;
@@ -216,7 +217,7 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
     }
   `]
 })
-export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
+export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   @ViewChild('mapElement') mapElement!: ElementRef;
   
   // Allow for full configuration object input
@@ -261,14 +262,6 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     this._config.initialActiveLayers = value;
   }
   
-  @Input() set showZoomControls(value: boolean) {
-    this._config.showZoomControls = value;
-  }
-  
-  @Input() set showCompass(value: boolean) {
-    this._config.showCompass = value;
-  }
-  
   // Vessel filtering for AIS layer
   @Input() set vesselFilter(value: number | null) {
     console.log('Map Component: vesselFilter set to', value);
@@ -300,22 +293,70 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy {
     //
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['center'] && this._map && this._map.isStyleLoaded()) {
+      this.updateMapCenter();
+    }
+  }
+
+  private updateMapCenter(): void {
+    if (this._map && this._config.center) {
+      this._map.flyTo({
+        center: this._config.center,
+        zoom: this._map.getZoom() // Maintain current zoom level
+      });
+    }
+  }
+
+  // Public method to center map on specific coordinates
+  public centerOnCoordinates(lng: number, lat: number, zoom?: number): void {
+    if (this._map && this._map.isStyleLoaded()) {
+      this._map.flyTo({
+        center: [lng, lat],
+        zoom: zoom || this._map.getZoom()
+      });
+    }
+  }
+
+  // Public zoom methods for template use
+  public zoomIn(): void {
+    if (this._map) {
+      try {
+        this._map.zoomIn();
+        console.log('Map zoomed in, new zoom level:', this._map.getZoom());
+      } catch (error) {
+        console.error('Error zooming in:', error);
+      }
+    } else {
+      console.warn('Map not initialized, cannot zoom in');
+    }
+  }
+
+  public zoomOut(): void {
+    if (this._map) {
+      try {
+        this._map.zoomOut();
+        console.log('Map zoomed out, new zoom level:', this._map.getZoom());
+      } catch (error) {
+        console.error('Error zooming out:', error);
+      }
+    } else {
+      console.warn('Map not initialized, cannot zoom out');
+    }
+  }
+
   ngAfterViewInit(): void {
     // Initialize the map with the OSM style from the config
     this._map = this.mapService.initializeMap(this.mapElement.nativeElement, {
       style: this._config.mapStyle,
       center: this._config.center,
-      zoom: this._config.zoom
+      zoom: this._config.zoom,
+      minZoom: this._config.minZoom,
+      maxZoom: this._config.maxZoom
     });
     
     if (this._map) {
-      // Only add the navigation control if configured
-      if (this._config.showZoomControls || this._config.showCompass) {
-        this._map.addControl(new NavigationControl({
-          showCompass: this._config.showCompass,
-          showZoom: this._config.showZoomControls
-        }), 'top-right');
-      }
+      // Navigation control removed - using custom controls only
       
       this._map.on('load', () => {
         this.layerManager.initializeMap(this._map!);

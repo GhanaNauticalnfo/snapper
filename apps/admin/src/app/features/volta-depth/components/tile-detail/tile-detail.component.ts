@@ -125,10 +125,6 @@ type TileDetailStatus = 'loading' | 'error' | 'success' | 'not_found' | 'deletin
     .map-preview-committed { height: 300px; margin-bottom: 1.5rem; border-radius: var(--border-radius); }
     .map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: rgba(255, 255, 255, 0.8); z-index: 10; }
     .map-error { color: var(--red-600); background-color: rgba(255, 235, 238, 0.9); font-weight: 500; }
-    :host ::ng-deep .p-card .p-card-content { padding-top: 1.5rem; }
-    :host ::ng-deep .p-card .p-card-footer { padding-top: 1rem; }
-    :host ::ng-deep p-message .p-message-wrapper { margin-bottom: 1rem; }
-    p-skeleton { /* ... */ }
   `]
 })
 export class TileDetailComponent implements AfterViewInit, OnDestroy {

@@ -1,4 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { HazardResponseDto } from './dto/hazard-response.dto';
+import { GeoPointUtils } from '@snapper/shared-models';
 
 @Entity('hazards')
 export class Hazard {
@@ -34,4 +36,22 @@ export class Hazard {
 
   @UpdateDateColumn()
   last_updated: Date;
+
+  toResponseDto(): HazardResponseDto {
+    return {
+      id: this.id,
+      name: this.name,
+      description: this.description,
+      coordinates: {
+        lat: this.lat,
+        lng: this.lng
+      },
+      radius: this.radius,
+      type: this.type,
+      color: this.color,
+      enabled: this.enabled,
+      created: this.created,
+      last_updated: this.last_updated
+    };
+  }
 }

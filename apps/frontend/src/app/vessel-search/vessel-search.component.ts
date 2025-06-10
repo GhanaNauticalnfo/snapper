@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService, Vessel, TrackingPoint } from '../api.service';
+import { ApiService, Vessel, VesselTelemetry } from '../api.service';
 import { forkJoin, map, catchError, of } from 'rxjs';
 
 export interface VesselWithLocation extends Vessel {
@@ -38,7 +38,7 @@ export interface VesselWithLocation extends Vessel {
             >
               <div class="vessel-name">{{ vessel.name }}</div>
               <div class="vessel-details">
-                {{ vessel.registration_number }} • {{ vessel.vessel_type }}
+                {{ vessel.vessel_type }}
                 @if (vessel.latitude && vessel.longitude) {
                   <span class="location-info">
                     • Last seen: {{ formatLocation(vessel.latitude, vessel.longitude) }}
@@ -166,8 +166,7 @@ export class VesselSearchComponent {
     
     const term = this.searchTerm.toLowerCase();
     return this.vessels().filter(vessel => 
-      vessel.name.toLowerCase().includes(term) ||
-      vessel.registration_number.toLowerCase().includes(term)
+      vessel.name.toLowerCase().includes(term)
     ).slice(0, 10); // Limit to 10 results
   });
   
@@ -199,20 +198,20 @@ export class VesselSearchComponent {
   private loadVessels() {
     this.apiService.getActiveVessels().subscribe({
       next: (vessels) => {
-        // Load latest tracking for each vessel
-        const trackingRequests = vessels.map(vessel => 
-          this.apiService.getVesselTracking(vessel.id, 1).pipe(
-            map(tracking => ({ 
+        // Load latest telemetry for each vessel
+        const telemetryRequests = vessels.map(vessel => 
+          this.apiService.getVesselTelemetry(vessel.id, 1).pipe(
+            map(telemetry => ({ 
               ...vessel, 
-              latitude: tracking[0]?.latitude,
-              longitude: tracking[0]?.longitude,
-              lastSeen: tracking[0]?.timestamp ? new Date(tracking[0].timestamp) : undefined
+              latitude: telemetry[0]?.position?.coordinates?.[1],
+              longitude: telemetry[0]?.position?.coordinates?.[0],
+              lastSeen: telemetry[0]?.timestamp ? new Date(telemetry[0].timestamp) : undefined
             })),
             catchError(() => of({ ...vessel }))
           )
         );
         
-        forkJoin(trackingRequests).subscribe(vesselsWithLocation => {
+        forkJoin(telemetryRequests).subscribe(vesselsWithLocation => {
           this.vessels.set(vesselsWithLocation);
         });
       },

@@ -83,8 +83,7 @@ import { VoltaDepthComponent } from '../../volta-depth.component';
         .map-error .pi { font-size: 1.2rem; margin-right: 0.5rem; } 
         .map-placeholder .p-ml-2 { margin-left: 0.5rem; } 
         .actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--surface-d);} 
-        .commit-error-message { margin-top: 1rem; font-size: 0.9em;} 
-        :host ::ng-deep .p-message-wrapper { margin-bottom: 1rem; }`
+        .commit-error-message { margin-top: 1rem; font-size: 0.9em;}`
     ]
 })
 export class UploadConfirmationComponent implements AfterViewInit, OnDestroy {

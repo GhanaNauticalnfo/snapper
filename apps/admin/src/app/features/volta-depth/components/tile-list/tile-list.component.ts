@@ -125,29 +125,13 @@ import { VoltaDepthService } from '../../volta-depth.service';
     :host { display: block; }
     .tile-list-container { margin-top: 1rem; }
     .font-mono { font-family: monospace; background-color: var(--surface-100); padding: 0.1rem 0.3rem; border-radius: 3px; }
-    :host ::ng-deep .p-datatable-sm .p-datatable-tbody > tr > td { padding: 0.6rem 0.8rem; vertical-align: middle; }
-    :host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
-      text-align: left;
-      background-color: var(--surface-100) !important;
-      font-size: 0.85rem;
-      padding: 0.6rem 0.8rem;
-      white-space: nowrap;
-      cursor: pointer;
-    }
-    :host ::ng-deep .p-datatable .p-sortable-column:not(.p-highlight):hover {
-      background-color: var(--surface-200) !important;
-      color: var(--text-color);
-    }
-    :host ::ng-deep .p-datatable .p-sortable-column.p-highlight {
-      background-color: var(--surface-100) !important;
-      color: var(--text-color);
-    }
-    :host ::ng-deep .p-tag { font-size: 0.8rem; }
-    :host ::ng-deep .p-sortable-column .p-sortable-column-icon { margin-left: 0.5em; vertical-align: middle; }
     p-message { margin-bottom: 1rem; }
     .text-center { text-align: center; }
     .actions-cell { display: flex; gap: 0.5rem; }
-  `]
+  `],
+  host: {
+    'class': 'tile-list-host'
+  }
 })
 export class TileListComponent {
     private voltaDepthService = inject(VoltaDepthService);

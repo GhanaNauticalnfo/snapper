@@ -1,7 +1,10 @@
 // vessel.entity.ts
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TrackingPoint } from './tracking-point.entity';
+import { VesselTelemetry } from './tracking/vessel-telemetry.entity';
+import { VesselType } from './type/vessel-type.entity';
+import { VesselResponseDto } from './dto/vessel-response.dto';
+import { GeoPoint } from '@snapper/shared-models';
 
 @Entity()
 export class Vessel {
@@ -21,13 +24,10 @@ export class Vessel {
   @ApiProperty({ description: 'Name of the vessel', example: 'MV Ghana Star' })
   name: string;
 
-  @Column('varchar', { length: 50, unique: true })
-  @ApiProperty({ description: 'Unique registration number of the vessel', example: 'GH-123-45' })
-  registration_number: string;
-
-  @Column('varchar', { length: 50 })
-  @ApiProperty({ description: 'Type of vessel', example: 'Cargo', enum: ['Cargo', 'Passenger', 'Fishing', 'Tanker', 'Other'] })
-  vessel_type: string;
+  @ManyToOne(() => VesselType, vesselType => vesselType.vessels, { nullable: false })
+  @JoinColumn({ name: 'vessel_type_id' })
+  @ApiProperty({ description: 'Vessel type', type: () => VesselType })
+  vessel_type: VesselType;
 
   @Column('numeric', { precision: 5, scale: 2, nullable: true })
   @ApiPropertyOptional({ description: 'Length of the vessel in meters', example: 25.5 })
@@ -45,11 +45,38 @@ export class Vessel {
   @ApiPropertyOptional({ description: 'Home port of the vessel', example: 'Tema' })
   home_port: string;
 
-  @Column('boolean', { default: true })
-  @ApiProperty({ description: 'Whether the vessel is currently active', example: true })
-  active: boolean;
+  @Column('integer', { nullable: true })
+  latest_position_id: number;
 
-  @OneToMany(() => TrackingPoint, trackingPoint => trackingPoint.vessel)
-  @ApiPropertyOptional({ description: 'Tracking points associated with this vessel', type: [TrackingPoint] })
-  tracking_points: TrackingPoint[];
+  @ManyToOne(() => VesselTelemetry)
+  @JoinColumn({ name: 'latest_position_id' })
+  @ApiPropertyOptional({ description: 'Latest tracking position for this vessel', type: () => VesselTelemetry })
+  latest_position: VesselTelemetry;
+
+  toResponseDto(coordinates?: GeoPoint): VesselResponseDto {
+    const dto: VesselResponseDto = {
+      id: this.id,
+      created: this.created,
+      last_updated: this.last_updated,
+      name: this.name,
+      vessel_type: this.vessel_type?.toResponseDto(),
+      length_meters: this.length_meters,
+      owner_name: this.owner_name,
+      owner_contact: this.owner_contact,
+      home_port: this.home_port,
+    };
+
+    // Include latest position data if available
+    if (this.latest_position) {
+      dto.latest_position_timestamp = this.latest_position.timestamp;
+      dto.latest_position_speed = this.latest_position.speed_knots;
+      dto.latest_position_heading = this.latest_position.heading_degrees;
+      
+      if (coordinates) {
+        dto.latest_position_coordinates = coordinates;
+      }
+    }
+
+    return dto;
+  }
 }

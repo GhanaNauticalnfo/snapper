@@ -20,10 +20,10 @@ export class VesselSearchService {
       return;
     }
 
-    // Zoom to vessel location with smooth animation
+    // Zoom to vessel location with smooth animation and consistent zoom level
     this.map.flyTo({
       center: [vessel.longitude, vessel.latitude],
-      zoom: 14,
+      zoom: 14.0, // Use clean integer zoom for consistency
       speed: 1.5,
       curve: 1.2
     });

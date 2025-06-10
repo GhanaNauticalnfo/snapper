@@ -11,24 +11,34 @@
             "routerLink": "/vessels"
         },
         {
-            "name": "KML",
-            "icon": "pi pi-map",
-            "routerLink": "/kml"
+            "name": "Telemetry",
+            "icon": "pi pi-chart-line",
+            "routerLink": "/telemetry"
         },
         {
-            "name": "Volta Depths",
-            "icon": "pi pi-chart-line",
-            "routerLink": "/volta-depth"
+            "name": "Features",
+            "icon": "pi pi-th-large",
+            "routerLink": "/features"
         },
         {
             "name": "Routes",
-            "icon": "pi pi-route",
+            "icon": "pi pi-arrow-up-right",
             "routerLink": "/routes"
+        },
+        {
+            "name": "Tree Stubs",
+            "icon": "pi pi-sitemap",
+            "routerLink": "/tree-stubs"
         },
         {
             "name": "Live",
             "icon": "pi pi-compass",
             "routerLink": "/live"
+        },
+        {
+            "name": "Settings",
+            "icon": "pi pi-cog",
+            "routerLink": "/settings"
         }
     ]
 }

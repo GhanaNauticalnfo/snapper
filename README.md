@@ -120,8 +120,8 @@ Key endpoints include:
 - `GET/POST/PUT/DELETE /api/routes` - Navigation routes
 - `GET/POST/PUT/DELETE /api/markers` - Map markers
 - `GET/POST/PUT/DELETE /api/hazards` - Navigation hazards
-- `POST /api/tracking/activate` - Device activation
-- `POST /api/tracking/report` - Position reporting
+- `POST /api/devices/activate` - Device activation
+- `POST /api/vessels/telemetry/report` - Position reporting
 
 See [API Reference](docs/api-reference.md) for complete documentation.
 

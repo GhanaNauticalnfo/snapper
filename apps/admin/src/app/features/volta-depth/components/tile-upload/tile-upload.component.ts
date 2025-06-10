@@ -84,11 +84,6 @@ import { UploadResponse } from '../../models/upload-response.model';
     .tile-upload-wrapper { padding: 1rem 1.25rem; border: 1px solid var(--surface-d); background-color: var(--surface-a); border-radius: 6px; }
     h4 { margin-top: 0; margin-bottom: 1rem; color: var(--text-color-secondary); }
     .upload-error-message { margin-top: 0.75rem; font-size: 0.9em; padding: 0.5rem; border-radius: 4px; background-color: var(--red-50); }
-    :host ::ng-deep .p-fileupload-content { padding: 1.25rem; }
-    :host ::ng-deep .p-fileupload-buttonbar { padding: 1.25rem; padding-bottom: 0; }
-    :host ::ng-deep .p-fileupload.p-invalid .p-fileupload-content { border-color: var(--red-500); }
-    :host ::ng-deep .p-fileupload-advanced { width: 100%; }
-    :host ::ng-deep .p-button.p-fileupload-choose:not(.p-disabled) { background-color: var(--primary-color); }
   `]
 })
 export class TileUploadComponent {

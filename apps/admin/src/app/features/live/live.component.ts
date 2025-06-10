@@ -99,7 +99,7 @@ import { VesselSearchService } from './services/vessel-search.service';
       overflow: hidden;
     }
     
-    .map-container ::ng-deep .map-container {
+    .map-container .map-container {
       height: 100%;
       min-height: 500px;
     }
@@ -158,8 +158,6 @@ export class LiveComponent implements OnInit, AfterViewInit {
     zoom: 7.5, // Adjusted zoom to show the full lake area
     height: '600px',
     showFullscreenControl: true,
-    showZoomControls: false,
-    showCompass: false,
     availableLayers: ['ais-ships', 'weather', 'niord', 'depth'],
     initialActiveLayers: ['ais-ships'], // Automatically activate this layer on load
     layerNames: {
@@ -193,7 +191,7 @@ export class LiveComponent implements OnInit, AfterViewInit {
   }
   
   onVesselSelected(vessel: VesselWithLocation) {
-    this.debugLog.info('Live Component', `Vessel selected: ${vessel.name} (${vessel.registration_number})`);
+    this.debugLog.info('Live Component', `Vessel selected: ${vessel.name}`);
     this.vesselSearchService.zoomToVessel(vessel);
   }
 }

@@ -15,6 +15,8 @@ import { RoutesModule } from './routes/routes.module';
 import { SyncModule } from './sync/sync.module';
 import { MarkersModule } from './markers/markers.module';
 import { HazardsModule } from './hazards/hazards.module';
+import { SettingsModule } from './settings/settings.module';
+import { TreeStubsModule } from './tree-stubs/tree-stubs.module';
 
 @Module({
   imports: [
@@ -48,6 +50,8 @@ import { HazardsModule } from './hazards/hazards.module';
     SyncModule,
     MarkersModule,
     HazardsModule,
+    SettingsModule,
+    TreeStubsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

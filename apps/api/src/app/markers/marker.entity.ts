@@ -1,4 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { MarkerResponseDto } from './dto/marker-response.dto';
+import { GeoPointUtils } from '@snapper/shared-models';
 
 @Entity('markers')
 export class Marker {
@@ -31,4 +33,21 @@ export class Marker {
 
   @UpdateDateColumn()
   last_updated: Date;
+
+  toResponseDto(): MarkerResponseDto {
+    return {
+      id: this.id,
+      name: this.name,
+      description: this.description,
+      coordinates: {
+        lat: this.lat,
+        lng: this.lng
+      },
+      icon: this.icon,
+      color: this.color,
+      enabled: this.enabled,
+      created: this.created,
+      last_updated: this.last_updated
+    };
+  }
 }

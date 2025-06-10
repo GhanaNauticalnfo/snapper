@@ -66,7 +66,7 @@ export class RouteService {
     // Convert waypoints to LineString geometry
     const coordinates = route.waypoints
       .sort((a, b) => a.order - b.order)
-      .map(wp => [wp.lng, wp.lat]);
+      .map(wp => [wp.lng, wp.lat]); // GeoJSON format is [longitude, latitude]
     
     return {
       type: 'Feature',
@@ -79,7 +79,6 @@ export class RouteService {
         id: route.id,
         name: route.name,
         description: route.description,
-        color: route.color,
         enabled: route.enabled,
         created: route.created,
         last_updated: route.last_updated

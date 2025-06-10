@@ -4,6 +4,7 @@ import { KmlComponent } from './features/kml/kml.component';
 import { VesselComponent } from './features/vessels/vessel.component';
 import { LiveComponent } from './features/live/live.component';
 import { RoutesComponent } from './features/routes/routes.component';
+import { FeaturesComponent } from './features/features.component';
 
 export const routes: Route[] = [
   {
@@ -26,21 +27,69 @@ export const routes: Route[] = [
       .then(m => m.Home2Component)
   },
   {
-    path: 'kml', component: KmlComponent,
+    path: 'features',
+    component: FeaturesComponent,
+    children: [
+      {
+        path: 'kml',
+        component: KmlComponent
+      },
+      {
+        path: 'volta-depth',
+        loadComponent: () => import('./features/volta-depth/volta-depth.component')
+          .then(m => m.VoltaDepthComponent)
+      },
+      {
+        path: '',
+        redirectTo: 'kml',
+        pathMatch: 'full'
+      }
+    ]
+  },
+  // Backward compatibility redirects
+  {
+    path: 'kml',
+    redirectTo: '/features/kml',
+    pathMatch: 'full'
   },
   {
     path: 'volta-depth',
-    loadComponent: () => import('./features/volta-depth/volta-depth.component')
-      .then(m => m.VoltaDepthComponent)
+    redirectTo: '/features/volta-depth',
+    pathMatch: 'full'
   },
   {
     path: 'vessels', component: VesselComponent,
   },
   {
+    path: 'telemetry',
+    loadComponent: () => import('./features/telemetry/telemetry.component')
+      .then(m => m.TelemetryComponent)
+  },
+  {
     path: 'routes', component: RoutesComponent,
   },
   {
+    path: 'tree-stubs',
+    loadComponent: () => import('./features/tree-stubs/tree-stubs.component')
+      .then(m => m.TreeStubsComponent)
+  },
+  {
+    path: 'tree-stubs/:id',
+    loadComponent: () => import('./features/tree-stubs/components/stub-editor.component')
+      .then(m => m.StubEditorComponent)
+  },
+  {
     path: 'live', component: LiveComponent,
+  },
+  {
+    path: 'settings',
+    loadComponent: () => import('./features/settings/settings.component')
+      .then(m => m.SettingsComponent)
+  },
+  {
+    path: 'settings/vessel-types/:id',
+    loadComponent: () => import('./features/settings/components/vessel-type-detail.component')
+      .then(m => m.VesselTypeDetailComponent)
   },
 ]
   }

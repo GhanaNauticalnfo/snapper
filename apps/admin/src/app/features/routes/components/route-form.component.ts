@@ -1,6 +1,6 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, AfterViewInit, ViewChild, signal, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
@@ -9,9 +9,10 @@ import { DividerModule } from 'primeng/divider';
 import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { ColorPickerModule } from 'primeng/colorpicker';
 import { Route, Waypoint } from '../models/route.model';
-import { OSM_STYLE } from '@snapper/map';
+import { MapComponent, MapConfig, OSM_STYLE, RouteLayerService, RouteData } from '@snapper/map';
+import { WaypointEditorDialogComponent } from './waypoint-editor-dialog.component';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-route-form',
@@ -28,19 +29,19 @@ import { OSM_STYLE } from '@snapper/map';
     CardModule,
     TableModule,
     InputNumberModule,
-    ColorPickerModule
+    MapComponent,
+    WaypointEditorDialogComponent
   ],
+  providers: [RouteLayerService],
   template: `
     <div class="route-form-container">
       <form [formGroup]="routeForm" class="flex gap-3" style="height: 100%;">
         <!-- Left side: Map -->
-        <div class="flex-1" style="position: relative;">
-          <div #mapContainer class="map-container"></div>
-          @if (mode !== 'view') {
-            <div class="map-instructions">
-              <p class="m-0">Click on the map to add waypoints</p>
-            </div>
-          }
+        <div class="map-section" style="position: relative;">
+          <lib-map 
+            #mapComponent
+            [config]="mapConfig()">
+          </lib-map>
         </div>
 
         <!-- Right side: Form fields and waypoints -->
@@ -71,20 +72,11 @@ import { OSM_STYLE } from '@snapper/map';
               </textarea>
             </div>
 
-            <div class="flex gap-4 align-items-center">
-              <div class="field-checkbox">
-                <p-inputSwitch 
-                  formControlName="enabled">
-                </p-inputSwitch>
-                <label class="ml-2">Active</label>
-              </div>
-
-              <div class="field flex align-items-center gap-2">
-                <label>Route Color</label>
-                <p-colorPicker 
-                  formControlName="color">
-                </p-colorPicker>
-              </div>
+            <div class="field-checkbox">
+              <p-inputSwitch 
+                formControlName="enabled">
+              </p-inputSwitch>
+              <label class="ml-2">Active</label>
             </div>
 
             <p-divider></p-divider>
@@ -93,15 +85,25 @@ import { OSM_STYLE } from '@snapper/map';
               <div class="flex justify-content-between align-items-center mb-3">
                 <h4 class="m-0">Waypoints ({{ waypoints().length }})</h4>
                 @if (mode !== 'view') {
-                  <button 
-                    pButton 
-                    type="button" 
-                    icon="pi pi-trash" 
-                    label="Clear All"
-                    class="p-button-danger p-button-sm"
-                    (click)="clearWaypoints()"
-                    [disabled]="waypoints().length === 0">
-                  </button>
+                  <div class="flex gap-2">
+                    <button 
+                      pButton 
+                      type="button" 
+                      icon="pi pi-pencil" 
+                      label="Edit Waypoints"
+                      class="p-button-outlined p-button-sm"
+                      (click)="showWaypointEditor()">
+                    </button>
+                    <button 
+                      pButton 
+                      type="button" 
+                      icon="pi pi-trash" 
+                      label="Clear All"
+                      class="p-button-danger p-button-sm"
+                      (click)="clearWaypoints()"
+                      [disabled]="waypoints().length === 0">
+                    </button>
+                  </div>
                 }
               </div>
 
@@ -109,67 +111,21 @@ import { OSM_STYLE } from '@snapper/map';
                 <p-table [value]="waypoints()" [scrollable]="true" scrollHeight="300px">
                   <ng-template pTemplate="header">
                     <tr>
-                      <th style="width: 50px">#</th>
-                      <th>Name</th>
-                      <th style="width: 100px">Latitude</th>
-                      <th style="width: 100px">Longitude</th>
-                      @if (mode !== 'view') {
-                        <th style="width: 80px">Actions</th>
-                      }
+                      <th style="width: 80px">ID</th>
+                      <th>Latitude</th>
+                      <th>Longitude</th>
                     </tr>
                   </ng-template>
                   <ng-template pTemplate="body" let-waypoint let-rowIndex="rowIndex">
                     <tr>
-                      <td>{{ rowIndex + 1 }}</td>
-                      <td>
-                        @if (mode !== 'view') {
-                          <input 
-                            pInputText 
-                            [(ngModel)]="waypoint.name" 
-                            [ngModelOptions]="{standalone: true}"
-                            placeholder="Waypoint name"
-                            class="w-full p-inputtext-sm">
-                        } @else {
-                          {{ waypoint.name || '-' }}
-                        }
-                      </td>
+                      <td>WP{{ rowIndex + 1 }}</td>
                       <td>{{ waypoint.lat.toFixed(6) }}</td>
                       <td>{{ waypoint.lng.toFixed(6) }}</td>
-                      @if (mode !== 'view') {
-                        <td>
-                          <button 
-                            pButton 
-                            type="button" 
-                            icon="pi pi-arrow-up" 
-                            class="p-button-text p-button-sm"
-                            (click)="moveWaypoint(rowIndex, -1)"
-                            [disabled]="rowIndex === 0"
-                            pTooltip="Move up">
-                          </button>
-                          <button 
-                            pButton 
-                            type="button" 
-                            icon="pi pi-arrow-down" 
-                            class="p-button-text p-button-sm"
-                            (click)="moveWaypoint(rowIndex, 1)"
-                            [disabled]="rowIndex === waypoints().length - 1"
-                            pTooltip="Move down">
-                          </button>
-                          <button 
-                            pButton 
-                            type="button" 
-                            icon="pi pi-trash" 
-                            class="p-button-text p-button-danger p-button-sm"
-                            (click)="removeWaypoint(rowIndex)"
-                            pTooltip="Remove">
-                          </button>
-                        </td>
-                      }
                     </tr>
                   </ng-template>
                   <ng-template pTemplate="emptymessage">
                     <tr>
-                      <td [attr.colspan]="mode === 'view' ? 4 : 5" class="text-center">
+                      <td colspan="3" class="text-center">
                         No waypoints added yet
                       </td>
                     </tr>
@@ -208,12 +164,24 @@ import { OSM_STYLE } from '@snapper/map';
           </div>
         </div>
       </form>
+      
+      <!-- Waypoint Editor Dialog -->
+      <app-waypoint-editor-dialog
+        [(visible)]="showWaypointEditorDialog"
+        [waypoints]="waypoints()"
+        (waypointsChange)="onWaypointsChange($event)">
+      </app-waypoint-editor-dialog>
     </div>
   `,
   styles: [`
     .route-form-container {
       height: 100%;
       overflow: hidden;
+    }
+
+    .map-section {
+      flex: 0 0 60%;
+      min-width: 300px;
     }
 
     .map-container {
@@ -223,21 +191,9 @@ import { OSM_STYLE } from '@snapper/map';
       border-radius: var(--border-radius);
     }
 
-    .map-instructions {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
-      color: #ffffff;
-      padding: 0.5rem 1rem;
-      border-radius: var(--border-radius);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      font-weight: 500;
-    }
 
     .form-panel {
-      width: 400px;
+      flex: 0 0 40%;
       display: flex;
       flex-direction: column;
       height: 100%;
@@ -277,218 +233,205 @@ import { OSM_STYLE } from '@snapper/map';
       border-radius: var(--border-radius);
     }
 
-    :host ::ng-deep .p-colorpicker-preview {
-      width: 2rem;
-      height: 2rem;
-    }
   `]
 })
-export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
+export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnChanges {
   @Input() route: Route | null = null;
   @Input() mode: 'view' | 'edit' | 'create' = 'view';
   @Output() save = new EventEmitter<Route>();
   @Output() cancel = new EventEmitter<void>();
   
-  @ViewChild('mapContainer', { static: false }) mapContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('mapComponent') mapComponent!: MapComponent;
 
   routeForm: FormGroup;
   waypoints = signal<Waypoint[]>([]);
-  map: any; // Made public for resize access
-  private markers: any[] = [];
-  private routeLine: any;
+  mapConfig = signal<Partial<MapConfig>>({});
+  showWaypointEditorDialog = false;
+  
+  private routeLayerService: RouteLayerService;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    routeLayerService: RouteLayerService
+  ) {
     this.routeForm = this.fb.group({
       name: ['', Validators.required],
       description: [''],
-      enabled: [true],
-      color: ['#FF0000']
+      enabled: [true]
     });
+    
+    this.routeLayerService = routeLayerService;
+    
+    // Initialize map configuration
+    this.mapConfig.set({
+      mapStyle: OSM_STYLE,
+      center: [-0.4, 6.7], // Lake Volta region
+      zoom: 7,
+      height: '100%',
+      showControls: false,
+      showFullscreenControl: true,
+      showCoordinateDisplay: true,
+      availableLayers: [],
+      initialActiveLayers: []
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['mode']) {
+      console.log('Mode changed from', changes['mode'].previousValue, 'to', changes['mode'].currentValue);
+      this.updateFormState();
+    }
+    
+    // Handle route data changes (when switching between different routes)
+    if (changes['route']) {
+      console.log('Route data changed:', changes['route'].currentValue);
+      this.resetFormWithRouteData();
+    }
   }
 
   ngOnInit() {
+    console.log('RouteForm initialized with mode:', this.mode);
+    console.log('Route data:', this.route);
+    
+    // Initial form setup
+    this.resetFormWithRouteData();
+    
+    // Watch for form changes to update route display
+    this.routeForm.valueChanges.subscribe(() => {
+      this.updateRouteDisplay();
+    });
+  }
+
+  private resetFormWithRouteData() {
     if (this.route) {
+      // Reset form with route data
       this.routeForm.patchValue({
-        name: this.route.name,
-        description: this.route.description,
-        enabled: this.route.enabled,
-        color: this.route.color || '#FF0000'
+        name: this.route.name || '',
+        description: this.route.description || '',
+        enabled: this.route.enabled !== undefined ? this.route.enabled : true
       });
       this.waypoints.set(this.route.waypoints || []);
+    } else {
+      // Reset form to default values for create mode
+      this.routeForm.patchValue({
+        name: '',
+        description: '',
+        enabled: true
+      });
+      this.waypoints.set([]);
     }
     
-    // Disable form controls if in view mode
-    if (this.mode === 'view') {
-      this.routeForm.disable();
-    }
+    // Update route display after form reset
+    setTimeout(() => {
+      this.updateRouteDisplay();
+      this.fitMapToWaypoints();
+    }, 100);
   }
 
   ngAfterViewInit() {
-    // Initialize map after view is ready and dialog is visible
+    // Initialize map integration after view is ready
     setTimeout(() => {
-      this.initializeMap();
+      this.initializeMapIntegration();
+      
+      // Focus on the first input field
+      const firstInput = document.querySelector('#name') as HTMLInputElement;
+      if (firstInput) {
+        firstInput.focus();
+      }
     }, 300);
   }
 
-  ngOnDestroy() {
-    if (this.map) {
-      this.map.remove();
-    }
-  }
-
-  async initializeMap() {
-    const maplibre = await import('maplibre-gl');
-    
-    if (!this.mapContainer?.nativeElement) {
-      console.error('Map container not found');
+  private initializeMapIntegration() {
+    if (!this.mapComponent?.map) {
+      console.error('Map component not ready');
       return;
     }
 
-    this.map = new maplibre.Map({
-      container: this.mapContainer.nativeElement,
-      style: OSM_STYLE as any,
-      center: [-0.4, 6.7],
-      zoom: 7
-    });
-
-    this.map.addControl(new maplibre.NavigationControl());
-
-    if (this.mode !== 'view') {
-      this.map.on('click', (e: any) => {
-        const waypoint: Waypoint = {
-          id: crypto.randomUUID(),
-          lat: e.lngLat.lat,
-          lng: e.lngLat.lng,
-          order: this.waypoints().length
-        };
-        this.waypoints.update(waypoints => [...waypoints, waypoint]);
-        this.updateMapDisplay();
-      });
-    }
-
-    this.map.on('load', () => {
-      // Ensure map is properly sized
-      this.map.resize();
-      this.updateMapDisplay();
-      this.fitMapToWaypoints();
-    });
-  }
-
-  updateMapDisplay() {
-    if (!this.map) return;
-
-    // Clear existing markers
-    this.markers.forEach(marker => marker.remove());
-    this.markers = [];
-
-    // Remove existing route line
-    if (this.map.getSource('route')) {
-      this.map.removeLayer('route-line');
-      this.map.removeSource('route');
-    }
-
-    const waypointList = this.waypoints();
+    // Initialize the route layer with the map
+    this.routeLayerService.initialize(this.mapComponent.map);
     
-    // Add markers for waypoints
-    waypointList.forEach((waypoint, index) => {
-      const el = document.createElement('div');
-      el.className = 'waypoint-marker';
-      el.style.width = '30px';
-      el.style.height = '30px';
-      el.style.borderRadius = '50%';
-      el.style.backgroundColor = this.routeForm.get('color')?.value || '#FF0000';
-      el.style.border = '3px solid white';
-      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-      el.style.display = 'flex';
-      el.style.alignItems = 'center';
-      el.style.justifyContent = 'center';
-      el.style.color = 'white';
-      el.style.fontWeight = 'bold';
-      el.style.fontSize = '12px';
-      el.textContent = (index + 1).toString();
+    // Configure API URL for route color fetching
+    this.routeLayerService.configureApiUrl(environment.apiUrl);
+    
+    // Update the display with current waypoints
+    this.updateRouteDisplay();
+    this.fitMapToWaypoints();
+  }
 
-      const marker = new (window as any).maplibregl.Marker({ element: el })
-        .setLngLat([waypoint.lng, waypoint.lat])
-        .addTo(this.map);
-      
-      this.markers.push(marker);
-    });
-
-    // Draw route line if we have at least 2 waypoints
-    if (waypointList.length >= 2) {
-      const coordinates = waypointList.map(wp => [wp.lng, wp.lat]);
-      
-      this.map.addSource('route', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: coordinates
-          }
-        }
-      });
-
-      this.map.addLayer({
-        id: 'route-line',
-        type: 'line',
-        source: 'route',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round'
-        },
-        paint: {
-          'line-color': this.routeForm.get('color')?.value || '#FF0000',
-          'line-width': 4,
-          'line-opacity': 0.8
-        }
-      });
+  private updateFormState() {
+    // Enable/disable form based on mode
+    if (this.mode === 'view') {
+      console.log('Disabling form for view mode');
+      this.routeForm.disable();
+    } else {
+      console.log('Enabling form for mode:', this.mode);
+      // Explicitly enable for create and edit modes
+      this.routeForm.enable();
+      // Force change detection
+      this.routeForm.updateValueAndValidity();
     }
   }
 
-  fitMapToWaypoints() {
-    if (!this.map || this.waypoints().length === 0) return;
 
-    const bounds = new (window as any).maplibregl.LngLatBounds();
-    this.waypoints().forEach(waypoint => {
-      bounds.extend([waypoint.lng, waypoint.lat]);
-    });
-
-    this.map.fitBounds(bounds, { padding: 50 });
+  ngOnDestroy() {
+    // Cleanup is handled by the shared map component
   }
 
-  removeWaypoint(index: number) {
-    this.waypoints.update(waypoints => {
-      const updated = [...waypoints];
-      updated.splice(index, 1);
-      // Update order
-      updated.forEach((wp, i) => wp.order = i);
-      return updated;
+
+  private updateRouteDisplay() {
+    const waypointList = this.waypoints();
+    const routeName = this.routeForm.get('name')?.value || 'Route';
+    const description = this.routeForm.get('description')?.value || '';
+    const enabled = this.routeForm.get('enabled')?.value || true;
+    
+    // Convert Waypoint[] to RouteWaypoint[]
+    const routeWaypoints = waypointList.map(wp => ({
+      id: wp.id || crypto.randomUUID(),
+      lat: wp.lat,
+      lng: wp.lng,
+      order: wp.order,
+      name: wp.name || `Waypoint ${wp.order + 1}`
+    }));
+    
+    this.routeLayerService.setRouteData({
+      id: this.route?.id,
+      name: routeName,
+      description: description,
+      waypoints: routeWaypoints,
+      enabled: enabled
     });
-    this.updateMapDisplay();
   }
 
-  moveWaypoint(index: number, direction: number) {
-    this.waypoints.update(waypoints => {
-      const updated = [...waypoints];
-      const newIndex = index + direction;
-      if (newIndex >= 0 && newIndex < updated.length) {
-        [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
-        // Update order
-        updated.forEach((wp, i) => wp.order = i);
-      }
-      return updated;
-    });
-    this.updateMapDisplay();
+  private fitMapToWaypoints() {
+    if (this.waypoints().length === 0) return;
+    
+    // Use the route layer service to fit the map to the route
+    this.routeLayerService.fitToRoute();
   }
+
 
   clearWaypoints() {
     this.waypoints.set([]);
-    this.updateMapDisplay();
+    this.updateRouteDisplay();
   }
 
+  showWaypointEditor() {
+    this.showWaypointEditorDialog = true;
+  }
+
+  onWaypointsChange(newWaypoints: Waypoint[]) {
+    this.waypoints.set(newWaypoints);
+    this.updateRouteDisplay();
+  }
+
+
   saveRoute() {
+    console.log('Save button clicked');
+    console.log('Form valid:', this.routeForm.valid);
+    console.log('Form value:', this.routeForm.value);
+    console.log('Form errors:', this.routeForm.errors);
+    console.log('Waypoints count:', this.waypoints().length);
+    
     if (this.routeForm.valid && this.waypoints().length >= 2) {
       const formValue = this.routeForm.value;
       const route: Route = {
@@ -497,6 +440,16 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
         waypoints: this.waypoints()
       };
       this.save.emit(route);
+    } else {
+      console.log('Cannot save - form invalid or not enough waypoints');
+      if (!this.routeForm.valid) {
+        Object.keys(this.routeForm.controls).forEach(key => {
+          const control = this.routeForm.get(key);
+          if (control && control.errors) {
+            console.log(`Field ${key} errors:`, control.errors);
+          }
+        });
+      }
     }
   }
 }

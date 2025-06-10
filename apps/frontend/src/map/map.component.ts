@@ -1,7 +1,7 @@
 // map.component.ts
 import { Component, ElementRef, OnDestroy, ViewChild, AfterViewInit, input, effect, inject } from '@angular/core';
 import { Map as MapLibreMap, NavigationControl, ScaleControl, GeolocateControl, Popup, Marker } from 'maplibre-gl';
-import { ApiService, Vessel, TrackingPoint } from '../app/api.service';
+import { ApiService, Vessel, VesselTelemetry } from '../app/api.service';
 
 @Component({
   selector: 'app-map',
@@ -179,7 +179,7 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  private addVesselMarker(vessel: Vessel, trackingPoint: TrackingPoint) {
+  private addVesselMarker(vessel: Vessel, vesselTelemetry: VesselTelemetry) {
     if (!this.map) return;
 
     // Remove existing marker if present
@@ -211,16 +211,15 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     });
 
     // Create popup content
-    const lastSeen = new Date(trackingPoint.timestamp).toLocaleString();
+    const lastSeen = new Date(vesselTelemetry.timestamp).toLocaleString();
     const popupContent = `
       <div style="font-family: Arial, sans-serif; min-width: 200px;">
         <h3 style="margin: 0 0 8px 0; color: #1e3c72; font-size: 16px;">${vessel.name}</h3>
-        <p style="margin: 4px 0; font-size: 14px;"><strong>Registration:</strong> ${vessel.registration_number}</p>
         <p style="margin: 4px 0; font-size: 14px;"><strong>Type:</strong> ${vessel.vessel_type}</p>
         ${vessel.home_port ? `<p style="margin: 4px 0; font-size: 14px;"><strong>Home Port:</strong> ${vessel.home_port}</p>` : ''}
-        <p style="margin: 4px 0; font-size: 14px;"><strong>Position:</strong> ${trackingPoint.latitude.toFixed(4)}°, ${trackingPoint.longitude.toFixed(4)}°</p>
-        ${trackingPoint.speed_knots ? `<p style="margin: 4px 0; font-size: 14px;"><strong>Speed:</strong> ${trackingPoint.speed_knots} knots</p>` : ''}
-        ${trackingPoint.heading_degrees ? `<p style="margin: 4px 0; font-size: 14px;"><strong>Heading:</strong> ${trackingPoint.heading_degrees}°</p>` : ''}
+        <p style="margin: 4px 0; font-size: 14px;"><strong>Position:</strong> ${vesselTelemetry.position.coordinates[1].toFixed(4)}°, ${vesselTelemetry.position.coordinates[0].toFixed(4)}°</p>
+        ${vesselTelemetry.speed_knots ? `<p style="margin: 4px 0; font-size: 14px;"><strong>Speed:</strong> ${vesselTelemetry.speed_knots} knots</p>` : ''}
+        ${vesselTelemetry.heading_degrees ? `<p style="margin: 4px 0; font-size: 14px;"><strong>Heading:</strong> ${vesselTelemetry.heading_degrees}°</p>` : ''}
         <p style="margin: 8px 0 0 0; font-size: 12px; color: #666;"><strong>Last seen:</strong> ${lastSeen}</p>
       </div>
     `;
@@ -229,7 +228,7 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 
     // Create and add marker
     const marker = new Marker(el)
-      .setLngLat([trackingPoint.longitude, trackingPoint.latitude])
+      .setLngLat([vesselTelemetry.position.coordinates[0], vesselTelemetry.position.coordinates[1]])
       .setPopup(popup)
       .addTo(this.map);
 

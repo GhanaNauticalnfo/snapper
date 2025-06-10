@@ -6,22 +6,22 @@ import { environment } from '../environments/environment';
 export interface Vessel {
   id: number;
   name: string;
-  registration_number: string;
   vessel_type: string;
   length_meters?: number;
   owner_name?: string;
   owner_contact?: string;
   home_port?: string;
-  active: boolean;
   created: Date;
   last_updated: Date;
 }
 
-export interface TrackingPoint {
+export interface VesselTelemetry {
   id: number;
   vessel_id: number;
-  latitude: number;
-  longitude: number;
+  position: {
+    type: 'Point';
+    coordinates: [number, number]; // [longitude, latitude]
+  };
   speed_knots?: number;
   heading_degrees?: number;
   timestamp: Date;
@@ -39,10 +39,10 @@ export class ApiService {
   }
 
   getActiveVessels(): Observable<Vessel[]> {
-    return this.http.get<Vessel[]>(`${this.apiUrl}/vessels?active=true`);
+    return this.http.get<Vessel[]>(`${this.apiUrl}/vessels`);
   }
 
-  getVesselTracking(vesselId: number, limit: number = 1): Observable<TrackingPoint[]> {
-    return this.http.get<TrackingPoint[]>(`${this.apiUrl}/vessels/${vesselId}/tracking?limit=${limit}`);
+  getVesselTelemetry(vesselId: number, limit: number = 1): Observable<VesselTelemetry[]> {
+    return this.http.get<VesselTelemetry[]>(`${this.apiUrl}/vessels/${vesselId}/telemetry?limit=${limit}`);
   }
 }

@@ -17,14 +17,19 @@ export class MapService {
     style?: string | any;
     center?: LngLatLike;
     zoom?: number;
+    minZoom?: number;
+    maxZoom?: number;
     [key: string]: any;
   }): Map | null {
-    // Create a new map instance for each container
+    // Create a new map instance for each container with consistent zoom behavior
     const map = new Map({
       container,
       style: options.style, // This will accept either a URL string or our style object
       center: options.center || [-74.5, 40] as LngLatLike,
       zoom: options.zoom !== undefined ? options.zoom : 9,
+      // Add zoom constraints for consistent behavior across all maps
+      minZoom: options.minZoom !== undefined ? options.minZoom : 1,
+      maxZoom: options.maxZoom !== undefined ? options.maxZoom : 18,
       ...options
     });
 

@@ -6,7 +6,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { providePrimeNG } from 'primeng/config';
 import { provideKeycloakAngular } from './keycloak.config';
 import { routes } from './app.routes';
-import { MessageService } from 'primeng/api'; // Import MessageService
+import { MessageService, ConfirmationService } from 'primeng/api'; // Import MessageService and ConfirmationService
 import Noir from '../themes/app-theme';
 import { DebugLogService } from '@snapper/map';
 
@@ -19,6 +19,7 @@ export const appConfig: ApplicationConfig = {
     //provideHttpClient(withInterceptors([includeBearerTokenInterceptor])),
     provideAnimationsAsync(),
     MessageService, // Provide MessageService globally
+    ConfirmationService, // Provide ConfirmationService globally
     DebugLogService, // Provide DebugLogService globally
     providePrimeNG({ theme: Noir, ripple: false })
   ]

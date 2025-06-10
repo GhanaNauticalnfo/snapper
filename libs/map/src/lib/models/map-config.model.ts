@@ -7,13 +7,13 @@ export interface MapConfig {
   mapStyle?: string | any; // Allow object style definitions
   center?: LngLatLike;
   zoom?: number;
+  minZoom?: number;
+  maxZoom?: number;
   height?: string;
   
   // Feature flags
   showControls?: boolean;
   showFullscreenControl?: boolean;
-  showZoomControls?: boolean;
-  showCompass?: boolean;
   showCoordinateDisplay?: boolean;
   
   // Layer options
@@ -31,8 +31,6 @@ export const DEFAULT_MAP_CONFIG: MapConfig = {
   height: '500px',
   showControls: true,
   showFullscreenControl: true,
-  showZoomControls: true,
-  showCompass: true,
   showCoordinateDisplay: true,
   availableLayers: [],
   initialActiveLayers: [],

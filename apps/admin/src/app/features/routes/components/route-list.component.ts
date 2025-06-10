@@ -156,6 +156,8 @@ import { RouteFormComponent } from './route-form.component';
         [maximizable]="true"
         [draggable]="false"
         [resizable]="false"
+        [appendTo]="'body'"
+        [blockScroll]="true"
         (onShow)="onDialogShow()">
         
         <app-route-form
@@ -175,12 +177,10 @@ import { RouteFormComponent } from './route-form.component';
     .route-list-container {
       padding: 0 1.5rem 1.5rem 1.5rem;
     }
-
-    :host ::ng-deep .p-dialog .p-dialog-content {
-      padding: 0;
-      overflow: hidden;
-    }
-  `]
+  `],
+  host: {
+    'class': 'route-list-host'
+  }
 })
 export class RouteListComponent implements OnInit {
   @ViewChild('routeForm') routeFormComponent?: RouteFormComponent;
@@ -191,7 +191,7 @@ export class RouteListComponent implements OnInit {
   error = signal<string | null>(null);
   searchQuery = '';
   showDialog = false;
-  dialogMode = signal<'view' | 'edit' | 'create'>('view');
+  dialogMode = signal<'view' | 'edit' | 'create'>('create');
 
   filteredRoutes = computed(() => {
     const query = this.searchQuery.toLowerCase();
@@ -237,8 +237,10 @@ export class RouteListComponent implements OnInit {
   showCreateDialog() {
     this.selectedRoute.set({
       name: '',
+      description: '',
       waypoints: [],
-      enabled: true
+      enabled: true,
+      color: '#FF0000'
     } as Route);
     this.dialogMode.set('create');
     this.showDialog = true;
