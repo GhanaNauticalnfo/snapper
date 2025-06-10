@@ -13,6 +13,21 @@ async function bootstrap() {
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
 
+  // Enable CORS for cross-origin requests
+  app.enableCors({
+    origin: [
+      'https://snapper-test-admin.ghananautical.info',
+      'https://snapper-test-frontend.ghananautical.info',
+      'http://localhost:4200',
+      'http://localhost:4201',
+      'http://localhost:4202',
+      'http://localhost:4203'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+  });
+
   // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('Snapper API')
