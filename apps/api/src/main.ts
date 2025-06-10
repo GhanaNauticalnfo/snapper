@@ -16,8 +16,13 @@ async function bootstrap() {
   // Enable CORS for cross-origin requests
   app.enableCors({
     origin: [
+      // Production domains
+      'https://snapper-admin.ghananautical.info',
+      'https://snapper-frontend.ghananautical.info',
+      // Test domains
       'https://snapper-test-admin.ghananautical.info',
       'https://snapper-test-frontend.ghananautical.info',
+      // Development domains
       'http://localhost:4200',
       'http://localhost:4201',
       'http://localhost:4202',
