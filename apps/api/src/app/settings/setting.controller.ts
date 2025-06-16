@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Put, Body, Param } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { SettingService } from './setting.service';
-import { SettingInputDto } from './dto/setting-input.dto';
 import { UpdateSettingDto } from './dto/update-setting.dto';
 import { SettingResponseDto } from './dto/setting-response.dto';
 
+@ApiTags('settings')
 @Controller('settings')
 export class SettingController {
   constructor(private readonly settingService: SettingService) {}
@@ -18,21 +19,11 @@ export class SettingController {
     return this.settingService.findOne(key);
   }
 
-  @Post()
-  create(@Body() settingInputDto: SettingInputDto): Promise<SettingResponseDto> {
-    return this.settingService.create(settingInputDto);
-  }
-
   @Put(':key')
   update(
     @Param('key') key: string,
     @Body() updateSettingDto: UpdateSettingDto,
   ): Promise<SettingResponseDto> {
     return this.settingService.update(key, updateSettingDto);
-  }
-
-  @Delete(':key')
-  remove(@Param('key') key: string): Promise<void> {
-    return this.settingService.remove(key);
   }
 }

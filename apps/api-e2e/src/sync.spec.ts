@@ -72,23 +72,25 @@ describe('Sync API E2E', () => {
       const beforeChanges = new Date().toISOString();
       await waitForTimestamp();
 
-      // Create a marker
-      const markerData = {
-        name: 'E2E Test Marker',
-        lat: 5.5,
-        lng: -0.2,
-        icon: 'test',
+      // Create a route
+      const routeData = {
+        name: 'E2E Test Route',
+        description: 'Test route for E2E testing',
+        waypoints: [
+          { order: 0, lat: 5.5, lng: -0.2, name: 'Start' },
+          { order: 1, lat: 5.6, lng: -0.3, name: 'End' }
+        ],
         enabled: true
       };
 
-      const createResponse = await api.post('/api/markers', markerData);
-      const markerId = createResponse.data.id;
+      const createResponse = await api.post('/api/routes', routeData);
+      const routeId = createResponse.data.id;
 
       await waitForTimestamp();
 
-      // Update the marker
-      await api.put(`/api/markers/${markerId}`, {
-        name: 'E2E Updated Marker'
+      // Update the route
+      await api.put(`/api/routes/${routeId}`, {
+        name: 'E2E Updated Route'
       });
 
       await waitForTimestamp();
@@ -98,38 +100,39 @@ describe('Sync API E2E', () => {
         params: { since: beforeChanges }
       });
 
-      const markerChanges = syncResponse.data.data.filter(
-        (change: any) => change.entity_id === markerId.toString()
+      const routeChanges = syncResponse.data.data.filter(
+        (change: any) => change.entity_id === routeId.toString()
       );
 
       // Should only have the latest change (update)
-      expect(markerChanges).toHaveLength(1);
-      expect(markerChanges[0].action).toBe('update');
-      expect(markerChanges[0].data.properties.name).toBe('E2E Updated Marker');
+      expect(routeChanges).toHaveLength(1);
+      expect(routeChanges[0].action).toBe('update');
+      expect(routeChanges[0].data.properties.name).toBe('E2E Updated Route');
 
       // Cleanup
-      await api.delete(`/api/markers/${markerId}`);
+      await api.delete(`/api/routes/${routeId}`);
     });
 
     it('should track deletions', async () => {
-      // Create a hazard
-      const hazardData = {
-        name: 'E2E Test Hazard',
-        lat: 5.5,
-        lng: -0.2,
-        radius: 100,
-        type: 'test',
+      // Create a route
+      const routeData = {
+        name: 'E2E Test Route for Deletion',
+        description: 'This route will be deleted',
+        waypoints: [
+          { order: 0, lat: 5.5, lng: -0.2, name: 'Start' },
+          { order: 1, lat: 5.6, lng: -0.3, name: 'End' }
+        ],
         enabled: true
       };
 
-      const createResponse = await api.post('/api/hazards', hazardData);
-      const hazardId = createResponse.data.id;
+      const createResponse = await api.post('/api/routes', routeData);
+      const routeId = createResponse.data.id;
 
       await waitForTimestamp();
       const beforeDelete = new Date().toISOString();
 
-      // Delete the hazard
-      await api.delete(`/api/hazards/${hazardId}`);
+      // Delete the route
+      await api.delete(`/api/routes/${routeId}`);
 
       await waitForTimestamp();
 
@@ -139,37 +142,34 @@ describe('Sync API E2E', () => {
       });
 
       const deleteChange = syncResponse.data.data.find(
-        (change: any) => change.entity_id === hazardId.toString() && change.action === 'delete'
+        (change: any) => change.entity_id === routeId.toString() && change.action === 'delete'
       );
 
       expect(deleteChange).toBeDefined();
-      expect(deleteChange.entity_type).toBe('hazard');
+      expect(deleteChange.entity_type).toBe('route');
       expect(deleteChange.data).toBeNull();
     });
 
-    it('should handle multiple entity types', async () => {
+    it('should handle multiple changes', async () => {
       const beforeChanges = new Date().toISOString();
       await waitForTimestamp();
 
-      // Create different entities
-      const route = await api.post('/api/routes', {
-        name: 'Multi Test Route',
-        waypoints: [{ lat: 5.5, lng: -0.2, order: 1 }],
+      // Create multiple routes
+      const route1 = await api.post('/api/routes', {
+        name: 'Multi Test Route 1',
+        waypoints: [
+          { lat: 5.5, lng: -0.2, order: 0, name: 'Start' },
+          { lat: 5.6, lng: -0.3, order: 1, name: 'End' }
+        ],
         enabled: true
       });
 
-      const marker = await api.post('/api/markers', {
-        name: 'Multi Test Marker',
-        lat: 5.5,
-        lng: -0.2,
-        enabled: true
-      });
-
-      const hazard = await api.post('/api/hazards', {
-        name: 'Multi Test Hazard',
-        lat: 5.5,
-        lng: -0.2,
-        type: 'test',
+      const route2 = await api.post('/api/routes', {
+        name: 'Multi Test Route 2',
+        waypoints: [
+          { lat: 5.7, lng: -0.4, order: 0, name: 'Start' },
+          { lat: 5.8, lng: -0.5, order: 1, name: 'End' }
+        ],
         enabled: true
       });
 
@@ -180,18 +180,19 @@ describe('Sync API E2E', () => {
         params: { since: beforeChanges }
       });
 
-      const entityTypes = new Set(
-        syncResponse.data.data.map((change: any) => change.entity_type)
+      const routeChanges = syncResponse.data.data.filter(
+        (change: any) => change.entity_type === 'route'
       );
 
-      expect(entityTypes.has('route')).toBe(true);
-      expect(entityTypes.has('marker')).toBe(true);
-      expect(entityTypes.has('hazard')).toBe(true);
+      expect(routeChanges.length).toBeGreaterThanOrEqual(2);
+      
+      const routeIds = new Set(routeChanges.map((change: any) => change.entity_id));
+      expect(routeIds.has(route1.data.id.toString())).toBe(true);
+      expect(routeIds.has(route2.data.id.toString())).toBe(true);
 
       // Cleanup
-      await api.delete(`/api/routes/${route.data.id}`);
-      await api.delete(`/api/markers/${marker.data.id}`);
-      await api.delete(`/api/hazards/${hazard.data.id}`);
+      await api.delete(`/api/routes/${route1.data.id}`);
+      await api.delete(`/api/routes/${route2.data.id}`);
     });
   });
 });

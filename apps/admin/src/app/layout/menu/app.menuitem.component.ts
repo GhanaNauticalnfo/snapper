@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { booleanAttribute, Component, Input } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { StyleClass } from 'primeng/styleclass';
 import { MenuItem } from './app.menu.component';
 import { Tag } from 'primeng/tag';
 
@@ -10,12 +9,12 @@ import { Tag } from 'primeng/tag';
 // eslint-disable-next-line @angular-eslint/component-selector
     selector: '[app-menuitem]',
     template: `
-        <button *ngIf="root && item.children" pButton type="button" class="px-link" pStyleClass="@next" enterFromClass="hidden" enterActiveClass="animate-slidedown" leaveToClass="hidden" leaveActiveClass="animate-slideup">
+        <button *ngIf="root && item.children" type="button" class="px-link" (click)="toggleSubmenu()">
             <div class="menu-icon">
                 <i [ngClass]="item.icon"></i>
             </div>
             <span>{{ item.name }}</span>
-            <i class="menu-toggle-icon pi pi-angle-down"></i>
+            <i class="menu-toggle-icon pi" [ngClass]="{'pi-angle-down': !isExpanded, 'pi-angle-up': isExpanded}"></i>
         </button>
         <a *ngIf="item.href" [href]="item.href" target="_blank" rel="noopener noreferrer">
             <div *ngIf="item.icon && root" class="menu-icon">
@@ -32,21 +31,27 @@ import { Tag } from 'primeng/tag';
             <p-tag *ngIf="item.badge" [value]="item.badge" />
         </a>
         <span *ngIf="!root && item.children" class="menu-child-category">{{ item.name }}</span>
-        <div *ngIf="item.children" class="overflow-y-hidden transition-all duration-[400ms] ease-in-out" [ngClass]="{ hidden: item.children && root && isActiveRootMenuItem(item) }">
+        <div *ngIf="item.children" class="overflow-y-hidden transition-all duration-[400ms] ease-in-out" [ngClass]="{'hidden': root && !isExpanded}">
             <ol>
                 <li *ngFor="let child of item.children" app-menuitem [root]="false" [item]="child"></li>
             </ol>
         </div>
     `,
     standalone: true,
-    imports: [CommonModule, StyleClass, RouterModule, Tag]
+    imports: [CommonModule, RouterModule, Tag]
 })
 export class AppMenuItemComponent {
     @Input() item!: MenuItem;
 
     @Input({ transform: booleanAttribute }) root = true;
+    
+    isExpanded = false;
 
     constructor(private router: Router) {}
+    
+    toggleSubmenu() {
+        this.isExpanded = !this.isExpanded;
+    }
 
     isActiveRootMenuItem(menuitem: MenuItem): boolean {
         const url = this.router.url.split('#')[0];

@@ -49,15 +49,20 @@ async function bootstrap() {
     .setDescription('Ghana Maritime Authority - Snapper API Documentation')
     .setVersion('1.0')
     .addBearerAuth()
+    .addTag('health', 'Application health and status')
     .addTag('vessels', 'Vessel management and tracking')
+    .addTag('vessel-types', 'Vessel type management')
     .addTag('vessel-telemetry', 'Real-time vessel telemetry')
     .addTag('devices', 'Device management and authentication')
+    .addTag('routes', 'Navigation routes')
+    .addTag('settings', 'Application settings management')
+
     .addTag('kml-datasets', 'KML dataset management')
     .addTag('volta-depth', 'Volta Lake depth tiles')
-    .addTag('routes', 'Navigation routes')
-    .addTag('markers', 'Map markers')
-    .addTag('hazards', 'Navigation hazards')
     .addTag('sync', 'Offline data synchronization')
+    .addTag('tree-stubs', 'Tree stub hazard management')
+    .addTag('tree-stub-groups', 'Tree stub group management')
+    .addTag('gis', 'GIS and QGIS integration endpoints')
     .build();
   
   const document = SwaggerModule.createDocument(app, config);

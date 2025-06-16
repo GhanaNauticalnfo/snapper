@@ -135,21 +135,6 @@ export class DeviceAuthService {
     return { active, pending, retired };
   }
 
-  async retireDevice(deviceId: string): Promise<Device> {
-    const device = await this.deviceRepository.findOne({
-      where: { device_id: deviceId, state: DeviceState.ACTIVE }
-    });
-
-    if (!device) {
-      throw new HttpException('Active device not found', HttpStatus.NOT_FOUND);
-    }
-
-    device.state = DeviceState.RETIRED;
-    device.auth_token = null; // Clear auth token when retiring
-    
-    return await this.deviceRepository.save(device);
-  }
-
   async deleteDevice(deviceId: string): Promise<void> {
     const device = await this.deviceRepository.findOne({
       where: { device_id: deviceId }
@@ -160,12 +145,14 @@ export class DeviceAuthService {
     }
 
     if (device.state === DeviceState.ACTIVE) {
-      // Active devices should be retired, not deleted
-      throw new HttpException('Cannot delete active device. Retire it instead.', HttpStatus.BAD_REQUEST);
+      // Active devices are retired instead of deleted to preserve history
+      device.state = DeviceState.RETIRED;
+      device.auth_token = null; // Clear auth token when retiring
+      await this.deviceRepository.save(device);
+    } else {
+      // Pending and retired devices can be deleted completely
+      await this.deviceRepository.delete({ device_id: deviceId });
     }
-
-    // Only pending and retired devices can be deleted
-    await this.deviceRepository.delete({ device_id: deviceId });
   }
 
   private generateToken(length: number): string {

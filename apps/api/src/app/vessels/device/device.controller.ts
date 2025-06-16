@@ -87,62 +87,16 @@ export class DeviceController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete device', description: 'Delete a pending or retired device by its ID. Active devices must be retired first.' })
+  @ApiOperation({ summary: 'Delete device', description: 'Delete or retire a device. Active devices are automatically retired (preserved in database), while pending and retired devices are deleted completely.' })
   @ApiParam({ name: 'id', description: 'Device ID', type: String })
-  @ApiResponse({ status: 200, description: 'Device deleted successfully' })
-  @ApiResponse({ status: 400, description: 'Cannot delete active device' })
+  @ApiResponse({ status: 200, description: 'Device deleted or retired successfully' })
   @ApiResponse({ status: 404, description: 'Device not found' })
   async remove(@Param('id') id: string) {
     await this.deviceAuthService.deleteDevice(id);
     return { success: true };
   }
 
-  @Post(':id/retire')
-  @ApiOperation({ summary: 'Retire device', description: 'Retire an active device by changing its state to retired' })
-  @ApiParam({ name: 'id', description: 'Device ID', type: String })
-  @ApiResponse({ status: 200, description: 'Device retired successfully', type: DeviceResponseDto })
-  @ApiResponse({ status: 404, description: 'Active device not found' })
-  async retire(@Param('id') id: string): Promise<DeviceResponseDto> {
-    const device = await this.deviceAuthService.retireDevice(id);
-    return device.toResponseDto();
-  }
 
-  @Post(':id/revoke')
-  @ApiOperation({ summary: 'Revoke device', description: 'Revoke device access by clearing auth token (deprecated - use retire instead)' })
-  @ApiParam({ name: 'id', description: 'Device ID', type: String })
-  @ApiResponse({ status: 200, description: 'Device revoked successfully' })
-  @ApiResponse({ status: 404, description: 'Device not found' })
-  async revoke(@Param('id') id: string) {
-    // For backward compatibility, revoke will retire the device
-    const device = await this.deviceAuthService.retireDevice(id);
-    return { success: true, device: device.toResponseDto() };
-  }
-
-  @Post(':id/regenerate')
-  @ApiOperation({ summary: 'Regenerate device token', description: 'Create a new device token to replace the existing one' })
-  @ApiParam({ name: 'id', description: 'Device ID', type: String })
-  @ApiResponse({ status: 200, description: 'Device token regenerated successfully', type: DeviceResponseDto })
-  @ApiResponse({ status: 404, description: 'Device not found' })
-  async regenerate(@Param('id') id: string): Promise<DeviceResponseDto> {
-    const existingDevice = await this.deviceRepository.findOne({
-      where: { device_id: id }
-    });
-
-    if (!existingDevice) {
-      throw new NotFoundException('Device not found');
-    }
-
-    // Create new device with 3-day expiration
-    const newDevice = await this.deviceAuthService.createDevice(
-      existingDevice.vessel_id, 
-      3
-    );
-
-    // Delete the old device using the service method
-    await this.deviceAuthService.deleteDevice(id);
-
-    return newDevice.toResponseDto(true);
-  }
 
   @Post('activate')
   @ApiOperation({ summary: 'Activate device', description: 'Activate a device using an activation token' })

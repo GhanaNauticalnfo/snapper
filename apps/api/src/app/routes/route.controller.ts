@@ -1,7 +1,9 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { RouteService } from './route.service';
 import { Route } from './route.entity';
 
+@ApiTags('routes')
 @Controller('routes')
 export class RouteController {
   constructor(private readonly routeService: RouteService) {}
@@ -11,10 +13,6 @@ export class RouteController {
     return this.routeService.findAll();
   }
 
-  @Get('enabled')
-  findEnabled(): Promise<Route[]> {
-    return this.routeService.findEnabled();
-  }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number): Promise<Route> {

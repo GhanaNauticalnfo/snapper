@@ -27,9 +27,6 @@ export class RouteService {
     return this.http.get<Route>(`${this.apiUrl}/${id}`);
   }
 
-  getEnabled(): Observable<Route[]> {
-    return this.http.get<Route[]>(`${this.apiUrl}/enabled`);
-  }
 
   create(route: Route): Observable<Route> {
     return this.http.post<Route>(this.apiUrl, route);

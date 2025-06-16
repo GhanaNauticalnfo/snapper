@@ -129,10 +129,10 @@ describe('SyncService', () => {
     });
 
     it('should log an update action with data', async () => {
-      const entityType = 'marker';
+      const entityType = 'route';
       const entityId = '456';
       const action = 'update' as const;
-      const data = { name: 'Updated Marker' };
+      const data = { name: 'Updated Route' };
 
       await service.logChange(entityType, entityId, action, data);
 
@@ -146,7 +146,7 @@ describe('SyncService', () => {
     });
 
     it('should log a delete action without data', async () => {
-      const entityType = 'hazard';
+      const entityType = 'route';
       const entityId = '789';
       const action = 'delete' as const;
 

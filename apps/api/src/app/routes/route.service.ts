@@ -26,12 +26,6 @@ export class RouteService {
     return route;
   }
 
-  async findEnabled(): Promise<Route[]> {
-    return this.routeRepository.find({
-      where: { enabled: true },
-      order: { last_updated: 'DESC' },
-    });
-  }
 
   async create(routeData: Partial<Route>): Promise<Route> {
     const route = this.routeRepository.create(routeData);

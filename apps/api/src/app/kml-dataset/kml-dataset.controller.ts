@@ -1,8 +1,10 @@
 // kml-dataset.controller.ts
 import { Controller, Get, Post, Body, Param, Put, Delete, HttpException, HttpStatus } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { KmlDatasetService } from './kml-dataset.service';
 import { KmlDataset } from './kml-dataset.entity';
 
+@ApiTags('kml-datasets')
 @Controller('kml-datasets')
 export class KmlDatasetController {
   constructor(private readonly kmlDatasetService: KmlDatasetService) {}

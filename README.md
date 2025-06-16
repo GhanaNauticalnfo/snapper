@@ -15,7 +15,7 @@ Snapper provides real-time vessel tracking, navigation aids, and offline-capable
 
 - 🚢 **Real-time Vessel Tracking** - Track vessels via GPS with MQTT updates
 - 🗺️ **Offline Maps** - Sync navigation data for offline use
-- 📍 **Navigation Aids** - Routes, markers, and hazard warnings
+- 📍 **Navigation Aids** - Routes and waypoints for navigation
 - 🔒 **Secure Authentication** - Device token system for vessel tracking
 - 📊 **Spatial Data** - PostGIS-powered geographic queries
 - 🔄 **Incremental Sync** - Efficient data synchronization

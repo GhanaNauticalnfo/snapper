@@ -13,8 +13,6 @@ import { typeOrmModuleOptionsFactory } from '../config/database.config';
 import { VesselsModule } from './vessels/vessels.module';
 import { RoutesModule } from './routes/routes.module';
 import { SyncModule } from './sync/sync.module';
-import { MarkersModule } from './markers/markers.module';
-import { HazardsModule } from './hazards/hazards.module';
 import { SettingsModule } from './settings/settings.module';
 import { TreeStubsModule } from './tree-stubs/tree-stubs.module';
 
@@ -48,8 +46,6 @@ import { TreeStubsModule } from './tree-stubs/tree-stubs.module';
     VoltaDepthModule,
     RoutesModule,
     SyncModule,
-    MarkersModule,
-    HazardsModule,
     SettingsModule,
     TreeStubsModule,
   ],

@@ -4,7 +4,6 @@ import { KmlComponent } from './features/kml/kml.component';
 import { VesselComponent } from './features/vessels/vessel.component';
 import { LiveComponent } from './features/live/live.component';
 import { RoutesComponent } from './features/routes/routes.component';
-import { FeaturesComponent } from './features/features.component';
 
 export const routes: Route[] = [
   {
@@ -28,7 +27,6 @@ export const routes: Route[] = [
   },
   {
     path: 'features',
-    component: FeaturesComponent,
     children: [
       {
         path: 'kml',
@@ -38,6 +36,20 @@ export const routes: Route[] = [
         path: 'volta-depth',
         loadComponent: () => import('./features/volta-depth/volta-depth.component')
           .then(m => m.VoltaDepthComponent)
+      },
+      {
+        path: 'routes', 
+        component: RoutesComponent
+      },
+      {
+        path: 'tree-stubs',
+        loadComponent: () => import('./features/tree-stubs/tree-stubs.component')
+          .then(m => m.TreeStubsComponent)
+      },
+      {
+        path: 'tree-stubs/:id',
+        loadComponent: () => import('./features/tree-stubs/components/stub-editor.component')
+          .then(m => m.StubEditorComponent)
       },
       {
         path: '',
@@ -65,18 +77,21 @@ export const routes: Route[] = [
     loadComponent: () => import('./features/telemetry/telemetry.component')
       .then(m => m.TelemetryComponent)
   },
+  // Backward compatibility redirects for routes and tree-stubs
   {
-    path: 'routes', component: RoutesComponent,
+    path: 'routes', 
+    redirectTo: '/features/routes',
+    pathMatch: 'full'
   },
   {
     path: 'tree-stubs',
-    loadComponent: () => import('./features/tree-stubs/tree-stubs.component')
-      .then(m => m.TreeStubsComponent)
+    redirectTo: '/features/tree-stubs',
+    pathMatch: 'full'
   },
   {
     path: 'tree-stubs/:id',
-    loadComponent: () => import('./features/tree-stubs/components/stub-editor.component')
-      .then(m => m.StubEditorComponent)
+    redirectTo: '/features/tree-stubs/:id',
+    pathMatch: 'full'
   },
   {
     path: 'live', component: LiveComponent,

@@ -642,7 +642,7 @@ export class VesselTabDeviceComponent implements OnInit, OnChanges {
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.loadingDevices.set(true);
-        this.http.post(`/api/devices/${device.device_id}/retire`, {}).subscribe({
+        this.http.delete(`/api/devices/${device.device_id}`).subscribe({
           next: () => {
             this.activeDevice.set(null);
             this.messageService.add({

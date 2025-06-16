@@ -56,10 +56,9 @@ The `devices` table contains:
   - Query params: `vessel_id`, `include_retired`, `include_expired`
 - `GET /api/devices/:id` - Get specific device details
 - `POST /api/devices` - Create new device with activation token
-- `DELETE /api/devices/:id` - Delete a pending or retired device (active devices cannot be deleted)
-- `POST /api/devices/:id/retire` - Retire an active device (moves to retired state)
-- `POST /api/devices/:id/revoke` - (Deprecated) Alias for retire endpoint
-- `POST /api/devices/:id/regenerate` - Generate new activation token
+- `DELETE /api/devices/:id` - Delete or retire device
+  - Active devices: Automatically retired (preserved in database)
+  - Pending/Retired devices: Deleted completely
 
 #### Device Activation
 - `POST /api/devices/activate` - Exchange activation token for auth credentials
@@ -78,8 +77,9 @@ Key methods:
 - `createDevice(vesselId, expiresInDays)` - Creates device with constraint validation
 - `activateDevice(activationToken)` - Exchanges activation token for auth token, sets state to 'active'
 - `validateDevice(authToken)` - Validates device for API requests (only active devices)
-- `retireDevice(deviceId)` - Moves active device to retired state, clears auth token
-- `deleteDevice(deviceId)` - Deletes pending or retired device (throws error for active devices)
+- `deleteDevice(deviceId)` - Deletes or retires device based on state:
+  - Active devices → Retired (state changed, auth token cleared)
+  - Pending/Retired devices → Deleted from database
 - `getDevicesByVessel(vesselId)` - Returns devices grouped by status: {active, pending, retired}
 
 ## Frontend Implementation
@@ -115,10 +115,9 @@ Devices
 
 **Device Actions**:
 - Create: Calls `POST /api/devices` with 3-day expiration
-- Delete/Retire: 
-  - Pending devices: Deleted completely (`DELETE /api/devices/:id`)
-  - Active devices: Retired (`POST /api/devices/:id/retire`) - moved to retired state
-- Regenerate: Creates new device to replace existing one
+- Delete: Calls `DELETE /api/devices/:id` for both cases:
+  - Pending devices: Deleted completely from database
+  - Active devices: Automatically retired (preserved in database)
 
 **UI Filtering**:
 - By default, retired devices are filtered out of the admin UI
@@ -181,7 +180,7 @@ POST /api/vessels/telemetry/report
 ### Handling Device Issues
 
 **Lost/Stolen Device**:
-1. Retire the active device via admin UI (it becomes retired, preserving history)
+1. Delete the active device via admin UI (it will be automatically retired, preserving history)
 2. Create a new pending device
 3. Activate on new mobile device
 
@@ -216,11 +215,9 @@ Common error responses:
 
 - **400 Bad Request**: 
   - "Vessel already has a pending device"
-  - "Cannot delete active device. Retire it instead."
 - **404 Not Found**: 
   - "Invalid activation token"
   - "Device not found"
-  - "Active device not found" (when trying to retire non-active device)
 - **410 Gone**: "Token already activated" or "Activation token expired"
 - **401 Unauthorized**: "Invalid device token"
 

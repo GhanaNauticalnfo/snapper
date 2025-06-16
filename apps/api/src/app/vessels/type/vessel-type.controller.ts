@@ -4,7 +4,7 @@ import { VesselTypeService } from './vessel-type.service';
 import { VesselTypeInputDto } from './dto/vessel-type-input.dto';
 import { VesselTypeResponseDto } from './dto/vessel-type-response.dto';
 
-@ApiTags('Vessels - Types')
+@ApiTags('vessel-types')
 @Controller('vessels/types')
 export class VesselTypeController {
   constructor(private readonly vesselTypeService: VesselTypeService) {}

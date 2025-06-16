@@ -18,11 +18,13 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
+import { ApiTags } from '@nestjs/swagger';
 import { VoltaDepthService } from './volta-depth.service';
 import { UploadResponseDto } from './dto/upload-response.dto';
 import { CommitUploadDto } from './dto/commit-upload.dto';
 import { TileInfoDto } from './dto/tile-info.dto';
 
+@ApiTags('volta-depth')
 @Controller('volta-depth')
 export class VoltaDepthController {
   private readonly logger = new Logger(VoltaDepthController.name);

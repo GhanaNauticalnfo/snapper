@@ -9,7 +9,7 @@ The Sync Feature provides offline-first data synchronization between the Snapper
 ### How It Works
 
 1. **Server Side**: 
-   - Maintains a `sync_log` table that tracks all changes (create/update/delete) to routes, markers, and hazards
+   - Maintains a `sync_log` table that tracks all changes (create/update/delete) to synced entities
    - When data changes, marks old entries as `is_latest=false` and inserts new entry with `is_latest=true`
    - Provides single endpoint `/api/data/sync?since=timestamp` that returns only latest changes after given timestamp
 
@@ -34,7 +34,7 @@ The Sync Feature provides offline-first data synchronization between the Snapper
 -- Sync log table
 CREATE TABLE sync_log (
   id SERIAL PRIMARY KEY,
-  entity_type VARCHAR(50),      -- 'route', 'marker', 'hazard'
+  entity_type VARCHAR(50),      -- entity type name (e.g. 'route')
   entity_id VARCHAR(100),
   action VARCHAR(20),           -- 'create', 'update', 'delete'
   data JSONB,                   -- GeoJSON feature (null for deletes)

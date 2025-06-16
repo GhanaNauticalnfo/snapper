@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from './setting.entity';
-import { SettingInputDto, ALLOWED_SETTING_KEYS, SettingKey } from './dto/setting-input.dto';
+import { ALLOWED_SETTING_KEYS, SettingKey } from './dto/setting-input.dto';
 import { UpdateSettingDto } from './dto/update-setting.dto';
 import { SettingResponseDto } from './dto/setting-response.dto';
 import { SETTING_KEYS, SETTING_DEFAULTS } from './constants/settings.constants';
@@ -33,20 +33,6 @@ export class SettingService {
     return setting.toResponseDto();
   }
 
-  async create(settingInputDto: SettingInputDto): Promise<SettingResponseDto> {
-    const existingSetting = await this.settingRepository.findOne({ 
-      where: { key: settingInputDto.key } 
-    });
-    
-    if (existingSetting) {
-      throw new BadRequestException(`Setting with key ${settingInputDto.key} already exists`);
-    }
-
-    const setting = this.settingRepository.create(settingInputDto);
-    const savedSetting = await this.settingRepository.save(setting);
-    return savedSetting.toResponseDto();
-  }
-
   async update(key: string, updateSettingDto: UpdateSettingDto): Promise<SettingResponseDto> {
     if (!ALLOWED_SETTING_KEYS.includes(key as SettingKey)) {
       throw new BadRequestException(`Invalid setting key: ${key}`);
@@ -62,13 +48,6 @@ export class SettingService {
     return updatedSetting.toResponseDto();
   }
 
-  async remove(key: string): Promise<void> {
-    const setting = await this.settingRepository.findOne({ where: { key } });
-    if (!setting) {
-      throw new NotFoundException(`Setting with key ${key} not found`);
-    }
-    await this.settingRepository.remove(setting);
-  }
 
   async getRouteColor(): Promise<string> {
     const setting = await this.settingRepository.findOne({ where: { key: SETTING_KEYS.ROUTE_COLOR } });
