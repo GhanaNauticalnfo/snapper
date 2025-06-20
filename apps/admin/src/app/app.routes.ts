@@ -4,6 +4,7 @@ import { KmlComponent } from './features/kml/kml.component';
 import { VesselComponent } from './features/vessels/vessel.component';
 import { LiveComponent } from './features/live/live.component';
 import { RoutesComponent } from './features/routes/routes.component';
+import { LandingSitesComponent } from './features/landing-sites/landing-sites.component';
 
 export const routes: Route[] = [
   {
@@ -16,14 +17,14 @@ export const routes: Route[] = [
   component: AppMainComponent,
   children: [
   {
+    path: '',
+    redirectTo: 'home',
+    pathMatch: 'full'
+  },
+  {
     path: 'home',
     loadComponent: () => import('./features/home/home.component')
       .then(m => m.HomeComponent)
-  },
-  {
-    path: 'home2',
-    loadComponent: () => import('./features/home2/home.component')
-      .then(m => m.Home2Component)
   },
   {
     path: 'features',
@@ -73,9 +74,13 @@ export const routes: Route[] = [
     path: 'vessels', component: VesselComponent,
   },
   {
-    path: 'telemetry',
-    loadComponent: () => import('./features/telemetry/telemetry.component')
-      .then(m => m.TelemetryComponent)
+    path: 'landing-sites',
+    component: LandingSitesComponent
+  },
+  {
+    path: 'exports',
+    loadComponent: () => import('./features/export/export.component')
+      .then(m => m.ExportComponent)
   },
   // Backward compatibility redirects for routes and tree-stubs
   {

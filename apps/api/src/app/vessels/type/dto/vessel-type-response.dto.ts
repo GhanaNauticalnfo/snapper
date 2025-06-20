@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class VesselTypeResponseDto {
   @ApiProperty({ description: 'Unique identifier for the vessel type', example: 1 })
@@ -18,4 +18,10 @@ export class VesselTypeResponseDto {
 
   @ApiProperty({ description: 'Number of vessels using this type', example: 5 })
   vessel_count: number;
+
+  @ApiPropertyOptional({ 
+    description: 'Custom settings for this vessel type', 
+    example: { '1': 'value1', '2': 'value2' } 
+  })
+  settings?: Record<string, string>;
 }

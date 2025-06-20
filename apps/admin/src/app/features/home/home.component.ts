@@ -1,6 +1,14 @@
 // features/home/home.component.ts
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+
+interface VesselTypeCount {
+  id: number;
+  name: string;
+  color: string;
+  vessel_count: number;
+}
 
 @Component({
   selector: 'app-home',
@@ -9,8 +17,7 @@ import { CommonModule } from '@angular/common';
   template: `
     <div class="home-container">
       <div class="home-header">
-        <h1 class="home-title">Maritime Management System</h1>
-        <p class="home-subtitle">Manage vessels, tracking, and maritime operations</p>
+        <h1 class="home-title">Overview</h1>
       </div>
 
       <div class="dashboard-content">
@@ -22,61 +29,38 @@ import { CommonModule } from '@angular/common';
             <div class="stat-info">
               <h3>Total Vessels</h3>
               <p class="stat-number">{{ totalVessels() }}</p>
-              <span class="stat-label">Active fleet</span>
+              <div class="vessel-types-list">
+                @for (type of vesselTypes(); track type.id) {
+                  @if (type.vessel_count > 0) {
+                    <div class="vessel-type-item">
+                      <span class="type-color" [style.background-color]="type.color"></span>
+                      <span class="type-name">{{ type.name }}: {{ type.vessel_count }}</span>
+                    </div>
+                  }
+                }
+              </div>
             </div>
           </div>
 
-          <div class="stat-card stat-tracking">
+          <div class="stat-card stat-routes">
             <div class="stat-icon">
-              <i class="pi pi-map-marker"></i>
+              <i class="pi pi-map"></i>
             </div>
             <div class="stat-info">
-              <h3>Active Tracking</h3>
-              <p class="stat-number">{{ activeTracking() }}</p>
-              <span class="stat-label">Vessels reporting</span>
+              <h3>Total Routes</h3>
+              <p class="stat-number">{{ totalRoutes() }}</p>
+              <span class="stat-label">Navigation routes</span>
             </div>
           </div>
 
-          <div class="stat-card stat-devices">
+          <div class="stat-card stat-landing-sites">
             <div class="stat-icon">
-              <i class="pi pi-mobile"></i>
+              <i class="pi pi-flag"></i>
             </div>
             <div class="stat-info">
-              <h3>Connected Devices</h3>
-              <p class="stat-number">{{ connectedDevices() }}</p>
-              <span class="stat-label">Active connections</span>
-            </div>
-          </div>
-
-          <div class="stat-card stat-alerts">
-            <div class="stat-icon">
-              <i class="pi pi-exclamation-triangle"></i>
-            </div>
-            <div class="stat-info">
-              <h3>Recent Alerts</h3>
-              <p class="stat-number">{{ recentAlerts() }}</p>
-              <span class="stat-label">Last 24 hours</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="recent-activity">
-          <h3>Recent Activity</h3>
-          <div class="activity-list">
-            <div class="activity-item">
-              <i class="pi pi-check-circle"></i>
-              <span>Vessel "Accra Star" position updated</span>
-              <span class="activity-time">2 minutes ago</span>
-            </div>
-            <div class="activity-item">
-              <i class="pi pi-plus-circle"></i>
-              <span>New device activated for "Cape Coast Navigator"</span>
-              <span class="activity-time">15 minutes ago</span>
-            </div>
-            <div class="activity-item">
-              <i class="pi pi-sync"></i>
-              <span>Position sync completed for 8 vessels</span>
-              <span class="activity-time">1 hour ago</span>
+              <h3>Total Landing Sites</h3>
+              <p class="stat-number">{{ totalLandingSites() }}</p>
+              <span class="stat-label">Active sites</span>
             </div>
           </div>
         </div>
@@ -147,9 +131,8 @@ import { CommonModule } from '@angular/common';
     }
 
     .stat-vessels .stat-icon { background: var(--blue-500); }
-    .stat-tracking .stat-icon { background: var(--green-500); }
-    .stat-devices .stat-icon { background: var(--orange-500); }
-    .stat-alerts .stat-icon { background: var(--red-500); }
+    .stat-routes .stat-icon { background: var(--green-500); }
+    .stat-landing-sites .stat-icon { background: var(--orange-500); }
 
     .stat-info h3 {
       margin: 0 0 0.25rem 0;
@@ -172,50 +155,30 @@ import { CommonModule } from '@angular/common';
       color: var(--text-color-secondary);
     }
 
-    .recent-activity {
-      background: var(--surface-card);
-      border: 1px solid var(--surface-border);
-      border-radius: 8px;
-      padding: 1.5rem;
-    }
-
-    .recent-activity h3 {
-      margin: 0 0 1rem 0;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text-color);
-    }
-
-    .activity-list {
+    .vessel-types-list {
+      margin-top: 0.5rem;
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.25rem;
     }
 
-    .activity-item {
+    .vessel-type-item {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem;
-      background: var(--surface-ground);
-      border-radius: 6px;
-    }
-
-    .activity-item i {
-      color: var(--green-500);
-      flex-shrink: 0;
-    }
-
-    .activity-item span:first-of-type {
-      flex: 1;
+      gap: 0.5rem;
       font-size: 0.875rem;
-      color: var(--text-color);
+      color: var(--text-color-secondary);
     }
 
-    .activity-time {
-      font-size: 0.75rem;
-      color: var(--text-color-secondary);
+    .type-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
       flex-shrink: 0;
+    }
+
+    .type-name {
+      font-size: 0.875rem;
     }
 
     @media (max-width: 768px) {
@@ -234,9 +197,40 @@ import { CommonModule } from '@angular/common';
     }
   `]
 })
-export class HomeComponent {
-  totalVessels = signal(12);
-  activeTracking = signal(8);
-  connectedDevices = signal(15);
-  recentAlerts = signal(3);
+export class HomeComponent implements OnInit {
+  private http = inject(HttpClient);
+  
+  totalVessels = signal(0);
+  vesselTypes = signal<VesselTypeCount[]>([]);
+  totalRoutes = signal(0);
+  totalLandingSites = signal(0);
+
+  ngOnInit() {
+    this.loadStatistics();
+  }
+
+  private loadStatistics() {
+    // Fetch vessel types with counts
+    this.http.get<VesselTypeCount[]>('/api/vessels/types').subscribe({
+      next: (types) => {
+        this.vesselTypes.set(types);
+        // Calculate total vessels from all types
+        const total = types.reduce((sum, type) => sum + type.vessel_count, 0);
+        this.totalVessels.set(total);
+      },
+      error: (err) => console.error('Failed to load vessel types:', err)
+    });
+
+    // Fetch routes count
+    this.http.get<any[]>('/api/routes').subscribe({
+      next: (routes) => this.totalRoutes.set(routes.length),
+      error: (err) => console.error('Failed to load routes:', err)
+    });
+
+    // Fetch landing sites count
+    this.http.get<any[]>('/api/landing-sites').subscribe({
+      next: (sites) => this.totalLandingSites.set(sites.length),
+      error: (err) => console.error('Failed to load landing sites:', err)
+    });
+  }
 }

@@ -7,6 +7,7 @@ import { providePrimeNG } from 'primeng/config';
 import { provideKeycloakAngular } from './keycloak.config';
 import { routes } from './app.routes';
 import { MessageService, ConfirmationService } from 'primeng/api'; // Import MessageService and ConfirmationService
+import { DialogService } from 'primeng/dynamicdialog';
 import Noir from '../themes/app-theme';
 import { DebugLogService } from '@snapper/map';
 
@@ -20,6 +21,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     MessageService, // Provide MessageService globally
     ConfirmationService, // Provide ConfirmationService globally
+    DialogService, // Provide DialogService globally for dynamic dialogs
     DebugLogService, // Provide DebugLogService globally
     providePrimeNG({ theme: Noir, ripple: false })
   ]

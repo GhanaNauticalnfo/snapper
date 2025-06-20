@@ -46,7 +46,9 @@ export interface StagedUpload {
     <p-toast key="mainToast" position="top-center"></p-toast>
 
     <div class="volta-depth-container">
-      <h2>Volta Depth Tile Management</h2>
+      <div class="page-header">
+        <h2>Volta Depth</h2>
+      </div>
       
       <!-- List component first -->
       @if (!showConfirmation()) {
@@ -81,7 +83,7 @@ export interface StagedUpload {
     </div>
   `,
   styles: [`
-    .volta-depth-container { padding: 0 1rem 1rem 1rem; }
+    .volta-depth-container { padding: 0 20px 20px 20px; }
     hr { margin: 2rem 0; border: 0; border-top: 1px solid var(--surface-d); }
     .p-message.p-message-error { margin-top: 1rem; }
     .dialog-loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.7); display: flex; justify-content: center; align-items: center; z-index: 10; border-radius: inherit; }

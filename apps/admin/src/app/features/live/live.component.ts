@@ -22,10 +22,8 @@ import { VesselSearchService } from './services/vessel-search.service';
   imports: [CommonModule, MapComponent, VesselSearchComponent],
   template: `
     <div class="live-container">
-      <div class="live-header">
-        <div class="header-content">
-          <h2>Live Vessel Tracking</h2>
-        </div>
+      <div class="page-header">
+        <h2>Live</h2>
       </div>
       <div class="map-container">
         <lib-map #mapComponent [config]="mapConfig">
@@ -47,36 +45,14 @@ import { VesselSearchService } from './services/vessel-search.service';
     }
     
     .live-container {
+      padding: 0 20px 20px 20px;
       height: 100%;
       display: flex;
       flex-direction: column;
     }
     
-    .live-header {
-      background: white;
-      border-bottom: 1px solid #e5e7eb;
-      padding: 20px;
-      flex-shrink: 0;
-    }
-    
-    .header-content {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    
-    h2 {
-      margin: 0;
-      color: #1f2937;
-      font-size: 24px;
-      font-weight: 600;
-    }
-    
     .map-container {
       flex: 1;
-      padding: 20px;
       min-height: 0;
       position: relative;
     }
@@ -158,6 +134,7 @@ export class LiveComponent implements OnInit, AfterViewInit {
     zoom: 7.5, // Adjusted zoom to show the full lake area
     height: '600px',
     showFullscreenControl: true,
+    showControls: false, // Hide the map layers panel
     availableLayers: ['ais-ships', 'weather', 'niord', 'depth'],
     initialActiveLayers: ['ais-ships'], // Automatically activate this layer on load
     layerNames: {

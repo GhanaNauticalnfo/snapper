@@ -45,6 +45,7 @@ export class Vessel {
   @ApiPropertyOptional({ description: 'Home port of the vessel', example: 'Tema' })
   home_port: string;
 
+
   @Column('integer', { nullable: true })
   latest_position_id: number;
 
@@ -53,7 +54,7 @@ export class Vessel {
   @ApiPropertyOptional({ description: 'Latest tracking position for this vessel', type: () => VesselTelemetry })
   latest_position: VesselTelemetry;
 
-  toResponseDto(coordinates?: GeoPoint): VesselResponseDto {
+  toResponseDto(coordinates?: GeoPoint, settings?: Record<string, string>): VesselResponseDto {
     const dto: VesselResponseDto = {
       id: this.id,
       created: this.created,
@@ -66,6 +67,7 @@ export class Vessel {
       home_port: this.home_port,
     };
 
+
     // Include latest position data if available
     if (this.latest_position) {
       dto.latest_position_timestamp = this.latest_position.timestamp;
@@ -75,6 +77,11 @@ export class Vessel {
       if (coordinates) {
         dto.latest_position_coordinates = coordinates;
       }
+    }
+
+    // Include settings if provided
+    if (settings) {
+      dto.settings = settings;
     }
 
     return dto;

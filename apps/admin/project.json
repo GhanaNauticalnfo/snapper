@@ -32,7 +32,8 @@
         ],
         "styles": [
           "apps/admin/src/assets/styles/global.scss",
-          "node_modules/primeicons/primeicons.css"
+          "node_modules/primeicons/primeicons.css",
+          "apps/admin/src/styles.css"
         ],
         "scripts": []
       },

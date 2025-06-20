@@ -31,6 +31,10 @@ export class DeviceController {
     @Query('include_retired') includeRetired?: string | boolean,
     @Query('vessel_id') vesselId?: number
   ): Promise<DeviceResponseDto[]> {
+    console.log('=== DEVICE CONTROLLER GET ===');
+    console.log('GET /api/devices request');
+    console.log('Query params:', { includeExpired, includeRetired, vesselId });
+    console.log('Timestamp:', new Date().toISOString());
     const query = this.deviceRepository.createQueryBuilder('device')
       .leftJoinAndSelect('device.vessel', 'vessel');
 
@@ -43,7 +47,7 @@ export class DeviceController {
     const shouldIncludeRetired = includeRetired === true || includeRetired === 'true';
 
     if (!shouldIncludeExpired) {
-      query.andWhere('device.expires_at IS NULL OR device.expires_at > :now', { now: new Date() });
+      query.andWhere('(device.expires_at IS NULL OR device.expires_at > :now)', { now: new Date() });
     }
 
     if (!shouldIncludeRetired) {
@@ -51,6 +55,10 @@ export class DeviceController {
     }
 
     const devices = await query.orderBy('device.created_at', 'DESC').getMany();
+    console.log(`DEBUG: Found ${devices.length} devices for vessel ${vesselId}`);
+    devices.forEach(d => {
+      console.log(`  - Device ${d.device_id}: vessel_id=${d.vessel_id}, state=${d.state}`);
+    });
     return devices.map(device => device.toResponseDto());
   }
 
@@ -78,11 +86,19 @@ export class DeviceController {
   @ApiResponse({ status: 201, description: 'Device created successfully', type: DeviceResponseDto })
   @ApiResponse({ status: 400, description: 'Bad request' })
   async create(@Body() deviceInput: DeviceInputDto): Promise<DeviceResponseDto> {
+    console.log('=== DEVICE CONTROLLER CREATE ===');
+    console.log('Received POST /api/devices request');
+    console.log('Request body:', JSON.stringify(deviceInput, null, 2));
+    console.log('Request timestamp:', new Date().toISOString());
+    
     const device = await this.deviceAuthService.createDevice(
       deviceInput.vessel_id,
       deviceInput.expires_in_days || 30
     );
 
+    console.log('Device created, returning response');
+    console.log('=== END DEVICE CONTROLLER CREATE ===');
+    
     return device.toResponseDto(true);
   }
 

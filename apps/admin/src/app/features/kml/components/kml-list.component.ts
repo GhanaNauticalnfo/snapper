@@ -53,8 +53,7 @@ import { SkeletonModule } from 'primeng/skeleton';
     </p-confirmDialog>
 
     <div class="kml-list-container">
-    <div class="flex justify-content-between align-items-center mb-3">
-        <h4>KML Datasets</h4>
+    <div class="flex justify-between items-center mb-3">
         <p-button
           label="New KML Document"
           icon="pi pi-plus"

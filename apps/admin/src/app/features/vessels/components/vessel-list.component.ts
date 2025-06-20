@@ -5,7 +5,6 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { VesselDatasetService } from '../services/vessel-dataset.service';
 import { VesselDataset } from '../models/vessel-dataset.model';
-import { AisShipLayerService, LayerManagerService } from '@snapper/map';
 import { TimeAgoPipe, VesselIdPipe } from '@snapper/shared';
 
 // Tab components
@@ -52,16 +51,14 @@ import { TabsModule } from 'primeng/tabs';
     VesselTabDangerZoneComponent,
     VesselTabTelemetryDownloadComponent
   ],
-  providers: [MessageService, AisShipLayerService],
+  providers: [MessageService],
   template: `
     <p-toast></p-toast>
 
-    <!-- Vessel List View -->
-    @if (!vesselDialogVisible) {
-      <div class="vessel-list-container">
-        <div class="flex justify-content-between align-items-center mb-3">
-          <h4>Vessels</h4>
-        <div class="flex gap-2 align-items-center">
+    <!-- Vessel List View (Always Visible) -->
+    <div class="vessel-list-container">
+      <div class="flex justify-end items-center mb-3">
+        <div class="flex gap-2 items-center">
           <p-iconField iconPosition="left">
             <p-inputIcon>
               <i class="pi pi-search"></i>
@@ -155,29 +152,21 @@ import { TabsModule } from 'primeng/tabs';
           }
         </ng-template>
       </p-table>
-      </div>
-    }
+    </div>
 
-    <!-- Vessel Details View -->
-    @if (vesselDialogVisible && selectedVessel()) {
-      <div class="vessel-details-container">
-        <!-- Header with Back Button -->
-        <div class="vessel-details-header">
-          <div class="mb-3">
-            <p-button 
-              label="Back to Vessels" 
-              icon="pi pi-arrow-left" 
-              styleClass="p-button-secondary" 
-              (onClick)="closeVesselDialog()">
-            </p-button>
-          </div>
-          <h4 class="mb-3">
-            {{ selectedVessel()?.name }} 
-            <span [class]="'type-badge ' + getVesselTypeClass(selectedVessel()?.type || '')">
-              {{ selectedVessel()?.type }}
-            </span>
-          </h4>
-        </div>
+    <!-- Vessel Details Dialog -->
+    <p-dialog
+      [(visible)]="viewDialogVisible"
+      [style]="{width: '90vw', 'max-width': '1400px', height: '85vh'}"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [closeOnEscape]="true"
+      [closable]="true"
+      [header]="getViewDialogHeader()"
+      (onHide)="closeViewDialog()"
+      styleClass="vessel-details-dialog"
+    >
       @if (selectedVessel()) {
         <p-tabs [value]="activeTabIndex.toString()" (onChange)="onTabChange($event)" styleClass="vessel-tabs">
           <p-tablist>
@@ -220,7 +209,8 @@ import { TabsModule } from 'primeng/tabs';
             <p-tabpanel value="2">
               <app-vessel-tab-tracking 
                 [vessel]="selectedVessel()"
-                [allVessels]="datasets()">
+                [allVessels]="datasets()"
+                [isVisible]="activeTabIndex === 2 && viewDialogVisible">
               </app-vessel-tab-tracking>
             </p-tabpanel>
             
@@ -240,8 +230,7 @@ import { TabsModule } from 'primeng/tabs';
           </p-tabpanels>
         </p-tabs>
       }
-      </div>
-    }
+    </p-dialog>
 
     <!-- Create Dialog (for new vessels only) -->
     <p-dialog
@@ -267,16 +256,6 @@ import { TabsModule } from 'primeng/tabs';
   styles: [`
     :host { display: block; }
     .vessel-list-container { margin-top: 0; }
-    .vessel-details-container { 
-      margin-top: 0; 
-      height: 100vh; 
-      display: flex; 
-      flex-direction: column; 
-      overflow-x: hidden;
-      overflow-y: auto;
-      position: relative;
-    }
-    .vessel-details-header { margin-top: 0; }
     .font-mono { 
       font-family: 'Courier New', monospace; 
       background-color: var(--surface-100); 
@@ -364,17 +343,7 @@ import { TabsModule } from 'primeng/tabs';
       color: var(--gray-600, #757575);
     }
 
-    /* Utility classes */
-    .w-full { width: 100%; }
-    .mr-2 { margin-right: 0.5rem; }
-    .ml-2 { margin-left: 0.5rem; }
-    .mt-1 { margin-top: 0.25rem; }
-    .block { display: block; }
-    .flex { display: flex; }
-    .justify-content-between { justify-content: space-between; }
-    .align-items-center { align-items: center; }
-    .mb-3 { margin-bottom: 1rem; }
-    .gap-2 { gap: 0.5rem; }
+    /* Remove utility classes - using Tailwind CSS instead */
     
     .search-input {
       width: 300px;
@@ -421,7 +390,6 @@ import { TabsModule } from 'primeng/tabs';
 export class VesselListComponent implements OnInit, OnDestroy {
   private vesselDatasetService = inject(VesselDatasetService);
   private messageService = inject(MessageService);
-  private layerManager = inject(LayerManagerService);
 
   // ViewChild reference to vessel info component for form reset
   @ViewChild('vesselInfoComponent') vesselInfoComponent?: VesselTabInfoComponent;
@@ -447,7 +415,7 @@ export class VesselListComponent implements OnInit, OnDestroy {
   });
 
   // Dialog control properties
-  vesselDialogVisible = false;
+  viewDialogVisible = false;
   formDialogVisible = false;
   activeTabIndex = 0; // 0 for info, 1 for device, 2 for track, 3 for download, 4 for danger zone
 
@@ -457,8 +425,6 @@ export class VesselListComponent implements OnInit, OnDestroy {
   constructor() {}
 
   ngOnInit(): void {
-    // Register the AIS ships layer
-    this.layerManager.registerLayer('ais-ships', AisShipLayerService);
     this.loadVessels();
   }
 
@@ -525,7 +491,7 @@ export class VesselListComponent implements OnInit, OnDestroy {
     this.selectedVessel.set(vessel);
     
     this.activeTabIndex = 0; // Open on vessel info tab
-    this.vesselDialogVisible = true;
+    this.viewDialogVisible = true;
     
     // Fetch complete vessel data with tracking points for accurate coordinates
     this.vesselDatasetService.getOne(vessel.id).subscribe({
@@ -539,10 +505,16 @@ export class VesselListComponent implements OnInit, OnDestroy {
     });
   }
 
-  closeVesselDialog(): void {
-    this.vesselDialogVisible = false;
+  closeViewDialog(): void {
+    this.viewDialogVisible = false;
     this.selectedVessel.set(null);
     // The lib-map component handles its own cleanup automatically
+  }
+
+  getViewDialogHeader(): string {
+    const vessel = this.selectedVessel();
+    if (!vessel) return 'Vessel Details';
+    return `${vessel.name} - ${vessel.type}`;
   }
 
   // --- Form Dialog Methods ---
@@ -586,7 +558,7 @@ export class VesselListComponent implements OnInit, OnDestroy {
     // Close the view dialog if we're currently viewing the deleted vessel
     if (this.selectedVessel()?.id === id) {
       this.selectedVessel.set(null);
-      this.closeVesselDialog();
+      this.closeViewDialog();
     }
   }
 

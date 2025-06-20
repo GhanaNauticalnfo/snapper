@@ -1,10 +1,12 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 import { TextareaModule } from 'primeng/textarea';
 import { MessageModule } from 'primeng/message';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 import { Waypoint } from '../models/route.model';
 
 @Component({
@@ -16,16 +18,29 @@ import { Waypoint } from '../models/route.model';
     DialogModule,
     ButtonModule,
     TextareaModule,
-    MessageModule
+    MessageModule,
+    ConfirmDialogModule
   ],
+  providers: [ConfirmationService],
   template: `
     <p-dialog 
       [(visible)]="visible"
-      [header]="'Edit Waypoints'"
       [modal]="true"
       [style]="{width: '600px'}"
-      [closable]="true"
-      (onHide)="onCancel()">
+      [closable]="false">
+      
+      <ng-template pTemplate="header">
+        <div class="flex items-center justify-between w-full">
+          <span>Edit Waypoints</span>
+          <button 
+            pButton 
+            type="button" 
+            icon="pi pi-times" 
+            class="p-button-text p-button-plain"
+            (click)="onCancel()">
+          </button>
+        </div>
+      </ng-template>
       
       <div class="mb-3">
         <p-message severity="info" [closable]="false">
@@ -53,6 +68,8 @@ import { Waypoint } from '../models/route.model';
         <p-message severity="error" [text]="errorMessage" [closable]="false"></p-message>
       }
 
+      <p-confirmDialog></p-confirmDialog>
+
       <ng-template pTemplate="footer">
         <button 
           pButton 
@@ -75,25 +92,48 @@ import { Waypoint } from '../models/route.model';
     :host {
       display: block;
     }
+    .dialog-header {
+      width: 100%;
+    }
   `]
 })
-export class WaypointEditorDialogComponent {
+export class WaypointEditorDialogComponent implements OnChanges {
+  constructor(private confirmationService: ConfirmationService) {}
   @Input() visible = false;
-  @Input() set waypoints(value: Waypoint[]) {
-    this._waypoints = value;
-    this.waypointsToText();
-  }
+  @Input() waypoints: Waypoint[] = [];
   @Output() visibleChange = new EventEmitter<boolean>();
   @Output() waypointsChange = new EventEmitter<Waypoint[]>();
   
   waypointsText = '';
   errorMessage = '';
   private _waypoints: Waypoint[] = [];
+  private originalWaypointsText = '';
+  private changesApplied = false;
 
-  waypointsToText() {
-    this.waypointsText = this._waypoints
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['visible'] && changes['visible'].currentValue === true) {
+      // When dialog is shown, initialize waypoints text
+      this.initializeWaypoints();
+    }
+    if (changes['waypoints'] && !changes['visible']) {
+      // If waypoints change while dialog is closed, store them
+      this._waypoints = changes['waypoints'].currentValue || [];
+    }
+  }
+
+  private initializeWaypoints() {
+    // Use the current waypoints prop or fall back to stored waypoints
+    const currentWaypoints = this.waypoints || this._waypoints || [];
+    this.waypointsText = currentWaypoints
       .map(wp => `${wp.lat},${wp.lng}`)
       .join('\n');
+    this.originalWaypointsText = this.waypointsText;
+    this.errorMessage = '';
+    this.changesApplied = false;
+  }
+
+  private hasUnsavedChanges(): boolean {
+    return this.waypointsText !== this.originalWaypointsText;
   }
 
   onApply() {
@@ -144,13 +184,29 @@ export class WaypointEditorDialogComponent {
     }
 
     this.waypointsChange.emit(newWaypoints);
-    this.visible = false;
-    this.visibleChange.emit(false);
+    this.changesApplied = true;
+    this.closeDialog();
   }
 
   onCancel() {
+    if (!this.changesApplied && this.hasUnsavedChanges()) {
+      this.confirmationService.confirm({
+        message: 'You have unsaved changes to the waypoints. Are you sure you want to cancel?',
+        header: 'Unsaved Changes',
+        icon: 'pi pi-exclamation-triangle',
+        accept: () => {
+          this.closeDialog();
+        }
+      });
+    } else {
+      this.closeDialog();
+    }
+  }
+
+  private closeDialog() {
     this.waypointsText = '';
     this.errorMessage = '';
+    this.changesApplied = false;
     this.visible = false;
     this.visibleChange.emit(false);
   }

@@ -56,7 +56,8 @@ async function bootstrap() {
     .addTag('devices', 'Device management and authentication')
     .addTag('routes', 'Navigation routes')
     .addTag('settings', 'Application settings management')
-
+    .addTag('resource-settings', 'Resource-specific settings management')
+    .addTag('landing-sites', 'Landing site management')
     .addTag('kml-datasets', 'KML dataset management')
     .addTag('volta-depth', 'Volta Lake depth tiles')
     .addTag('sync', 'Offline data synchronization')

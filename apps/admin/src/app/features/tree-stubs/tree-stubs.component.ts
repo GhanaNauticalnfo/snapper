@@ -34,8 +34,12 @@ import { TreeStubGroupResponseDto, TreeStubGroupInputDto } from '@snapper/shared
   providers: [MessageService, ConfirmationService],
   template: `
     <div class="tree-stubs-container">
-      <div class="flex justify-content-between align-items-center mb-4">
-        <h2>Tree Stub Groups</h2>
+      <div class="page-header">
+        <h2>Tree Stubs</h2>
+      </div>
+      
+      <div class="flex justify-between items-center mb-4">
+        <h3>Groups</h3>
         <button 
           pButton 
           type="button" 
@@ -134,7 +138,7 @@ import { TreeStubGroupResponseDto, TreeStubGroupInputDto } from '@snapper/shared
           <tr>
             <td colspan="5" class="text-center">
               @if (loading()) {
-                <div class="flex flex-column align-items-center gap-3">
+                <div class="flex flex-col items-center gap-3">
                   @for (i of [1,2,3]; track i) {
                     <p-skeleton width="100%" height="2rem"></p-skeleton>
                   }
@@ -203,7 +207,7 @@ import { TreeStubGroupResponseDto, TreeStubGroupInputDto } from '@snapper/shared
   `,
   styles: [`
     .tree-stubs-container {
-      padding: 0 1.5rem 1.5rem 1.5rem;
+      padding: 0 20px 20px 20px;
     }
   `]
 })

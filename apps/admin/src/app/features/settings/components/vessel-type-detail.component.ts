@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -11,7 +11,7 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { CardModule } from 'primeng/card';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { ColorPickerModule } from 'primeng/colorpicker';
+import { ColorPickerModule, ColorPicker } from 'primeng/colorpicker';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { VesselTypeService, VesselType } from '../services/vessel-type.service';
@@ -52,7 +52,7 @@ import { BoatIconComponent } from '@snapper/shared';
       @if (!loading()) {
         <p-card>
           <ng-template pTemplate="title">
-            <div class="flex justify-content-between align-items-center">
+            <div class="flex justify-between items-center">
               <h2>{{ vesselType()?.id === 0 ? 'Create New Vessel Type' : 'Vessel Type Details' }}</h2>
               <div class="button-group">
                 @if (vesselType()?.id !== 0 && vesselType()?.id !== 1) {
@@ -155,6 +155,7 @@ import { BoatIconComponent } from '@snapper/shared';
                     
                     <div class="color-controls">
                       <p-colorPicker 
+                        #vesselColorPicker
                         formControlName="color"
                         appendTo="body"
                         [disabled]="vesselType()?.id === 1"
@@ -397,7 +398,8 @@ import { BoatIconComponent } from '@snapper/shared';
     }
   `]
 })
-export class VesselTypeDetailComponent implements OnInit {
+export class VesselTypeDetailComponent implements OnInit, OnDestroy {
+  @ViewChild('vesselColorPicker') vesselColorPicker!: ColorPicker;
   private vesselTypeService = inject(VesselTypeService);
   private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
@@ -438,6 +440,13 @@ export class VesselTypeDetailComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    // Close color picker if it's open when navigating away
+    if (this.vesselColorPicker && this.vesselColorPicker.overlayVisible) {
+      this.vesselColorPicker.overlayVisible = false;
+    }
+  }
+
   loadVesselType(id: number): void {
     this.loading.set(true);
     this.error.set(null);
@@ -462,6 +471,10 @@ export class VesselTypeDetailComponent implements OnInit {
   }
 
   goBack(): void {
+    // Close color picker if it's open before navigating
+    if (this.vesselColorPicker && this.vesselColorPicker.overlayVisible) {
+      this.vesselColorPicker.overlayVisible = false;
+    }
     this.router.navigate(['/settings']);
   }
 

@@ -31,6 +31,7 @@ export class VesselResponseDto {
   @ApiPropertyOptional({ description: 'Home port of the vessel', example: 'Tema' })
   home_port?: string;
 
+
   @ApiPropertyOptional({ description: 'Latest position coordinates', example: { latitude: 5.5555, longitude: -0.2058 } })
   latest_position_coordinates?: GeoPoint;
 
@@ -42,5 +43,11 @@ export class VesselResponseDto {
 
   @ApiPropertyOptional({ description: 'Heading in degrees at latest position', example: 180.0 })
   latest_position_heading?: number;
+
+  @ApiPropertyOptional({ 
+    description: 'Custom settings for this vessel', 
+    example: { '1': '+233 20 123 4567', '2': 'owner@example.com' } 
+  })
+  settings?: Record<string, string>;
 
 }

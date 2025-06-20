@@ -33,8 +33,7 @@ import { RouteFormComponent } from './route-form.component';
   providers: [MessageService, ConfirmationService],
   template: `
     <div class="route-list-container">
-      <div class="flex justify-content-between align-items-center mb-4">
-        <h2>Routes</h2>
+      <div class="flex justify-end items-center mb-4">
         <button 
           pButton 
           type="button" 
@@ -135,7 +134,7 @@ import { RouteFormComponent } from './route-form.component';
           <tr>
             <td colspan="6" class="text-center">
               @if (loading()) {
-                <div class="flex flex-column align-items-center gap-3">
+                <div class="flex flex-col items-center gap-3">
                   @for (i of [1,2,3]; track i) {
                     <p-skeleton width="100%" height="2rem"></p-skeleton>
                   }
@@ -158,6 +157,7 @@ import { RouteFormComponent } from './route-form.component';
         [resizable]="false"
         [appendTo]="'body'"
         [blockScroll]="true"
+        [closable]="false"
         (onShow)="onDialogShow()">
         
         <app-route-form
@@ -165,7 +165,7 @@ import { RouteFormComponent } from './route-form.component';
           [route]="selectedRoute()"
           [mode]="dialogMode()"
           (save)="saveRoute($event)"
-          (cancel)="showDialog = false">
+          (cancel)="onFormCancel()">
         </app-route-form>
       </p-dialog>
 
@@ -253,7 +253,11 @@ export class RouteListComponent implements OnInit {
   }
 
   editRoute(route: Route) {
-    this.selectedRoute.set({ ...route });
+    // Make a deep copy of the route including waypoints
+    this.selectedRoute.set({ 
+      ...route,
+      waypoints: route.waypoints ? [...route.waypoints] : []
+    });
     this.dialogMode.set('edit');
     this.showDialog = true;
   }
@@ -339,5 +343,11 @@ export class RouteListComponent implements OnInit {
         (this.routeFormComponent as any).map?.resize();
       }
     }, 100);
+  }
+
+  onFormCancel() {
+    this.showDialog = false;
+    // Reset selected route to prevent stale data
+    this.selectedRoute.set(null);
   }
 }

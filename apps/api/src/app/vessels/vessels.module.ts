@@ -15,6 +15,7 @@ import { TrackingController } from './tracking/tracking.controller';
 import { TrackingGateway } from './tracking/tracking.gateway';
 import { MqttTrackingService } from './tracking/mqtt-tracking.service';
 import { TelemetryExportService } from './tracking/telemetry-export.service';
+import { ResourceSettingsModule } from '../resource-settings/resource-settings.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { TelemetryExportService } from './tracking/telemetry-export.service';
       Device,
       VesselTelemetry,
     ]),
+    ResourceSettingsModule,
   ],
   providers: [
     VesselService,

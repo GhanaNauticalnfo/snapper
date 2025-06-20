@@ -1,9 +1,9 @@
-import { Component, OnInit, signal, HostListener } from '@angular/core';
+import { Component, OnInit, signal, HostListener, ViewChild, inject, ChangeDetectionStrategy, computed, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { TabsModule } from 'primeng/tabs';
 import { CardModule } from 'primeng/card';
-import { ColorPickerModule } from 'primeng/colorpicker';
+import { ColorPickerModule, ColorPicker } from 'primeng/colorpicker';
 import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { FieldsetModule } from 'primeng/fieldset';
@@ -11,13 +11,14 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageService } from 'primeng/api';
 import { VesselTypeSettingsComponent } from './components/vessel-type-settings.component';
 import { SettingsService } from './services/settings.service';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
   imports: [
     CommonModule, 
-    FormsModule,
+    ReactiveFormsModule,
     TabsModule, 
     CardModule,
     ColorPickerModule,
@@ -27,10 +28,11 @@ import { SettingsService } from './services/settings.service';
     InputTextModule,
     VesselTypeSettingsComponent
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [MessageService],
   template: `
     <div class="settings-container">
-      <div class="settings-header">
+      <div class="page-header">
         <h2>Settings</h2>
       </div>
       
@@ -47,15 +49,15 @@ import { SettingsService } from './services/settings.service';
         </p-tablist>
         <p-tabpanels>
           <p-tabpanel value="0">
-            <div class="general-settings">
+            <form [formGroup]="settingsForm" class="general-settings">
               <div class="settings-content">
                 <p-fieldset legend="Routes" class="mb-4">
                   <div class="field">
                     <label for="route-color" class="block mb-2 font-semibold">Route Color</label>
                     <div class="color-control">
-                      <p-colorPicker 
-                        [ngModel]="routeColor()"
-                        (ngModelChange)="routeColor.set($event)"
+                      <p-colorPicker
+                        #routeColorPicker
+                        formControlName="routeColor"
                         format="hex"
                         appendTo="body"
                         [inline]="false"
@@ -64,8 +66,7 @@ import { SettingsService } from './services/settings.service';
                       <input 
                         type="text" 
                         pInputText
-                        [ngModel]="routeColor()"
-                        (ngModelChange)="onHexInputChange($event)"
+                        formControlName="routeColorHex"
                         placeholder="#RRGGBB"
                         maxlength="7"
                         class="hex-input">
@@ -103,7 +104,7 @@ import { SettingsService } from './services/settings.service';
                   </button>
                 </div>
               }
-            </div>
+            </form>
           </p-tabpanel>
           
           <p-tabpanel value="1">
@@ -118,16 +119,6 @@ import { SettingsService } from './services/settings.service';
   styles: [`
     .settings-container {
       padding: 0 20px 20px 20px;
-    }
-    
-    .settings-header {
-      margin-bottom: 2rem;
-      border-bottom: 1px solid var(--surface-border, #ddd);
-      padding-bottom: 1rem;
-    }
-    
-    .settings-header h2 {
-      margin: 0;
     }
     
     .general-settings h3 {
@@ -187,19 +178,72 @@ import { SettingsService } from './services/settings.service';
     'class': 'settings-host'
   }
 })
-export class SettingsComponent implements OnInit {
+export class SettingsComponent implements OnInit, OnDestroy {
+  @ViewChild('routeColorPicker') routeColorPicker!: ColorPicker;
+  
+  private readonly settingsService = inject(SettingsService);
+  private readonly messageService = inject(MessageService);
+  private readonly fb = inject(FormBuilder);
+  private readonly destroy$ = new Subject<void>();
+  
   activeTabIndex = 0; // Start with General Settings tab (index 0)
   routeColor = signal('#FF0000');
   originalRouteColor = signal('#FF0000');
   loading = signal(false);
-
-  constructor(
-    private settingsService: SettingsService,
-    private messageService: MessageService
-  ) {}
+  
+  settingsForm: FormGroup = this.fb.group({
+    routeColor: ['#FF0000'],
+    routeColorHex: ['#FF0000']
+  });
+  
+  hasRouteColorChanged = computed(() => this.routeColor() !== this.originalRouteColor());
 
   ngOnInit() {
     this.loadRouteColor();
+    this.setupFormSubscriptions();
+  }
+  
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  
+  private setupFormSubscriptions() {
+    // Subscribe to color picker changes
+    this.settingsForm.get('routeColor')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(color => {
+        if (color && this.isValidHexColor(color)) {
+          this.routeColor.set(color);
+          // Update hex input when color picker changes
+          this.settingsForm.get('routeColorHex')?.setValue(color, { emitEvent: false });
+        }
+      });
+    
+    // Subscribe to hex input changes
+    this.settingsForm.get('routeColorHex')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => {
+        if (value && !value.startsWith('#')) {
+          value = '#' + value;
+        }
+        
+        if (this.isValidHexColor(value)) {
+          // Expand 3-char hex to 6-char if needed
+          if (value.length === 4) {
+            value = '#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3];
+          }
+          const upperValue = value.toUpperCase();
+          this.routeColor.set(upperValue);
+          // Update color picker when hex input changes
+          this.settingsForm.get('routeColor')?.setValue(upperValue, { emitEvent: false });
+        }
+      });
+  }
+  
+  private isValidHexColor(color: string): boolean {
+    const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+    return hexRegex.test(color);
   }
 
   @HostListener('document:keydown.escape', ['$event'])
@@ -211,6 +255,11 @@ export class SettingsComponent implements OnInit {
   }
 
   onTabChange(event: any): void {
+    // Close any open color picker overlay before switching tabs
+    if (this.routeColorPicker && this.routeColorPicker.overlayVisible) {
+      this.routeColorPicker.overlayVisible = false;
+    }
+    
     // The new p-tabs component passes the tab value in event.value
     this.activeTabIndex = parseInt(event.value || event, 10);
   }
@@ -221,6 +270,10 @@ export class SettingsComponent implements OnInit {
       next: (color) => {
         this.routeColor.set(color);
         this.originalRouteColor.set(color);
+        this.settingsForm.patchValue({
+          routeColor: color,
+          routeColorHex: color
+        }, { emitEvent: false });
         this.loading.set(false);
       },
       error: (error) => {
@@ -235,36 +288,27 @@ export class SettingsComponent implements OnInit {
     });
   }
 
-  hasRouteColorChanged(): boolean {
-    return this.routeColor() !== this.originalRouteColor();
-  }
 
   cancelRouteColorChanges() {
-    this.routeColor.set(this.originalRouteColor());
+    const originalColor = this.originalRouteColor();
+    this.routeColor.set(originalColor);
+    this.settingsForm.patchValue({
+      routeColor: originalColor,
+      routeColorHex: originalColor
+    }, { emitEvent: false });
   }
 
-  onHexInputChange(value: string) {
-    // Validate hex color format
-    const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-    
-    if (value && !value.startsWith('#')) {
-      value = '#' + value;
-    }
-    
-    if (hexRegex.test(value)) {
-      // Expand 3-char hex to 6-char if needed
-      if (value.length === 4) {
-        value = '#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3];
-      }
-      this.routeColor.set(value.toUpperCase());
-    }
-  }
 
   saveRouteColor() {
     this.loading.set(true);
     this.settingsService.setRouteColor(this.routeColor()).subscribe({
       next: () => {
-        this.originalRouteColor.set(this.routeColor());
+        const savedColor = this.routeColor();
+        this.originalRouteColor.set(savedColor);
+        this.settingsForm.patchValue({
+          routeColor: savedColor,
+          routeColorHex: savedColor
+        }, { emitEvent: false });
         this.messageService.add({
           severity: 'success',
           summary: 'Success',

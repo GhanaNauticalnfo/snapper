@@ -10,6 +10,7 @@ import { CreateVesselDto } from './dto/create-vessel.dto';
 import { UpdateVesselDto } from './dto/update-vessel.dto';
 import { VesselResponseDto } from './dto/vessel-response.dto';
 import { GeoPoint } from '@snapper/shared-models';
+import { ResourceSettingsService } from '../resource-settings/resource-settings.service';
 
 @Injectable()
 export class VesselService {
@@ -22,6 +23,7 @@ export class VesselService {
     private trackingRepository: Repository<VesselTelemetry>,
     @InjectRepository(VesselType)
     private vesselTypeRepository: Repository<VesselType>,
+    private resourceSettingsService: ResourceSettingsService,
   ) {}
 
   async findAll(): Promise<VesselResponseDto[]> {
@@ -31,7 +33,14 @@ export class VesselService {
         name: 'ASC'
       }
     });
-    return vessels.map(vessel => vessel.toResponseDto());
+    
+    const result = [];
+    for (const vessel of vessels) {
+      const settings = await this.resourceSettingsService.getSettingsForResource('vessel', vessel.id);
+      result.push(vessel.toResponseDto(undefined, settings));
+    }
+    
+    return result;
   }
 
   async findAllWithLatestPositions(): Promise<VesselResponseDto[]> {
@@ -61,7 +70,8 @@ export class VesselService {
         }
       }
       
-      result.push(vessel.toResponseDto(coordinates));
+      const settings = await this.resourceSettingsService.getSettingsForResource('vessel', vessel.id);
+      result.push(vessel.toResponseDto(coordinates, settings));
     }
     
     return result;
@@ -92,7 +102,8 @@ export class VesselService {
       }
     }
     
-    return vessel.toResponseDto(coordinates);
+    const settings = await this.resourceSettingsService.getSettingsForResource('vessel', vessel.id);
+    return vessel.toResponseDto(coordinates, settings);
   }
 
   async findOneEntity(id: number): Promise<Vessel> {
@@ -105,6 +116,10 @@ export class VesselService {
 
 
   async create(createVesselDto: CreateVesselDto): Promise<VesselResponseDto> {
+    console.log('=== VESSEL SERVICE CREATE DEBUG ===');
+    console.log('Creating vessel:', JSON.stringify(createVesselDto, null, 2));
+    console.log('Timestamp:', new Date().toISOString());
+    
     // Find the vessel type
     const vesselType = await this.vesselTypeRepository.findOne({
       where: { id: createVesselDto.vessel_type_id }
@@ -121,11 +136,25 @@ export class VesselService {
     });
     
     const savedVessel = await this.vesselRepository.save(vessel);
+    console.log('DEBUG: Vessel saved with ID:', savedVessel.id);
+    
+    // Check if any devices exist for this vessel (should be none!)
+    const deviceCount = await this.deviceRepository.count({ where: { vessel_id: savedVessel.id } });
+    console.log('DEBUG: Device count after vessel creation:', deviceCount);
+    if (deviceCount > 0) {
+      console.log('WARNING: Devices found for newly created vessel!');
+      const devices = await this.deviceRepository.find({ where: { vessel_id: savedVessel.id } });
+      devices.forEach(d => {
+        console.log(`  - Device ${d.device_id}: state=${d.state}, created=${d.created_at}`);
+      });
+    }
+    
     // Reload with relations
     const vesselWithRelations = await this.vesselRepository.findOne({
       where: { id: savedVessel.id },
       relations: ['vessel_type']
     });
+    console.log('=== END VESSEL SERVICE CREATE DEBUG ===');
     return vesselWithRelations.toResponseDto();
   }
 
@@ -153,14 +182,18 @@ export class VesselService {
   async remove(id: number): Promise<void> {
     // Use a transaction to ensure all related data is deleted atomically
     await this.vesselRepository.manager.transaction(async manager => {
-      // First, count and delete all tracking points for this vessel
+      // First, clear the latest_position_id from the vessel to break the circular reference
+      await manager.update(Vessel, { id }, { latest_position_id: null });
+      console.log(`Cleared latest_position_id for vessel ${id}`);
+      
+      // Then, count and delete all tracking points for this vessel
       const trackingCount = await manager.count(VesselTelemetry, { where: { vessel_id: id } });
       if (trackingCount > 0) {
         await manager.delete(VesselTelemetry, { vessel_id: id });
         console.log(`Deleted ${trackingCount} vessel telemetry records for vessel ${id}`);
       }
       
-      // Then, count and delete all devices associated with this vessel
+      // Next, count and delete all devices associated with this vessel
       const deviceCount = await manager.count(Device, { where: { vessel_id: id } });
       if (deviceCount > 0) {
         await manager.delete(Device, { vessel_id: id });

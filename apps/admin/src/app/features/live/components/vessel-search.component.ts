@@ -141,7 +141,7 @@ export class VesselSearchComponent implements OnInit {
   vesselSelected = output<VesselWithLocation>();
   
   searchConfig: SearchDropdownConfig = {
-    placeholder: 'Search vessels by name...',
+    placeholder: 'Search vessels',
     searchFields: ['name'],
     maxResults: 10,
     showKeyboardHints: true,
@@ -212,11 +212,6 @@ export class VesselSearchComponent implements OnInit {
           console.log('Final vessels with location data:', vesselsWithLocation);
           this.vessels.set(vesselsWithLocation);
           this.isLoading.set(false);
-          // Update placeholder with count
-          this.searchConfig = {
-            ...this.searchConfig,
-            placeholder: `Search vessels`
-          };
         });
       },
       error: (error) => {

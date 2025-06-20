@@ -31,8 +31,7 @@ import { VoltaDepthService } from '../../volta-depth.service';
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
     <div class="tile-list-container">
-        <div class="flex align-items-center mb-3">
-            <h4>Existing Tiles</h4>
+        <div class="flex items-center mb-3">
         </div>
 
         <p-toast key="tileListToast"></p-toast>

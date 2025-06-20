@@ -1,8 +1,8 @@
-import { Component, Input, Output, EventEmitter, signal, OnInit, OnDestroy, OnChanges, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, OnInit, OnDestroy, OnChanges, AfterViewInit, ViewChild, ElementRef, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { VesselDataset } from '../models/vessel-dataset.model';
 import { VesselDatasetService } from '../services/vessel-dataset.service';
-import { OSM_STYLE, MapComponent, AisShipLayerService, LayerManagerService, MapConfig } from '@snapper/map';
+import { OSM_STYLE, MapComponent, MapConfig } from '@snapper/map';
 import { TimeAgoPipe } from '@snapper/shared';
 import { HttpClient } from '@angular/common/http';
 import { io, Socket } from 'socket.io-client';
@@ -23,7 +23,6 @@ import { DialogModule } from 'primeng/dialog';
     MapComponent,
     DialogModule
   ],
-  providers: [AisShipLayerService],
   template: `
     <div class="tracking-dialog-content">
       <!-- Tracking Header with Key Info -->
@@ -518,6 +517,7 @@ import { DialogModule } from 'primeng/dialog';
 export class VesselTabTrackingComponent implements OnInit, OnDestroy, OnChanges, AfterViewInit {
   @Input() vessel: VesselDataset | null = null;
   @Input() allVessels: VesselDataset[] = [];
+  @Input() isVisible: boolean = false;
   @Output() nearbyRequested = new EventEmitter<void>();
   
   @ViewChild('trackingMap') trackingMap?: MapComponent;
@@ -561,7 +561,10 @@ export class VesselTabTrackingComponent implements OnInit, OnDestroy, OnChanges,
 
   ngOnInit() {
     if (this.vessel) {
-      this.setupLiveTracking();
+      // Only setup live tracking if tab is visible
+      if (this.isVisible) {
+        this.setupLiveTracking();
+      }
       this.loadNearbyVessels();
       this.updateTrackingMapConfig();
     }
@@ -587,9 +590,24 @@ export class VesselTabTrackingComponent implements OnInit, OnDestroy, OnChanges,
     }
   }
 
-  ngOnChanges() {
-    if (this.vessel) {
-      this.setupLiveTracking();
+  ngOnChanges(changes: SimpleChanges) {
+    // Handle visibility changes
+    if (changes['isVisible']) {
+      if (this.isVisible && this.vessel && !this.socket) {
+        // Tab became visible - start tracking
+        this.setupLiveTracking();
+      } else if (!this.isVisible && this.socket) {
+        // Tab became hidden - stop tracking
+        this.disconnectLiveTracking();
+      }
+    }
+    
+    // Handle vessel changes
+    if (changes['vessel'] && this.vessel) {
+      // Only setup live tracking if tab is visible
+      if (this.isVisible) {
+        this.setupLiveTracking();
+      }
       this.loadNearbyVessels();
       this.updateTrackingMapConfig();
       
@@ -631,8 +649,8 @@ export class VesselTabTrackingComponent implements OnInit, OnDestroy, OnChanges,
       showControls: false,
       showFullscreenControl: true,
       showCoordinateDisplay: true,
-      availableLayers: ['ais-ships'],
-      initialActiveLayers: ['ais-ships']
+      availableLayers: [],
+      initialActiveLayers: []
     });
   }
 

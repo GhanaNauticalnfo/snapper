@@ -1,5 +1,5 @@
 // libs/map/src/lib/components/map/map.component.ts
-import { Component, OnInit, AfterViewInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, ViewChild, inject, signal, Input } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, ViewChild, inject, signal, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MapService } from '../../core/map.service';
 import { LayerManagerService } from '../../core/layer-manager.service';
@@ -11,7 +11,7 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="map-container" [class.fullscreen]="isFullscreen()" [style.height]="_config.height">
+    <div class="map-container" [class.fullscreen]="isFullscreen()" [class.clickable]="clickable" [style.height]="_config.height">
       <div #mapElement class="map-canvas"></div>
       
       <div class="map-controls" *ngIf="_config.showFullscreenControl">
@@ -80,6 +80,9 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
   .map-canvas {
     height: 100%;
     width: 100%;
+  }
+  .map-container.clickable .map-canvas {
+    cursor: crosshair;
   }
     .map-controls {
       position: absolute;
@@ -269,6 +272,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
     this.applyVesselFilter();
   }
   
+  // Click functionality
+  @Input() clickable = false;
+  
+  // Events
+  @Output() mapClick = new EventEmitter<{longitude: number, latitude: number}>();
+  @Output() mapLoad = new EventEmitter<Map>();
+  
   // Default configuration
   _config: MapConfig = { ...DEFAULT_MAP_CONFIG };
   private _vesselFilter: number | null = null;
@@ -369,6 +379,19 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
             if (layerId === 'ais-ships') {
               this.applyVesselFilter();
             }
+          });
+        }
+        
+        // Emit map load event
+        this.mapLoad.emit(this._map!);
+      });
+
+      // Add click event listener for coordinate selection
+      this._map.on('click', (e) => {
+        if (this.clickable) {
+          this.mapClick.emit({
+            longitude: e.lngLat.lng,
+            latitude: e.lngLat.lat
           });
         }
       });

@@ -95,9 +95,7 @@ import { BoatIconComponent } from '@snapper/shared';
       gap: 0.5rem;
     }
 
-    /* Utility classes */
-    .w-full { width: 100%; }
-    .mb-3 { margin-bottom: 1rem; }
+    /* Remove utility classes - using Tailwind CSS instead */
   `]
 })
 export class VesselTypeSettingsComponent implements OnInit {

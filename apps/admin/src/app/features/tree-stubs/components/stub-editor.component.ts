@@ -29,8 +29,8 @@ import { TreeStubLayerService } from '../services/tree-stub-layer.service';
   providers: [MessageService, ConfirmationService],
   template: `
     <div class="stub-editor-container">
-      <div class="flex justify-content-between align-items-center mb-4">
-        <div class="flex align-items-center gap-3">
+      <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center gap-3">
           <button 
             pButton 
             type="button" 

@@ -69,15 +69,28 @@ export class DeviceAuthService {
   }
 
   async createDevice(vesselId?: number, expiresInDays: number = 30): Promise<Device> {
+    // DEBUG: Log device creation request
+    console.log('=== DEVICE CREATION DEBUG ===');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Vessel ID:', vesselId);
+    console.log('Expires in days:', expiresInDays);
+    console.log('Stack trace:', new Error().stack);
+    
     // Check if vessel already has a pending device
     if (vesselId) {
+      console.log('DEBUG: Checking existing devices for vessel:', vesselId);
       const existingDevices = await this.deviceRepository.find({
         where: { vessel_id: vesselId }
+      });
+      console.log('DEBUG: Found', existingDevices.length, 'existing devices');
+      existingDevices.forEach(d => {
+        console.log(`  - Device ${d.device_id}: state=${d.state}, created=${d.created_at}`);
       });
 
       // Check for active devices
       const activeDevices = existingDevices.filter(d => d.state === DeviceState.ACTIVE);
       if (activeDevices.length > 1) {
+        console.log('DEBUG: Multiple active devices found, rejecting');
         throw new HttpException('Vessel already has more than one active device. Please clean up first.', HttpStatus.BAD_REQUEST);
       }
 
@@ -88,6 +101,7 @@ export class DeviceAuthService {
       );
       
       if (pendingDevices.length > 0) {
+        console.log('DEBUG: Pending device exists, rejecting');
         throw new HttpException('Vessel already has a pending device. Please activate or delete it first.', HttpStatus.BAD_REQUEST);
       }
     }
@@ -98,13 +112,24 @@ export class DeviceAuthService {
     device.vessel_id = vesselId;
     device.state = DeviceState.PENDING;
     
+    console.log('DEBUG: Creating new device with:');
+    console.log('  - device_token:', device.device_token);
+    console.log('  - activation_token:', device.activation_token);
+    console.log('  - vessel_id:', device.vessel_id);
+    console.log('  - state:', device.state);
+    
     if (expiresInDays > 0) {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + expiresInDays);
       device.expires_at = expiresAt;
+      console.log('  - expires_at:', expiresAt.toISOString());
     }
 
-    return await this.deviceRepository.save(device);
+    const savedDevice = await this.deviceRepository.save(device);
+    console.log('DEBUG: Device saved with ID:', savedDevice.device_id);
+    console.log('=== END DEVICE CREATION DEBUG ===');
+    
+    return savedDevice;
   }
 
   async getDevicesByVessel(vesselId: number): Promise<{

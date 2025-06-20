@@ -10,6 +10,36 @@
   touch-action: manipulation;
 }
 
+/* Ensure color picker overlay has proper z-index and closes properly */
+.p-colorpicker-panel {
+  z-index: 1100 !important; /* Above other overlays */
+}
+
+/* Color picker overlay mask */
+.p-colorpicker-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1099;
+  background-color: transparent;
+}
+
+/* Common page header styling */
+.page-header {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1rem;
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
 /* Features component styling */
 .features-host .card {
   margin: 1rem;
@@ -33,6 +63,42 @@
   border-radius: 4px;
   cursor: pointer;
   margin: 0;
+}
+
+/* Vessel Details Dialog styling */
+.vessel-details-dialog .p-dialog-content {
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.vessel-details-dialog .vessel-tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.vessel-details-dialog .p-tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.vessel-details-dialog .p-tabpanels {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.vessel-details-dialog .p-tabpanel {
+  padding: 1.5rem;
+  height: 100%;
+}
+
+/* Special handling for tracking tab */
+.vessel-details-dialog .p-tabpanel:has(app-vessel-tab-tracking) {
+  padding: 0;
+  overflow: hidden;
 }
 
 .features-host .features-tabs .p-tablist {
@@ -471,4 +537,86 @@ body.map-fullscreen-active .map-container.fullscreen {
 .vessel-list-host .tracking-dialog-content .map-container .coordinate-display {
   position: absolute !important;
   pointer-events: auto !important;
+}
+
+/* Landing Site Form component styling */
+.landing-site-form-host .coordinate-field .p-inputnumber {
+  width: 100%;
+}
+
+.landing-site-form-host .coordinate-field .p-inputnumber-input {
+  width: 100%;
+}
+
+/* Landing site dialog overflow fixes */
+.landing-site-form-host .p-dialog .p-dialog-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Landing site marker styling */
+.landing-site-marker {
+  background-color: #dc2626;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  border: 2px solid white;
+  cursor: pointer;
+}
+
+/* Download tabs styling */
+.download-host .download-tabs {
+  border: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.download-host .download-tabs .p-tablist {
+  border-bottom: 2px solid var(--surface-300);
+  background: var(--surface-50);
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.download-host .download-tabs .p-tab {
+  border: none;
+  padding: 0.75rem 1rem;
+  color: var(--text-color-secondary);
+  background: transparent;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.download-host .download-tabs .p-tab[aria-selected="true"] {
+  color: var(--primary-color);
+  background: transparent;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.download-host .download-tabs .p-tab:not([aria-selected="true"]):hover {
+  color: var(--text-color);
+  background: var(--surface-hover);
+}
+
+.download-host .download-tabs .p-tabpanels {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+}
+
+.download-host .download-tabs .p-tabpanel {
+  height: 100%;
+  overflow: auto;
+  padding: 0;
 }

@@ -16,12 +16,12 @@ import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 
-import { VesselDataset } from '../vessels/models/vessel-dataset.model';
-import { VesselDatasetService, TelemetryExportFilters, TelemetryExportStats } from '../vessels/services/vessel-dataset.service';
-import { VesselTypeService, VesselType } from '../settings/services/vessel-type.service';
+import { VesselDataset } from '../../vessels/models/vessel-dataset.model';
+import { VesselDatasetService, TelemetryExportFilters, TelemetryExportStats } from '../../vessels/services/vessel-dataset.service';
+import { VesselTypeService, VesselType } from '../../settings/services/vessel-type.service';
 
 @Component({
-  selector: 'app-telemetry',
+  selector: 'app-download-tab-vessel-telemetry',
   standalone: true,
   imports: [
     CommonModule,
@@ -43,7 +43,7 @@ import { VesselTypeService, VesselType } from '../settings/services/vessel-type.
     <div class="telemetry-page-container">
       <p-toast></p-toast>
       
-      <div class="flex justify-content-between align-items-center mb-4">
+      <div class="flex justify-between items-center mb-4">
         <h2>Telemetry Data Export</h2>
       </div>
 
@@ -59,7 +59,7 @@ import { VesselTypeService, VesselType } from '../settings/services/vessel-type.
               <!-- Date Range Selection -->
               <div class="field">
                 <label class="block text-900 font-medium mb-3">Date Range</label>
-                <div class="flex gap-3 align-items-end">
+                <div class="flex gap-3 items-end">
                   <div class="flex-1">
                     <label class="block text-600 text-sm mb-2">From Date & Time</label>
                     <p-datePicker 
@@ -132,30 +132,6 @@ import { VesselTypeService, VesselType } from '../settings/services/vessel-type.
                 </small>
               </div>
 
-              <!-- Export Stats -->
-              @if (exportStats() && !loading()) {
-                <p-divider></p-divider>
-                <div class="field">
-                  <p-card header="Export Information" styleClass="surface-50">
-                    <div class="grid">
-                      <div class="col-6">
-                        <strong>Total Records:</strong> {{ exportStats()?.totalRecords | number }}
-                      </div>
-                      <div class="col-6">
-                        <strong>Estimated Size:</strong> {{ getEstimatedSize() }}
-                      </div>
-                      <div class="col-12 mt-2">
-                        <strong>Available Data Range:</strong><br>
-                        <small class="text-600">
-                          @if (exportStats()?.dateRange?.min && exportStats()?.dateRange?.max) {
-                            {{ formatDate(exportStats()!.dateRange.min) }} to {{ formatDate(exportStats()!.dateRange.max) }}
-                          }
-                        </small>
-                      </div>
-                    </div>
-                  </p-card>
-                </div>
-              }
 
               <!-- Progress Bar -->
               @if (downloadProgress() > 0 && downloadProgress() < 100) {
@@ -175,7 +151,7 @@ import { VesselTypeService, VesselType } from '../settings/services/vessel-type.
               <!-- Action Buttons -->
               <div class="flex gap-2 justify-content-end">
                 <p-button 
-                  label="Prepare Download"
+                  label="Prepare Export"
                   icon="pi pi-cog"
                   type="button"
                   [loading]="loading()"
@@ -188,26 +164,7 @@ import { VesselTypeService, VesselType } from '../settings/services/vessel-type.
         </div>
 
         <div class="col-12 lg:col-4">
-          <p-card header="About Telemetry Export" styleClass="mb-4">
-            <div class="text-600 line-height-3">
-              <h5 class="text-900 mt-0">CSV File Contents</h5>
-              <ul class="list-none p-0 m-0">
-                <li class="mb-2"><i class="pi pi-check text-green-500 mr-2"></i>Vessel ID & Name</li>
-                <li class="mb-2"><i class="pi pi-check text-green-500 mr-2"></i>Vessel Type</li>
-                <li class="mb-2"><i class="pi pi-check text-green-500 mr-2"></i>Timestamp</li>
-                <li class="mb-2"><i class="pi pi-check text-green-500 mr-2"></i>GPS Position (Lat/Lng)</li>
-                <li class="mb-2"><i class="pi pi-check text-green-500 mr-2"></i>Speed (Knots)</li>
-                <li class="mb-2"><i class="pi pi-check text-green-500 mr-2"></i>Heading (Degrees)</li>
-                <li class="mb-2"><i class="pi pi-check text-green-500 mr-2"></i>Battery Level</li>
-                <li class="mb-2"><i class="pi pi-check text-green-500 mr-2"></i>Signal Strength</li>
-                <li class="mb-2"><i class="pi pi-check text-green-500 mr-2"></i>Device ID</li>
-                <li class="mb-2"><i class="pi pi-check text-green-500 mr-2"></i>Status</li>
-              </ul>
-              
-              <h5 class="text-900 mt-4">File Format</h5>
-              <p class="m-0">Data is exported as a compressed ZIP file containing a CSV file. The ZIP format reduces file size and makes downloading large datasets more efficient.</p>
-            </div>
-          </p-card>
+        
 
           @if (recentStats()) {
             <p-card header="System Overview" styleClass="mb-4">
@@ -321,6 +278,8 @@ import { VesselTypeService, VesselType } from '../settings/services/vessel-type.
   styles: [`
     .telemetry-page-container {
       padding: 1.5rem;
+      height: 100%;
+      overflow: auto;
     }
     
     .field {
@@ -356,7 +315,7 @@ import { VesselTypeService, VesselType } from '../settings/services/vessel-type.
     }
   `]
 })
-export class TelemetryComponent implements OnInit {
+export class DownloadTabVesselTelemetryComponent implements OnInit {
   private fb = inject(FormBuilder);
   private vesselDatasetService = inject(VesselDatasetService);
   private vesselTypeService = inject(VesselTypeService);

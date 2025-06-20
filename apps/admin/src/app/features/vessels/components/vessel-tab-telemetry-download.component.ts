@@ -81,7 +81,7 @@ interface ExportStats {
               <!-- Date Range Selection -->
               <div class="field">
                 <label class="block text-900 font-medium mb-3">Date Range</label>
-                <div class="flex gap-3 align-items-end">
+                <div class="flex gap-3 items-end">
                   <div class="flex-1">
                     <label class="block text-600 text-sm mb-2">From Date & Time</label>
                     <p-datePicker 
@@ -123,7 +123,7 @@ interface ExportStats {
                 <label class="block text-900 font-medium mb-3">Export Scope</label>
                 @if (vessel) {
                   <p-card styleClass="surface-50">
-                    <div class="flex align-items-center">
+                    <div class="flex items-center">
                       <i class="pi pi-compass text-2xl mr-3 text-blue-500"></i>
                       <div>
                         <div class="text-900 font-semibold">{{ vessel.name }}</div>

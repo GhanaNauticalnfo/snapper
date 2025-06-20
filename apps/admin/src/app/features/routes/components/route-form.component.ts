@@ -9,6 +9,8 @@ import { DividerModule } from 'primeng/divider';
 import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 import { Route, Waypoint } from '../models/route.model';
 import { MapComponent, MapConfig, OSM_STYLE, RouteLayerService, RouteData } from '@snapper/map';
 import { WaypointEditorDialogComponent } from './waypoint-editor-dialog.component';
@@ -30,9 +32,10 @@ import { environment } from '../../../../environments/environment';
     TableModule,
     InputNumberModule,
     MapComponent,
-    WaypointEditorDialogComponent
+    WaypointEditorDialogComponent,
+    ConfirmDialogModule
   ],
-  providers: [RouteLayerService],
+  providers: [RouteLayerService, ConfirmationService],
   template: `
     <div class="route-form-container">
       <form [formGroup]="routeForm" class="flex gap-3" style="height: 100%;">
@@ -82,7 +85,7 @@ import { environment } from '../../../../environments/environment';
             <p-divider></p-divider>
 
             <div class="waypoints-section">
-              <div class="flex justify-content-between align-items-center mb-3">
+              <div class="flex justify-between items-center mb-3">
                 <h4 class="m-0">Waypoints ({{ waypoints().length }})</h4>
                 @if (mode !== 'view') {
                   <div class="flex gap-2">
@@ -142,7 +145,7 @@ import { environment } from '../../../../environments/environment';
                 type="button" 
                 label="Cancel" 
                 class="p-button-text"
-                (click)="cancel.emit()">
+                (click)="onCancel()">
               </button>
               <button 
                 pButton 
@@ -158,7 +161,7 @@ import { environment } from '../../../../environments/environment';
                 type="button" 
                 label="Close" 
                 class="p-button-text"
-                (click)="cancel.emit()">
+                (click)="onCancel()">
               </button>
             }
           </div>
@@ -171,6 +174,8 @@ import { environment } from '../../../../environments/environment';
         [waypoints]="waypoints()"
         (waypointsChange)="onWaypointsChange($event)">
       </app-waypoint-editor-dialog>
+      
+      <p-confirmDialog></p-confirmDialog>
     </div>
   `,
   styles: [`
@@ -249,10 +254,13 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
   showWaypointEditorDialog = false;
   
   private routeLayerService: RouteLayerService;
+  private originalFormValue: any = {};
+  private originalWaypoints: Waypoint[] = [];
 
   constructor(
     private fb: FormBuilder,
-    routeLayerService: RouteLayerService
+    routeLayerService: RouteLayerService,
+    private confirmationService: ConfirmationService
   ) {
     this.routeForm = this.fb.group({
       name: ['', Validators.required],
@@ -305,20 +313,30 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
   private resetFormWithRouteData() {
     if (this.route) {
       // Reset form with route data
-      this.routeForm.patchValue({
+      const formData = {
         name: this.route.name || '',
         description: this.route.description || '',
         enabled: this.route.enabled !== undefined ? this.route.enabled : true
-      });
+      };
+      this.routeForm.patchValue(formData);
       this.waypoints.set(this.route.waypoints || []);
+      
+      // Store original values for change detection
+      this.originalFormValue = { ...formData };
+      this.originalWaypoints = [...(this.route.waypoints || [])];
     } else {
       // Reset form to default values for create mode
-      this.routeForm.patchValue({
+      const formData = {
         name: '',
         description: '',
         enabled: true
-      });
+      };
+      this.routeForm.patchValue(formData);
       this.waypoints.set([]);
+      
+      // Store original values for change detection
+      this.originalFormValue = { ...formData };
+      this.originalWaypoints = [];
     }
     
     // Update route display after form reset
@@ -422,6 +440,43 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
   onWaypointsChange(newWaypoints: Waypoint[]) {
     this.waypoints.set(newWaypoints);
     this.updateRouteDisplay();
+    this.fitMapToWaypoints();
+  }
+
+  private hasUnsavedChanges(): boolean {
+    // Check form changes
+    const currentFormValue = this.routeForm.value;
+    const formChanged = 
+      currentFormValue.name !== this.originalFormValue.name ||
+      currentFormValue.description !== this.originalFormValue.description ||
+      currentFormValue.enabled !== this.originalFormValue.enabled;
+    
+    // Check waypoint changes
+    const currentWaypoints = this.waypoints();
+    const waypointsChanged = 
+      currentWaypoints.length !== this.originalWaypoints.length ||
+      !currentWaypoints.every((wp, i) => 
+        this.originalWaypoints[i] && 
+        wp.lat === this.originalWaypoints[i].lat && 
+        wp.lng === this.originalWaypoints[i].lng
+      );
+    
+    return formChanged || waypointsChanged;
+  }
+
+  onCancel() {
+    if (this.mode !== 'view' && this.hasUnsavedChanges()) {
+      this.confirmationService.confirm({
+        message: 'You have unsaved changes. Are you sure you want to cancel?',
+        header: 'Unsaved Changes',
+        icon: 'pi pi-exclamation-triangle',
+        accept: () => {
+          this.cancel.emit();
+        }
+      });
+    } else {
+      this.cancel.emit();
+    }
   }
 
 

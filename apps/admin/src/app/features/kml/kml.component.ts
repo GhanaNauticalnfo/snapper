@@ -10,6 +10,9 @@ import { KmlListComponent } from './components/kml-list.component';
   imports: [RouterModule, CommonModule, KmlListComponent],
   template: `
     <div class="kml-container">
+      <div class="page-header">
+        <h2>KML DataSets</h2>
+      </div>
       <app-kml-list></app-kml-list>
     </div>
   `,

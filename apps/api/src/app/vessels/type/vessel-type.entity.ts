@@ -28,8 +28,8 @@ export class VesselType {
   @OneToMany(() => Vessel, vessel => vessel.vessel_type)
   vessels: Vessel[];
 
-  toResponseDto(): VesselTypeResponseDto {
-    return {
+  toResponseDto(settings?: Record<string, string>): VesselTypeResponseDto {
+    const dto: VesselTypeResponseDto = {
       id: this.id,
       name: this.name,
       color: this.color,
@@ -37,5 +37,11 @@ export class VesselType {
       updated_at: this.updated_at.toISOString(),
       vessel_count: this.vessels?.length || 0
     };
+
+    if (settings) {
+      dto.settings = settings;
+    }
+
+    return dto;
   }
 }

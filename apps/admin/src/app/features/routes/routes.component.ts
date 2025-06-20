@@ -9,11 +9,15 @@ import { RouteListComponent } from './components/route-list.component';
   imports: [CommonModule, RouterModule, RouteListComponent],
   template: `
     <div class="routes-container">
+      <div class="page-header">
+        <h2>Routes</h2>
+      </div>
       <app-route-list></app-route-list>
     </div>
   `,
   styles: [`
     .routes-container {
+      padding: 0 20px 20px 20px;
       height: 100%;
     }
   `]

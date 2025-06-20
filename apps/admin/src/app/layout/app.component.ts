@@ -1,13 +1,12 @@
 // apps/admin/src/app/app.component.ts
 import { Component } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { SidebarComponent } from '../shared/components/sidebar/sidebar.component';
 import { User } from '@snapper/shared-models';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent],
+  imports: [RouterOutlet],
   template: `
     <router-outlet></router-outlet>
   `,

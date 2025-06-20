@@ -66,7 +66,7 @@ interface VesselFormData {
       @if (!loading()) {
         <p-card>
           <ng-template pTemplate="title">
-            <div class="flex justify-content-between align-items-center">
+            <div class="flex justify-between items-center">
               <h2>{{ isEditMode() ? 'Edit Vessel' : 'Create New Vessel' }}</h2>
               <div class="button-group">
                 <p-button
