@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, AfterViewInit, ViewChild, signal, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, AfterViewInit, ViewChild, signal, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -10,6 +10,7 @@ import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { SkeletonModule } from 'primeng/skeleton';
 import { ConfirmationService } from 'primeng/api';
 import { Route, Waypoint } from '../models/route.model';
 import { MapComponent, MapConfig, OSM_STYLE, RouteLayerService, RouteData } from '@snapper/map';
@@ -20,6 +21,7 @@ import { environment } from '../../../../environments/environment';
   selector: 'app-route-form',
   standalone: true,
   imports: [
+    SkeletonModule,
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -41,10 +43,17 @@ import { environment } from '../../../../environments/environment';
       <form [formGroup]="routeForm" class="flex gap-3" style="height: 100%;">
         <!-- Left side: Map -->
         <div class="map-section" style="position: relative;">
-          <lib-map 
-            #mapComponent
-            [config]="mapConfig()">
-          </lib-map>
+          @if (mapReady()) {
+            <lib-map 
+              #mapComponent
+              [config]="mapConfig()">
+            </lib-map>
+          } @else {
+            <div class="map-skeleton">
+              <p-skeleton width="100%" height="100%"></p-skeleton>
+              <div class="loading-text">Loading map...</div>
+            </div>
+          }
         </div>
 
         <!-- Right side: Form fields and waypoints -->
@@ -184,9 +193,37 @@ import { environment } from '../../../../environments/environment';
       overflow: hidden;
     }
 
+    .route-form-container form {
+      height: 100%;
+    }
+
     .map-section {
       flex: 0 0 60%;
       min-width: 300px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .map-section lib-map {
+      flex: 1;
+      min-height: 500px;
+    }
+
+    .map-skeleton {
+      width: 100%;
+      height: 100%;
+      min-height: 500px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-text {
+      position: absolute;
+      color: var(--text-color-secondary);
+      font-size: 1.2rem;
     }
 
     .map-container {
@@ -252,6 +289,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
   waypoints = signal<Waypoint[]>([]);
   mapConfig = signal<Partial<MapConfig>>({});
   showWaypointEditorDialog = false;
+  mapReady = signal(false);
   
   private routeLayerService: RouteLayerService;
   private originalFormValue: any = {};
@@ -260,12 +298,13 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
   constructor(
     private fb: FormBuilder,
     routeLayerService: RouteLayerService,
-    private confirmationService: ConfirmationService
+    private confirmationService: ConfirmationService,
+    private cdr: ChangeDetectorRef
   ) {
-    this.routeForm = this.fb.group({
-      name: ['', Validators.required],
-      description: [''],
-      enabled: [true]
+    this.routeForm = this.fb.nonNullable.group({
+      name: this.fb.nonNullable.control('', Validators.required),
+      description: this.fb.nonNullable.control(''),
+      enabled: this.fb.nonNullable.control<boolean>(false)
     });
     
     this.routeLayerService = routeLayerService;
@@ -275,7 +314,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
       mapStyle: OSM_STYLE,
       center: [-0.4, 6.7], // Lake Volta region
       zoom: 7,
-      height: '100%',
+      height: '600px',
       showControls: false,
       showFullscreenControl: true,
       showCoordinateDisplay: true,
@@ -316,9 +355,13 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
       const formData = {
         name: this.route.name || '',
         description: this.route.description || '',
-        enabled: this.route.enabled !== undefined ? this.route.enabled : true
+        enabled: !!this.route.enabled
       };
-      this.routeForm.patchValue(formData);
+      this.routeForm.reset(formData);
+      
+      // Force change detection to ensure PrimeNG InputSwitch updates
+      this.cdr.detectChanges();
+      
       this.waypoints.set(this.route.waypoints || []);
       
       // Store original values for change detection
@@ -329,9 +372,9 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
       const formData = {
         name: '',
         description: '',
-        enabled: true
+        enabled: false
       };
-      this.routeForm.patchValue(formData);
+      this.routeForm.reset(formData);
       this.waypoints.set([]);
       
       // Store original values for change detection
@@ -347,16 +390,11 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
   }
 
   ngAfterViewInit() {
-    // Initialize map integration after view is ready
-    setTimeout(() => {
-      this.initializeMapIntegration();
-      
-      // Focus on the first input field
-      const firstInput = document.querySelector('#name') as HTMLInputElement;
-      if (firstInput) {
-        firstInput.focus();
-      }
-    }, 300);
+    // Focus on the first input field
+    const firstInput = document.querySelector('#name') as HTMLInputElement;
+    if (firstInput) {
+      firstInput.focus();
+    }
   }
 
   private initializeMapIntegration() {
@@ -392,7 +430,24 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
 
 
   ngOnDestroy() {
+    // Reset map state for next time
+    this.mapReady.set(false);
     // Cleanup is handled by the shared map component
+  }
+
+  // Public method to prepare the map - called by parent component when dialog is shown
+  public prepareMap(): void {
+    this.mapReady.set(true);
+    
+    // Force update the enabled field to ensure InputSwitch displays correctly
+    const currentValue = this.routeForm.get('enabled')?.value;
+    this.routeForm.get('enabled')?.setValue(currentValue, { emitEvent: false });
+    this.cdr.detectChanges();
+    
+    // Initialize map after next tick when it's rendered
+    setTimeout(() => {
+      this.initializeMapIntegration();
+    }, 0);
   }
 
 
@@ -400,7 +455,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
     const waypointList = this.waypoints();
     const routeName = this.routeForm.get('name')?.value || 'Route';
     const description = this.routeForm.get('description')?.value || '';
-    const enabled = this.routeForm.get('enabled')?.value || true;
+    const enabled = this.routeForm.get('enabled')?.value as boolean;
     
     // Convert Waypoint[] to RouteWaypoint[]
     const routeWaypoints = waypointList.map(wp => ({
@@ -471,10 +526,12 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
         header: 'Unsaved Changes',
         icon: 'pi pi-exclamation-triangle',
         accept: () => {
+          this.mapReady.set(false);
           this.cancel.emit();
         }
       });
     } else {
+      this.mapReady.set(false);
       this.cancel.emit();
     }
   }
@@ -495,6 +552,8 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
         waypoints: this.waypoints()
       };
       this.save.emit(route);
+      // Reset map state in case dialog closes
+      this.mapReady.set(false);
     } else {
       console.log('Cannot save - form invalid or not enough waypoints');
       if (!this.routeForm.valid) {

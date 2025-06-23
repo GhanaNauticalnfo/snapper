@@ -269,15 +269,14 @@ export class LandingSiteListComponent implements OnInit, AfterViewInit {
   }
   
   onDialogShow() {
-    // Allow Angular to render the form component first
+    // Wait for dialog animation to complete, then prepare map
     setTimeout(() => {
-      // The form component may need to initialize its map
       const formComponent = this.landingSiteFormComponent();
       if (formComponent) {
-        // Trigger map initialization if needed
-        formComponent.initializeMapIntegration();
+        // Initialize map after dialog is fully open
+        formComponent.prepareMap();
       }
-    }, 100);
+    }, 10); // Minimal delay since dialog now opens instantly
   }
   
   // Convert DTO to model for form

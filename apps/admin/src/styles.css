@@ -1,9 +1,9 @@
+/* MapLibre GL CSS */
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* MapLibre GL CSS */
-@import 'maplibre-gl/dist/maplibre-gl.css';
 
 /* Fix for PrimeNG ColorPicker touch event passive listeners */
 .p-colorpicker .p-colorpicker-panel {
@@ -116,6 +116,25 @@
 
 .route-list-host .p-dialog-mask {
   z-index: 1049 !important;
+}
+
+/* Waypoint editor dialog needs higher z-index to appear above map markers */
+.route-list-host app-waypoint-editor-dialog .p-dialog {
+  z-index: 9999 !important;
+}
+
+.route-list-host app-waypoint-editor-dialog .p-dialog-mask {
+  z-index: 9998 !important;
+}
+
+/* Ensure MapLibre markers in route form don't interfere with dialogs */
+.route-list-host .maplibregl-marker {
+  z-index: 1 !important;
+}
+
+/* Ensure the waypoint markers specifically have appropriate z-index */
+.route-list-host .waypoint-marker {
+  z-index: 1 !important;
 }
 
 /* Ensure form inputs in dialog are interactive */

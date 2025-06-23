@@ -1,220 +1,126 @@
-import { Component, OnInit, ViewChild, signal, computed } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ChangeDetectionStrategy, TemplateRef, signal, viewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
-import { ToastModule } from 'primeng/toast';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { SkeletonModule } from 'primeng/skeleton';
-import { MessageService, ConfirmationService } from 'primeng/api';
+import { MessageService } from 'primeng/api';
+import { ResourceListComponent, ResourceListConfig, ResourceAction } from '@snapper/shared';
 import { RouteService } from '../services/route.service';
 import { Route } from '../models/route.model';
 import { RouteFormComponent } from './route-form.component';
 
 @Component({
   selector: 'app-route-list',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
-    TableModule,
-    ButtonModule,
-    InputTextModule,
-    DialogModule,
     TagModule,
-    ToastModule,
-    ConfirmDialogModule,
-    SkeletonModule,
+    ResourceListComponent,
     RouteFormComponent
   ],
-  providers: [MessageService, ConfirmationService],
+  providers: [MessageService],
   template: `
-    <div class="route-list-container">
-      <div class="flex justify-end items-center mb-4">
-        <button 
-          pButton 
-          type="button" 
-          label="New Route" 
-          icon="pi pi-plus" 
-          class="p-button-success"
-          (click)="showCreateDialog()">
-        </button>
-      </div>
-
-      <div class="mb-3">
-        <span class="p-input-icon-left">
-          <i class="pi pi-search"></i>
-          <input 
-            pInputText 
-            type="text" 
-            [(ngModel)]="searchQuery" 
-            placeholder="Search routes..." 
-            class="w-full">
-        </span>
-      </div>
-
-      <p-table 
-        [value]="filteredRoutes()" 
-        [loading]="loading()"
-        [paginator]="true" 
-        [rows]="10"
-        [showCurrentPageReport]="true"
-        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} routes"
-        styleClass="p-datatable-gridlines">
-        
-        <ng-template pTemplate="header">
-          <tr>
-            <th pSortableColumn="name">
-              Name <p-sortIcon field="name"></p-sortIcon>
-            </th>
-            <th>Description</th>
-            <th pSortableColumn="waypoints">
-              Waypoints <p-sortIcon field="waypoints"></p-sortIcon>
-            </th>
-            <th pSortableColumn="enabled">
-              Status <p-sortIcon field="enabled"></p-sortIcon>
-            </th>
-            <th pSortableColumn="last_updated">
-              Last Updated <p-sortIcon field="last_updated"></p-sortIcon>
-            </th>
-            <th>Actions</th>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="body" let-route>
-          <tr>
-            <td>{{ route.name }}</td>
-            <td>{{ route.description || '-' }}</td>
-            <td>
-              <p-tag 
-                [value]="route.waypoints.length + ' waypoints'" 
-                severity="info">
-              </p-tag>
-            </td>
-            <td>
-              <p-tag 
-                [value]="route.enabled ? 'Active' : 'Inactive'" 
-                [severity]="route.enabled ? 'success' : 'danger'">
-              </p-tag>
-            </td>
-            <td>{{ route.last_updated | date:'short' }}</td>
-            <td>
-              <button 
-                pButton 
-                type="button" 
-                icon="pi pi-eye" 
-                class="p-button-text p-button-info"
-                (click)="viewRoute(route)"
-                pTooltip="View">
-              </button>
-              <button 
-                pButton 
-                type="button" 
-                icon="pi pi-pencil" 
-                class="p-button-text p-button-warning"
-                (click)="editRoute(route)"
-                pTooltip="Edit">
-              </button>
-              <button 
-                pButton 
-                type="button" 
-                icon="pi pi-trash" 
-                class="p-button-text p-button-danger"
-                (click)="confirmDelete(route)"
-                pTooltip="Delete">
-              </button>
-            </td>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="6" class="text-center">
-              @if (loading()) {
-                <div class="flex flex-col items-center gap-3">
-                  @for (i of [1,2,3]; track i) {
-                    <p-skeleton width="100%" height="2rem"></p-skeleton>
-                  }
-                </div>
-              } @else {
-                No routes found
-              }
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
-
-      <p-dialog 
-        [(visible)]="showDialog" 
-        [header]="dialogMode() === 'view' ? 'View Route' : (dialogMode() === 'edit' ? 'Edit Route' : 'Create Route')"
-        [modal]="true"
-        [style]="{width: '90vw', height: '85vh'}"
-        [maximizable]="true"
-        [draggable]="false"
-        [resizable]="false"
-        [appendTo]="'body'"
-        [blockScroll]="true"
-        [closable]="false"
-        (onShow)="onDialogShow()">
-        
+    <lib-resource-list
+      [config]="listConfig"
+      [data]="routes()"
+      [loading]="loading()"
+      [dialogMode]="dialogMode()"
+      [selectedItem]="selectedRoute()"
+      [showDialog]="showDialog"
+      (showDialogChange)="showDialog = $event"
+      (action)="handleAction($event)"
+      (dialogShown)="onDialogShow()">
+      
+      @if (showDialog) {
         <app-route-form
+          formContent
           #routeForm
           [route]="selectedRoute()"
           [mode]="dialogMode()"
           (save)="saveRoute($event)"
-          (cancel)="onFormCancel()">
+          (cancel)="showDialog = false">
         </app-route-form>
-      </p-dialog>
-
-      <p-confirmDialog></p-confirmDialog>
-      <p-toast></p-toast>
-    </div>
+      }
+    </lib-resource-list>
+    
+    <!-- Column Templates -->
+    <ng-template #waypointsTemplate let-item>
+      <p-tag 
+        [value]="item.waypoints.length + ' waypoints'" 
+        severity="info">
+      </p-tag>
+    </ng-template>
+    
+    <ng-template #statusTemplate let-item>
+      <p-tag 
+        [value]="item.enabled ? 'Active' : 'Inactive'" 
+        [severity]="item.enabled ? 'success' : 'danger'">
+      </p-tag>
+    </ng-template>
+    
+    <ng-template #lastUpdatedTemplate let-item>
+      {{ item.last_updated | date:'short' }}
+    </ng-template>
   `,
-  styles: [`
-    .route-list-container {
-      padding: 0 1.5rem 1.5rem 1.5rem;
-    }
-  `],
   host: {
     'class': 'route-list-host'
   }
 })
-export class RouteListComponent implements OnInit {
-  @ViewChild('routeForm') routeFormComponent?: RouteFormComponent;
+export class RouteListComponent implements OnInit, AfterViewInit {
+  // Services
+  private routeService = inject(RouteService);
+  private messageService = inject(MessageService);
+
+  // View children
+  routeFormComponent = viewChild<RouteFormComponent>('routeForm');
+  waypointsTemplate = viewChild.required<TemplateRef<any>>('waypointsTemplate');
+  statusTemplate = viewChild.required<TemplateRef<any>>('statusTemplate');
+  lastUpdatedTemplate = viewChild.required<TemplateRef<any>>('lastUpdatedTemplate');
   
+  // Signals
   routes = signal<Route[]>([]);
   selectedRoute = signal<Route | null>(null);
   loading = signal(false);
-  error = signal<string | null>(null);
-  searchQuery = '';
   showDialog = false;
   dialogMode = signal<'view' | 'edit' | 'create'>('create');
-
-  filteredRoutes = computed(() => {
-    const query = this.searchQuery.toLowerCase();
-    const routeList = this.routes();
-    
-    if (!query) return routeList;
-    
-    return routeList.filter(route => 
-      route.name.toLowerCase().includes(query) ||
-      route.description?.toLowerCase().includes(query)
-    );
-  });
-
-  constructor(
-    private routeService: RouteService,
-    private messageService: MessageService,
-    private confirmationService: ConfirmationService
-  ) {}
-
+  
+  listConfig!: ResourceListConfig<Route>;
+  
   ngOnInit() {
+    // Initialize config without template references
+    this.listConfig = {
+      title: '', // Remove duplicate title - parent component already has page header
+      searchPlaceholder: 'Search routes...',
+      newButtonLabel: 'New Route',
+      entityName: 'routes',
+      entityNameSingular: 'route',
+      columns: [
+        { field: 'name', header: 'Name', sortable: true },
+        { field: 'description', header: 'Description', sortable: false },
+        { field: 'waypoints', header: 'Waypoints', sortable: true },
+        { field: 'enabled', header: 'Status', sortable: true },
+        { field: 'last_updated', header: 'Last Updated', sortable: true }
+      ],
+      searchFields: ['name', 'description'],
+      actions: {
+        view: true,
+        edit: true,
+        delete: true
+      },
+      deleteConfirmMessage: (item) => `Are you sure you want to delete the route "${item.name}"?`,
+      emptyMessage: 'No routes found',
+      pageSize: 10
+    };
+    
     this.loadRoutes();
   }
-
+  
+  ngAfterViewInit() {
+    // Now add the template references
+    this.listConfig.columns[2].template = this.waypointsTemplate();
+    this.listConfig.columns[3].template = this.statusTemplate();
+    this.listConfig.columns[4].template = this.lastUpdatedTemplate();
+  }
+  
   loadRoutes() {
     this.loading.set(true);
     this.routeService.getAll().subscribe({
@@ -223,7 +129,6 @@ export class RouteListComponent implements OnInit {
         this.loading.set(false);
       },
       error: (error) => {
-        this.error.set('Failed to load routes');
         this.loading.set(false);
         this.messageService.add({
           severity: 'error',
@@ -233,25 +138,41 @@ export class RouteListComponent implements OnInit {
       }
     });
   }
-
+  
+  handleAction(action: ResourceAction<Route>) {
+    switch (action.type) {
+      case 'create':
+        this.showCreateDialog();
+        break;
+      case 'view':
+        if (action.item) this.viewRoute(action.item);
+        break;
+      case 'edit':
+        if (action.item) this.editRoute(action.item);
+        break;
+      case 'delete':
+        if (action.item) this.deleteRoute(action.item);
+        break;
+    }
+  }
+  
   showCreateDialog() {
     this.selectedRoute.set({
       name: '',
       description: '',
       waypoints: [],
-      enabled: true,
-      color: '#FF0000'
+      enabled: true
     } as Route);
     this.dialogMode.set('create');
     this.showDialog = true;
   }
-
+  
   viewRoute(route: Route) {
     this.selectedRoute.set(route);
     this.dialogMode.set('view');
     this.showDialog = true;
   }
-
+  
   editRoute(route: Route) {
     // Make a deep copy of the route including waypoints
     this.selectedRoute.set({ 
@@ -261,7 +182,7 @@ export class RouteListComponent implements OnInit {
     this.dialogMode.set('edit');
     this.showDialog = true;
   }
-
+  
   saveRoute(route: Route) {
     if (this.dialogMode() === 'create') {
       this.routeService.create(route).subscribe({
@@ -305,49 +226,37 @@ export class RouteListComponent implements OnInit {
       });
     }
   }
-
-  confirmDelete(route: Route) {
-    this.confirmationService.confirm({
-      message: `Are you sure you want to delete the route "${route.name}"?`,
-      header: 'Confirm Delete',
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        if (route.id) {
-          this.routeService.delete(route.id).subscribe({
-            next: () => {
-              this.routes.update(routes => routes.filter(r => r.id !== route.id));
-              this.messageService.add({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Route deleted successfully'
-              });
-            },
-            error: (error) => {
-              this.messageService.add({
-                severity: 'error',
-                summary: 'Error',
-                detail: 'Failed to delete route'
-              });
-            }
+  
+  deleteRoute(route: Route) {
+    if (route.id) {
+      this.routeService.delete(route.id).subscribe({
+        next: () => {
+          this.routes.update(routes => routes.filter(r => r.id !== route.id));
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Route deleted successfully'
+          });
+        },
+        error: (error) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to delete route'
           });
         }
-      }
-    });
+      });
+    }
   }
-
+  
   onDialogShow() {
-    // Allow dialog to render, then initialize/resize map
+    // Wait for dialog animation to complete, then prepare map
     setTimeout(() => {
-      if (this.routeFormComponent) {
-        // If the map is already initialized, resize it
-        (this.routeFormComponent as any).map?.resize();
+      const formComponent = this.routeFormComponent();
+      if (formComponent) {
+        // Initialize map after dialog is fully open
+        formComponent.prepareMap();
       }
-    }, 100);
-  }
-
-  onFormCancel() {
-    this.showDialog = false;
-    // Reset selected route to prevent stale data
-    this.selectedRoute.set(null);
+    }, 10); // Minimal delay since dialog now opens instantly
   }
 }

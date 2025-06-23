@@ -12,6 +12,7 @@ import { MessageService } from 'primeng/api';
 
 import { VesselTypeService, VesselType } from '../services/vessel-type.service';
 import { BoatIconComponent } from '@snapper/shared';
+import { VesselTypeFormDialogComponent } from './vessel-type-form-dialog.component';
 
 
 @Component({
@@ -23,7 +24,8 @@ import { BoatIconComponent } from '@snapper/shared';
     ButtonModule,
     MessageModule,
     ToastModule,
-    BoatIconComponent
+    BoatIconComponent,
+    VesselTypeFormDialogComponent
   ],
   providers: [MessageService],
   template: `
@@ -34,7 +36,7 @@ import { BoatIconComponent } from '@snapper/shared';
         <p-button
           icon="pi pi-plus"
           label="Add Vessel Type"
-          (onClick)="createNewVesselType()"
+          (onClick)="openCreateDialog()"
           styleClass="p-button-success"
         ></p-button>
       </div>
@@ -72,6 +74,13 @@ import { BoatIconComponent } from '@snapper/shared';
         </ng-template>
       </p-table>
     </div>
+
+    <!-- Vessel Type Form Dialog -->
+    <app-vessel-type-form-dialog
+      [(visible)]="showFormDialog"
+      [vesselType]="selectedVesselType"
+      (vesselTypeSaved)="onVesselTypeSaved($event)"
+    ></app-vessel-type-form-dialog>
   `,
   styles: [`
     .vessel-type-settings {
@@ -106,6 +115,8 @@ export class VesselTypeSettingsComponent implements OnInit {
   vesselTypes = signal<VesselType[]>([]);
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
+  showFormDialog = false;
+  selectedVesselType: VesselType | null = null;
 
   ngOnInit(): void {
     this.loadVesselTypes();
@@ -137,8 +148,18 @@ export class VesselTypeSettingsComponent implements OnInit {
     this.router.navigate(['/settings/vessel-types', vesselType.id]);
   }
 
-  createNewVesselType(): void {
-    // Navigate to a new vessel type creation page (we'll use ID 'new')
-    this.router.navigate(['/settings/vessel-types', 'new']);
+  openCreateDialog(): void {
+    this.selectedVesselType = null;
+    this.showFormDialog = true;
+  }
+
+  onVesselTypeSaved(vesselType: VesselType): void {
+    this.loadVesselTypes();
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: `Vessel type "${vesselType.name}" has been created successfully`,
+      life: 3000
+    });
   }
 }

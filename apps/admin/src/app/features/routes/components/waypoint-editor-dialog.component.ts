@@ -27,7 +27,8 @@ import { Waypoint } from '../models/route.model';
       [(visible)]="visible"
       [modal]="true"
       [style]="{width: '600px'}"
-      [closable]="false">
+      [closable]="false"
+      [appendTo]="'body'">
       
       <ng-template pTemplate="header">
         <div class="flex items-center justify-between w-full">
@@ -68,7 +69,7 @@ import { Waypoint } from '../models/route.model';
         <p-message severity="error" [text]="errorMessage" [closable]="false"></p-message>
       }
 
-      <p-confirmDialog></p-confirmDialog>
+      <p-confirmDialog [appendTo]="'body'"></p-confirmDialog>
 
       <ng-template pTemplate="footer">
         <button 

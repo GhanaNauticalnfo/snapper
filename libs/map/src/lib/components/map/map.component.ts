@@ -59,7 +59,6 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
   styles: [`
   .map-container {
     position: relative;
-    height: 500px;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -297,6 +296,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
   private _map: Map | null = null;
   get map(): Map | null {
     return this._map;
+  }
+  
+  // Public method to trigger map resize
+  public resize(): void {
+    if (this._map) {
+      this._map.resize();
+    }
   }
   
   ngOnInit(): void {

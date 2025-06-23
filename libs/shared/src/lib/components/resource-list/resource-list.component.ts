@@ -167,6 +167,8 @@ import { ResourceListConfig, ResourceAction } from './resource-list.models';
         [header]="dialogHeader()"
         [modal]="true"
         [style]="{width: '90vw', height: '85vh'}"
+        [contentStyle]="{height: '100%', display: 'flex', flexDirection: 'column'}"
+        [transitionOptions]="'0ms'"
         [maximizable]="true"
         [draggable]="false"
         [resizable]="false"
@@ -279,8 +281,11 @@ export class ResourceListComponent<T extends { id?: number | string }> {
     
     this.confirmationService.confirm({
       message,
-      header: 'Confirm Delete',
+      header: this.config().deleteConfirmHeader || 'Confirm Delete',
       icon: 'pi pi-exclamation-triangle',
+      acceptButtonStyleClass: 'p-button-danger',
+      acceptLabel: 'Delete Permanently',
+      rejectLabel: 'Cancel',
       accept: () => {
         this.action.emit({ type: 'delete', item });
       }

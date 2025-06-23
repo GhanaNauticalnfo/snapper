@@ -7,6 +7,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { DividerModule } from 'primeng/divider';
 import { CardModule } from 'primeng/card';
+import { SkeletonModule } from 'primeng/skeleton';
 import { LandingSite } from '../models/landing-site.model';
 import { MapComponent, MapConfig, OSM_STYLE } from '@snapper/map';
 import { GeoPoint } from '@snapper/shared-models';
@@ -16,6 +17,7 @@ import { Map as MaplibreMap, Marker, LngLatLike } from 'maplibre-gl';
   selector: 'app-landing-site-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    SkeletonModule,
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -32,13 +34,20 @@ import { Map as MaplibreMap, Marker, LngLatLike } from 'maplibre-gl';
       <form [formGroup]="landingSiteForm" class="flex gap-3" style="height: 100%;">
         <!-- Left side: Map -->
         <div class="map-section" style="position: relative;">
-          <lib-map 
-            #mapComponent
-            [config]="mapConfig()">
-          </lib-map>
-          @if (mode() !== 'view') {
-            <div class="map-instructions">
-              <i class="pi pi-info-circle"></i> Click on the map to set the landing site location
+          @if (mapReady()) {
+            <lib-map 
+              #mapComponent
+              [config]="mapConfig()">
+            </lib-map>
+            @if (mode() !== 'view') {
+              <div class="map-instructions">
+                <i class="pi pi-info-circle"></i> Click on the map to set the landing site location
+              </div>
+            }
+          } @else {
+            <div class="map-skeleton">
+              <p-skeleton width="100%" height="100%"></p-skeleton>
+              <div class="loading-text">Loading map...</div>
             </div>
           }
         </div>
@@ -132,10 +141,38 @@ import { Map as MaplibreMap, Marker, LngLatLike } from 'maplibre-gl';
       overflow: hidden;
     }
 
+    .landing-site-form-container form {
+      height: 100%;
+    }
+
     .map-section {
       flex: 0 0 60%;
       min-width: 300px;
       position: relative;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .map-section lib-map {
+      flex: 1;
+      min-height: 500px;
+    }
+
+    .map-skeleton {
+      width: 100%;
+      height: 100%;
+      min-height: 500px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-text {
+      position: absolute;
+      color: var(--text-color-secondary);
+      font-size: 1.2rem;
     }
 
     .map-instructions {
@@ -230,6 +267,7 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
     type: 'Point',
     coordinates: [-0.4, 5.6]
   });
+  mapReady = signal(false);
   
   private marker?: Marker;
   private map?: MaplibreMap;
@@ -257,7 +295,7 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
       mapStyle: OSM_STYLE,
       center: [-0.4, 5.6], // Ghana coast
       zoom: 7,
-      height: '100%',
+      height: '600px',
       showControls: false,
       showFullscreenControl: true,
       showCoordinateDisplay: true,
@@ -296,15 +334,11 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
   }
 
   ngAfterViewInit() {
-    setTimeout(() => {
-      this.initializeMapIntegration();
-      
-      // Focus on the first input field
-      const firstInput = document.querySelector('#name') as HTMLInputElement;
-      if (firstInput) {
-        firstInput.focus();
-      }
-    }, 300);
+    // Focus on the first input field
+    const firstInput = document.querySelector('#name') as HTMLInputElement;
+    if (firstInput) {
+      firstInput.focus();
+    }
   }
 
   public initializeMapIntegration() {
@@ -341,9 +375,20 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
   }
 
   ngOnDestroy() {
+    // Reset map state for next time
+    this.mapReady.set(false);
     if (this.marker) {
       this.marker.remove();
     }
+  }
+
+  // Public method to prepare the map - called by parent component when dialog is shown
+  public prepareMap(): void {
+    this.mapReady.set(true);
+    // Initialize map after next tick when it's rendered
+    setTimeout(() => {
+      this.initializeMapIntegration();
+    }, 0);
   }
 
   private updateLocation(lng: number, lat: number) {
@@ -390,6 +435,8 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
         location: this.currentLocation()
       };
       this.save.emit(landingSite);
+      // Reset map state in case dialog closes
+      this.mapReady.set(false);
     }
   }
 }

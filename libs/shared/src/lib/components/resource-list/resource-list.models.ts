@@ -26,6 +26,7 @@ export interface ResourceListConfig<T> {
   
   // Messages
   deleteConfirmMessage?: (item: T) => string;
+  deleteConfirmHeader?: string;
   emptyMessage?: string;
   
   // Pagination
