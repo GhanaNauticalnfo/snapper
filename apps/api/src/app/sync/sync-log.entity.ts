@@ -3,6 +3,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, Index } from 
 @Entity('sync_log')
 @Index(['created_at', 'is_latest'], { where: 'is_latest = true' })
 @Index(['entity_id', 'entity_type', 'is_latest'])
+@Index(['major_version', 'created_at', 'is_latest'], { where: 'is_latest = true' })
 export class SyncLog {
   @PrimaryGeneratedColumn()
   id: number;
@@ -24,4 +25,7 @@ export class SyncLog {
 
   @Column({ type: 'boolean', default: true })
   is_latest: boolean;
+
+  @Column({ type: 'int' })
+  major_version: number;
 }

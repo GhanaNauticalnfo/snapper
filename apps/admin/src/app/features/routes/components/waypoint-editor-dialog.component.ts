@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, input, output, model, effect, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
@@ -8,10 +8,12 @@ import { MessageModule } from 'primeng/message';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { Waypoint } from '../models/route.model';
+import { RouteValidators } from '../validators/route.validators';
 
 @Component({
   selector: 'app-waypoint-editor-dialog',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -65,8 +67,8 @@ import { Waypoint } from '../models/route.model';
         </textarea>
       </div>
 
-      @if (errorMessage) {
-        <p-message severity="error" [text]="errorMessage" [closable]="false"></p-message>
+      @if (errorMessage()) {
+        <p-message severity="error" [text]="errorMessage()" [closable]="false"></p-message>
       }
 
       <p-confirmDialog [appendTo]="'body'"></p-confirmDialog>
@@ -89,47 +91,40 @@ import { Waypoint } from '../models/route.model';
       </ng-template>
     </p-dialog>
   `,
-  styles: [`
-    :host {
-      display: block;
-    }
-    .dialog-header {
-      width: 100%;
-    }
-  `]
+  host: {
+    class: 'waypoint-editor-dialog-host'
+  }
 })
-export class WaypointEditorDialogComponent implements OnChanges {
-  constructor(private confirmationService: ConfirmationService) {}
-  @Input() visible = false;
-  @Input() waypoints: Waypoint[] = [];
-  @Output() visibleChange = new EventEmitter<boolean>();
-  @Output() waypointsChange = new EventEmitter<Waypoint[]>();
+export class WaypointEditorDialogComponent {
+  private confirmationService = inject(ConfirmationService);
   
+  // Inputs and outputs using new functions
+  visible = model(false);
+  waypoints = input<Waypoint[]>([]);
+  waypointsChange = output<Waypoint[]>();
+  
+  // State
   waypointsText = '';
-  errorMessage = '';
-  private _waypoints: Waypoint[] = [];
+  errorMessage = signal('');
   private originalWaypointsText = '';
   private changesApplied = false;
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['visible'] && changes['visible'].currentValue === true) {
-      // When dialog is shown, initialize waypoints text
-      this.initializeWaypoints();
-    }
-    if (changes['waypoints'] && !changes['visible']) {
-      // If waypoints change while dialog is closed, store them
-      this._waypoints = changes['waypoints'].currentValue || [];
-    }
+  
+  constructor() {
+    // Effect to initialize waypoints when dialog becomes visible
+    effect(() => {
+      if (this.visible()) {
+        this.initializeWaypoints();
+      }
+    });
   }
 
-  private initializeWaypoints() {
-    // Use the current waypoints prop or fall back to stored waypoints
-    const currentWaypoints = this.waypoints || this._waypoints || [];
+  private initializeWaypoints(): void {
+    const currentWaypoints = this.waypoints() || [];
     this.waypointsText = currentWaypoints
       .map(wp => `${wp.lat},${wp.lng}`)
       .join('\n');
     this.originalWaypointsText = this.waypointsText;
-    this.errorMessage = '';
+    this.errorMessage.set('');
     this.changesApplied = false;
   }
 
@@ -137,59 +132,22 @@ export class WaypointEditorDialogComponent implements OnChanges {
     return this.waypointsText !== this.originalWaypointsText;
   }
 
-  onApply() {
-    this.errorMessage = '';
-    const lines = this.waypointsText.trim().split('\n').filter(line => line.trim());
+  onApply(): void {
+    this.errorMessage.set('');
     
-    if (lines.length < 2) {
-      this.errorMessage = 'At least 2 waypoints are required';
+    const result = RouteValidators.parseWaypointsText(this.waypointsText);
+    
+    if (result.error) {
+      this.errorMessage.set(result.error);
       return;
     }
 
-    const newWaypoints: Waypoint[] = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      const parts = line.split(',').map(p => p.trim());
-      
-      if (parts.length !== 2) {
-        this.errorMessage = `Line ${i + 1}: Invalid format. Expected "lat,lon"`;
-        return;
-      }
-
-      const lat = parseFloat(parts[0]);
-      const lng = parseFloat(parts[1]);
-
-      if (isNaN(lat) || isNaN(lng)) {
-        this.errorMessage = `Line ${i + 1}: Invalid coordinates. Must be numbers`;
-        return;
-      }
-
-      if (lat < -90 || lat > 90) {
-        this.errorMessage = `Line ${i + 1}: Latitude must be between -90 and 90`;
-        return;
-      }
-
-      if (lng < -180 || lng > 180) {
-        this.errorMessage = `Line ${i + 1}: Longitude must be between -180 and 180`;
-        return;
-      }
-
-      newWaypoints.push({
-        id: crypto.randomUUID(),
-        lat,
-        lng,
-        order: i,
-        name: `Waypoint ${i + 1}`
-      });
-    }
-
-    this.waypointsChange.emit(newWaypoints);
+    this.waypointsChange.emit(result.waypoints);
     this.changesApplied = true;
     this.closeDialog();
   }
 
-  onCancel() {
+  onCancel(): void {
     if (!this.changesApplied && this.hasUnsavedChanges()) {
       this.confirmationService.confirm({
         message: 'You have unsaved changes to the waypoints. Are you sure you want to cancel?',
@@ -204,11 +162,10 @@ export class WaypointEditorDialogComponent implements OnChanges {
     }
   }
 
-  private closeDialog() {
+  private closeDialog(): void {
     this.waypointsText = '';
-    this.errorMessage = '';
+    this.errorMessage.set('');
     this.changesApplied = false;
-    this.visible = false;
-    this.visibleChange.emit(false);
+    this.visible.set(false);
   }
 }

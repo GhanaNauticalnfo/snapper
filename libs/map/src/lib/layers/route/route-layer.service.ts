@@ -39,7 +39,15 @@ export class RouteLayerService extends BaseLayerService {
 
   initialize(map: MaplibreMap): void {
     this.map = map;
-    this.updateDisplay();
+    
+    // Wait for style to be loaded before updating display
+    if (this.map.isStyleLoaded()) {
+      this.updateDisplay();
+    } else {
+      this.map.once('styledata', () => {
+        this.updateDisplay();
+      });
+    }
   }
 
   /**
@@ -85,7 +93,14 @@ export class RouteLayerService extends BaseLayerService {
   setRouteData(routeData: RouteData | null): void {
     this.routeData = routeData;
     if (this.map) {
-      this.updateDisplay();
+      // Ensure style is loaded before updating display
+      if (this.map.isStyleLoaded()) {
+        this.updateDisplay();
+      } else {
+        this.map.once('styledata', () => {
+          this.updateDisplay();
+        });
+      }
     }
   }
 
@@ -136,13 +151,32 @@ export class RouteLayerService extends BaseLayerService {
    */
   fitToRoute(): void {
     if (!this.map || !this.routeData?.waypoints.length) return;
+    
+    // Check if map container has valid dimensions
+    const container = this.map.getContainer();
+    if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) {
+      console.warn('Map container has no dimensions, skipping fitBounds');
+      // Try again after a delay
+      setTimeout(() => this.fitToRoute(), 200);
+      return;
+    }
 
-    const bounds = new LngLatBounds();
-    this.routeData.waypoints.forEach(waypoint => {
-      bounds.extend([waypoint.lng, waypoint.lat]);
-    });
+    try {
+      const bounds = new LngLatBounds();
+      this.routeData.waypoints.forEach(waypoint => {
+        bounds.extend([waypoint.lng, waypoint.lat]);
+      });
 
-    this.map.fitBounds(bounds, { padding: 50 });
+      // Only fit bounds if we have a valid bounding box
+      if (!bounds.isEmpty()) {
+        this.map.fitBounds(bounds, { 
+          padding: 50,
+          maxZoom: 15 // Prevent zooming in too close
+        });
+      }
+    } catch (error) {
+      console.error('Error fitting map to route:', error);
+    }
   }
 
   private updateDisplay(): void {
@@ -191,6 +225,12 @@ export class RouteLayerService extends BaseLayerService {
 
   private addRouteLine(): void {
     if (!this.map || !this.routeData) return;
+    
+    // Ensure style is loaded before adding source
+    if (!this.map.isStyleLoaded()) {
+      console.warn('Map style not loaded, skipping route line');
+      return;
+    }
 
     const coordinates = this.routeData.waypoints.map(wp => [wp.lng, wp.lat]);
     

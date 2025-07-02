@@ -1,6 +1,57 @@
 /* MapLibre GL CSS */
 @import 'maplibre-gl/dist/maplibre-gl.css';
 
+/* Fix for MapLibre controls positioning in route form dialogs */
+.route-form-host .maplibregl-map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.route-form-host .maplibregl-ctrl-top-right,
+.route-form-host .maplibregl-ctrl-bottom-right,
+.route-form-host .maplibregl-ctrl-top-left,
+.route-form-host .maplibregl-ctrl-bottom-left {
+  position: absolute;
+}
+
+.route-form-host .maplibregl-ctrl-attrib {
+  background-color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+/* Ensure map container has proper dimensions */
+.route-form-host .map-section {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Fix for coordinate display and zoom controls in route form */
+.route-form-host .coordinate-display {
+  position: absolute !important;
+  bottom: 60px !important;
+  right: 10px !important;
+  z-index: 10001 !important;
+  pointer-events: auto !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+}
+
+.route-form-host .coordinate-display .coordinate-text {
+  pointer-events: none !important;
+}
+
+.route-form-host .coordinate-display .zoom-controls {
+  pointer-events: auto !important;
+  z-index: 10002 !important;
+}
+
+.route-form-host .map-container {
+  position: relative !important;
+  overflow: visible !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -638,4 +689,13 @@ body.map-fullscreen-active .map-container.fullscreen {
   height: 100%;
   overflow: auto;
   padding: 0;
+}
+
+/* Sync settings component styling */
+.sync-settings-host .p-card-content {
+  padding-top: 0;
+}
+
+.sync-settings-host .p-tag {
+  font-size: 0.75rem;
 }

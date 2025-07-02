@@ -379,11 +379,7 @@ export class VesselListComponent implements OnInit, AfterViewInit {
   showCreateDialog() {
     const newVessel: Vessel = {
       name: '',
-      vessel_type_id: 1, // Default to Unspecified
-      length_meters: 15.0,
-      owner_name: 'Unknown',
-      owner_contact: '',
-      home_port: 'Unknown'
+      vessel_type_id: 1 // Default to Unspecified
     };
     this.formVessel.set(newVessel);
     this.selectedVessel.set(null);
@@ -409,11 +405,7 @@ export class VesselListComponent implements OnInit, AfterViewInit {
     if (this.dialogMode() === 'create') {
       const createDto: CreateVesselDto = {
         name: vessel.name,
-        vessel_type_id: vessel.vessel_type_id,
-        length_meters: vessel.length_meters,
-        owner_name: vessel.owner_name,
-        owner_contact: vessel.owner_contact,
-        home_port: vessel.home_port
+        vessel_type_id: vessel.vessel_type_id
       };
       
       this.vesselService.create(createDto).subscribe({
@@ -438,11 +430,7 @@ export class VesselListComponent implements OnInit, AfterViewInit {
     } else if (this.dialogMode() === 'edit' && this.selectedVessel()?.id) {
       const updateDto: UpdateVesselDto = {
         name: vessel.name,
-        vessel_type_id: vessel.vessel_type_id,
-        length_meters: vessel.length_meters,
-        owner_name: vessel.owner_name,
-        owner_contact: vessel.owner_contact,
-        home_port: vessel.home_port
+        vessel_type_id: vessel.vessel_type_id
       };
       
       this.vesselService.update(this.selectedVessel()!.id, updateDto).subscribe({
@@ -509,10 +497,6 @@ export class VesselListComponent implements OnInit, AfterViewInit {
       id: dto.id,
       name: dto.name,
       vessel_type_id: dto.vessel_type_id,
-      length_meters: dto.length_meters,
-      owner_name: dto.owner_name,
-      owner_contact: dto.owner_contact,
-      home_port: dto.home_port,
       created_at: dto.created_at ? new Date(dto.created_at) : undefined,
       updated_at: dto.updated_at ? new Date(dto.updated_at) : undefined
     };

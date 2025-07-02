@@ -21,16 +21,7 @@ export class VesselService {
   }
 
   create(data: CreateVesselDto): Observable<VesselResponseDto> {
-    // Set defaults for required fields if not provided
-    const createData = {
-      length_meters: 15.0,
-      owner_name: 'Unknown',
-      owner_contact: '',
-      home_port: 'Unknown',
-      ...data
-    };
-    
-    return this.http.post<VesselResponseDto>(this.apiUrl, createData);
+    return this.http.post<VesselResponseDto>(this.apiUrl, data);
   }
 
   update(id: number, data: UpdateVesselDto): Observable<VesselResponseDto> {

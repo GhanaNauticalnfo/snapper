@@ -10,6 +10,7 @@ import { FieldsetModule } from 'primeng/fieldset';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageService } from 'primeng/api';
 import { VesselTypeSettingsComponent } from './components/vessel-type-settings.component';
+import { SyncSettingsComponent } from './components/sync-settings.component';
 import { SettingsService } from './services/settings.service';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -26,7 +27,8 @@ import { Subject, takeUntil } from 'rxjs';
     ToastModule,
     FieldsetModule,
     InputTextModule,
-    VesselTypeSettingsComponent
+    VesselTypeSettingsComponent,
+    SyncSettingsComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [MessageService],
@@ -36,7 +38,7 @@ import { Subject, takeUntil } from 'rxjs';
         <h2>Settings</h2>
       </div>
       
-      <p-tabs [value]="activeTabIndex.toString()" (onChange)="onTabChange($event)" styleClass="settings-tabs">
+      <p-tabs [value]="activeTabIndex().toString()" (onChange)="onTabChange($event)" styleClass="settings-tabs">
         <p-tablist>
           <p-tab value="0">
             <i class="pi pi-cog"></i>
@@ -45,6 +47,10 @@ import { Subject, takeUntil } from 'rxjs';
           <p-tab value="1">
             <i class="pi pi-ship"></i>
             <span class="ml-2">Vessel Types</span>
+          </p-tab>
+          <p-tab value="2">
+            <i class="pi pi-sync"></i>
+            <span class="ml-2">Sync</span>
           </p-tab>
         </p-tablist>
         <p-tabpanels>
@@ -109,6 +115,10 @@ import { Subject, takeUntil } from 'rxjs';
           
           <p-tabpanel value="1">
             <app-vessel-type-settings></app-vessel-type-settings>
+          </p-tabpanel>
+          
+          <p-tabpanel value="2">
+            <app-sync-settings [isVisible]="activeTabIndex() === 2"></app-sync-settings>
           </p-tabpanel>
         </p-tabpanels>
       </p-tabs>
@@ -186,7 +196,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly destroy$ = new Subject<void>();
   
-  activeTabIndex = 0; // Start with General Settings tab (index 0)
+  activeTabIndex = signal(0); // Start with General Settings tab (index 0)
   routeColor = signal('#FF0000');
   originalRouteColor = signal('#FF0000');
   loading = signal(false);
@@ -261,7 +271,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     }
     
     // The new p-tabs component passes the tab value in event.value
-    this.activeTabIndex = parseInt(event.value || event, 10);
+    this.activeTabIndex.set(parseInt(event.value || event, 10));
   }
 
   private loadRouteColor() {

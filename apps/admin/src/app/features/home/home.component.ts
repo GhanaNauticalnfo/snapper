@@ -10,6 +10,16 @@ interface VesselTypeCount {
   vessel_count: number;
 }
 
+interface Vessel {
+  id: number;
+  name: string;
+  vessel_type: {
+    id: number;
+    name: string;
+    color: string;
+  };
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -210,15 +220,38 @@ export class HomeComponent implements OnInit {
   }
 
   private loadStatistics() {
-    // Fetch vessel types with counts
-    this.http.get<VesselTypeCount[]>('/api/vessels/types').subscribe({
-      next: (types) => {
-        this.vesselTypes.set(types);
-        // Calculate total vessels from all types
-        const total = types.reduce((sum, type) => sum + type.vessel_count, 0);
-        this.totalVessels.set(total);
+    // Fetch all vessels and count by type
+    this.http.get<Vessel[]>('/api/vessels').subscribe({
+      next: (vessels) => {
+        // Set total vessel count
+        this.totalVessels.set(vessels.length);
+        
+        // Group vessels by type and count them
+        const typeMap = new Map<number, VesselTypeCount>();
+        
+        vessels.forEach(vessel => {
+          if (vessel.vessel_type) {
+            const typeId = vessel.vessel_type.id;
+            if (!typeMap.has(typeId)) {
+              typeMap.set(typeId, {
+                id: typeId,
+                name: vessel.vessel_type.name,
+                color: vessel.vessel_type.color,
+                vessel_count: 0
+              });
+            }
+            const type = typeMap.get(typeId)!;
+            type.vessel_count++;
+          }
+        });
+        
+        // Convert map to array and sort by name
+        const typesWithCounts = Array.from(typeMap.values())
+          .sort((a, b) => a.name.localeCompare(b.name));
+        
+        this.vesselTypes.set(typesWithCounts);
       },
-      error: (err) => console.error('Failed to load vessel types:', err)
+      error: (err) => console.error('Failed to load vessels:', err)
     });
 
     // Fetch routes count

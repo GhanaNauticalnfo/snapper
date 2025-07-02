@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SyncService } from './sync.service';
 
@@ -41,5 +41,62 @@ export class SyncController {
     });
     
     return debugData;
+  }
+
+  @Get('sync/manage')
+  async manageSyncData(@Query('since') since?: string, @Query('limit') limit?: string) {
+    const sinceDate = since ? new Date(since) : new Date(0);
+    const data = await this.syncService.getChangesSince(sinceDate);
+    
+    // Build statistics by entity type
+    const statsByEntityType: Record<string, { create: number; update: number; delete: number; totalSize: number }> = {};
+    
+    data.data.forEach(item => {
+      if (!statsByEntityType[item.entity_type]) {
+        statsByEntityType[item.entity_type] = { create: 0, update: 0, delete: 0, totalSize: 0 };
+      }
+      
+      statsByEntityType[item.entity_type][item.action]++;
+      if (item.data) {
+        statsByEntityType[item.entity_type].totalSize += JSON.stringify(item.data).length;
+      }
+    });
+    
+    // Convert stats to array format for easier display
+    const entityStats = Object.entries(statsByEntityType).map(([entityType, stats]) => ({
+      entityType,
+      ...stats,
+      total: stats.create + stats.update + stats.delete
+    }));
+    
+    // Get recent entries (limited if specified)
+    const maxLimit = limit ? parseInt(limit, 10) : 100;
+    const recentEntries = data.data.slice(-maxLimit).reverse().map(item => ({
+      entityType: item.entity_type,
+      entityId: item.entity_id,
+      action: item.action,
+      dataSize: item.data ? JSON.stringify(item.data).length : 0,
+      hasData: !!item.data,
+      timestamp: item.data?.properties?.last_updated || item.data?.properties?.created || null
+    }));
+    
+    const majorVersion = await this.syncService.getCurrentMajorVersion();
+    
+    return {
+      version: data.version,
+      majorVersion,
+      summary: {
+        totalEntries: data.data.length,
+        lastSyncVersion: data.version,
+        entityTypes: Object.keys(statsByEntityType).length,
+      },
+      entityStats,
+      recentEntries
+    };
+  }
+
+  @Post('sync/reset')
+  async resetSync() {
+    return this.syncService.resetSync();
   }
 }

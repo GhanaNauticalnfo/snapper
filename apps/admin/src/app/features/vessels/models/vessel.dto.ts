@@ -6,10 +6,6 @@ export interface VesselResponseDto {
     name: string;
   };
   vessel_type_id: number;
-  length_meters: number;
-  owner_name: string;
-  owner_contact: string;
-  home_port: string;
   created_at: string;
   updated_at: string;
   latest_position_timestamp?: string;
@@ -24,19 +20,11 @@ export interface VesselResponseDto {
 export interface CreateVesselDto {
   name: string;
   vessel_type_id: number;
-  length_meters?: number;
-  owner_name?: string;
-  owner_contact?: string;
-  home_port?: string;
 }
 
 export interface UpdateVesselDto {
   name?: string;
   vessel_type_id?: number;
-  length_meters?: number;
-  owner_name?: string;
-  owner_contact?: string;
-  home_port?: string;
 }
 
 // Simplified vessel model for form usage
@@ -44,10 +32,6 @@ export interface Vessel {
   id?: number;
   name: string;
   vessel_type_id: number;
-  length_meters: number;
-  owner_name: string;
-  owner_contact: string;
-  home_port: string;
   created_at?: Date;
   updated_at?: Date;
 }

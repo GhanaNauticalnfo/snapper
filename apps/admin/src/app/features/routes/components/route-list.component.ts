@@ -5,7 +5,7 @@ import { MessageService } from 'primeng/api';
 import { ResourceListComponent, ResourceListConfig, ResourceAction } from '@snapper/shared';
 import { RouteService } from '../services/route.service';
 import { Route } from '../models/route.model';
-import { RouteFormComponent } from './route-form.component';
+import { RouteFormComponent } from './route-form-modern.component';
 
 @Component({
   selector: 'app-route-list',
@@ -44,10 +44,7 @@ import { RouteFormComponent } from './route-form.component';
     
     <!-- Column Templates -->
     <ng-template #waypointsTemplate let-item>
-      <p-tag 
-        [value]="item.waypoints.length + ' waypoints'" 
-        severity="info">
-      </p-tag>
+      {{ item.waypoints.length }} waypoints
     </ng-template>
     
     <ng-template #statusTemplate let-item>

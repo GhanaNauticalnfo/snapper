@@ -134,10 +134,6 @@ export class TrackingService {
           last_updated: vessel.last_updated,
           name: vessel.name,
           vessel_type: vessel.vessel_type?.name,
-          length_meters: vessel.length_meters,
-          owner_name: vessel.owner_name,
-          owner_contact: vessel.owner_contact,
-          home_port: vessel.home_port,
         };
         result.push(dto);
       }

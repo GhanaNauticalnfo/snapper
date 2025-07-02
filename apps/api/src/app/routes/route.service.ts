@@ -5,6 +5,7 @@ import { Route } from './route.entity';
 import { SyncService } from '../sync/sync.service';
 import { ResourceSettingsService } from '../resource-settings/resource-settings.service';
 import { RouteResponseDto } from './dto/route-response.dto';
+import { RouteInputDto } from './dto/route-input.dto';
 
 @Injectable()
 export class RouteService {
@@ -44,8 +45,8 @@ export class RouteService {
   }
 
 
-  async create(routeData: Partial<Route>): Promise<Route> {
-    const route = this.routeRepository.create(routeData);
+  async create(routeInput: RouteInputDto): Promise<Route> {
+    const route = this.routeRepository.create(routeInput);
     const saved = await this.routeRepository.save(route);
     
     // Log to sync
@@ -54,9 +55,9 @@ export class RouteService {
     return saved;
   }
 
-  async update(id: number, routeData: Partial<Route>): Promise<Route> {
+  async update(id: number, routeInput: RouteInputDto): Promise<Route> {
     const route = await this.findOneEntity(id);
-    Object.assign(route, routeData);
+    Object.assign(route, routeInput);
     const saved = await this.routeRepository.save(route);
     
     // Log to sync

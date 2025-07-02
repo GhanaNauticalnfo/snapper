@@ -29,23 +29,6 @@ export class Vessel {
   @ApiProperty({ description: 'Vessel type', type: () => VesselType })
   vessel_type: VesselType;
 
-  @Column('numeric', { precision: 5, scale: 2, nullable: true })
-  @ApiPropertyOptional({ description: 'Length of the vessel in meters', example: 25.5 })
-  length_meters: number;
-
-  @Column('varchar', { length: 255, nullable: true })
-  @ApiPropertyOptional({ description: 'Name of the vessel owner', example: 'Ghana Maritime Co. Ltd.' })
-  owner_name: string;
-
-  @Column('varchar', { length: 255, nullable: true })
-  @ApiPropertyOptional({ description: 'Contact information for the vessel owner', example: '+233 20 123 4567' })
-  owner_contact: string;
-
-  @Column('varchar', { length: 100, nullable: true })
-  @ApiPropertyOptional({ description: 'Home port of the vessel', example: 'Tema' })
-  home_port: string;
-
-
   @Column('integer', { nullable: true })
   latest_position_id: number;
 
@@ -61,12 +44,7 @@ export class Vessel {
       last_updated: this.last_updated,
       name: this.name,
       vessel_type: this.vessel_type?.toResponseDto(),
-      length_meters: this.length_meters,
-      owner_name: this.owner_name,
-      owner_contact: this.owner_contact,
-      home_port: this.home_port,
     };
-
 
     // Include latest position data if available
     if (this.latest_position) {
