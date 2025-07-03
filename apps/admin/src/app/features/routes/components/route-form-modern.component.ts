@@ -1,6 +1,7 @@
 import { Component, input, output, OnInit, OnDestroy, AfterViewInit, viewChild, signal, effect, computed, ChangeDetectionStrategy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
@@ -299,7 +300,30 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
   showWaypointEditorDialog = false;
   mapReady = signal(false);
   
+  // Form values signal - will be initialized after form creation
+  formValues!: ReturnType<typeof toSignal>;
+  
   // Computed values
+  hasUnsavedChanges = computed(() => {
+    const currentFormValue = this.formValues?.() || this.routeForm.value;
+    const formChanged = 
+      currentFormValue.name !== this.originalFormValue.name ||
+      currentFormValue.description !== this.originalFormValue.description ||
+      Boolean(currentFormValue.enabled) !== Boolean(this.originalFormValue.enabled);
+    
+    // Check waypoint changes
+    const currentWaypoints = this.waypoints();
+    const waypointsChanged = 
+      currentWaypoints.length !== this.originalWaypoints.length ||
+      !currentWaypoints.every((wp, i) => 
+        this.originalWaypoints[i] && 
+        wp.lat === this.originalWaypoints[i].lat && 
+        wp.lng === this.originalWaypoints[i].lng
+      );
+    
+    return formChanged || waypointsChanged;
+  });
+  
   canSave = computed(() => {
     if (this.routeForm.invalid || !this.hasUnsavedChanges()) {
       return false;
@@ -327,7 +351,12 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
     this.routeForm = this.fb.nonNullable.group({
       name: this.fb.nonNullable.control('', RouteValidators.routeName()),
       description: this.fb.nonNullable.control('', RouteValidators.routeDescription()),
-      enabled: this.fb.nonNullable.control<boolean>(false)
+      enabled: this.fb.nonNullable.control<boolean>(true)
+    });
+    
+    // Initialize form values signal for reactive change detection
+    this.formValues = toSignal(this.routeForm.valueChanges, { 
+      initialValue: this.routeForm.value 
     });
     
     // Initialize map configuration
@@ -384,10 +413,10 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
     // Force change detection to ensure map container renders with proper dimensions
     this.cdr.detectChanges();
     
-    // Initialize map after a longer delay to ensure it's fully ready
+    // Initialize map with minimal delay like landing sites
     setTimeout(() => {
       this.initializeMapIntegration();
-    }, 200);
+    }, 0);
   }
 
   private initializeMapIntegration(): void {
@@ -420,8 +449,18 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
     
     if (map.isStyleLoaded()) {
       initializeRoute();
+      // Ensure map layout is correct after initialization
+      setTimeout(() => {
+        mapComponentRef.resize();
+      }, 100);
     } else {
-      map.once('styledata', initializeRoute);
+      map.once('styledata', () => {
+        initializeRoute();
+        // Ensure map layout is correct after initialization
+        setTimeout(() => {
+          mapComponentRef.resize();
+        }, 100);
+      });
     }
   }
 
@@ -432,7 +471,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
       const formData = {
         name: currentRoute.name || '',
         description: currentRoute.description || '',
-        enabled: !!currentRoute.enabled
+        enabled: Boolean(currentRoute.enabled)
       };
       this.routeForm.reset(formData);
       
@@ -449,7 +488,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
       const formData = {
         name: '',
         description: '',
-        enabled: false
+        enabled: true
       };
       this.routeForm.reset(formData);
       this.waypoints.set([]);
@@ -521,27 +560,6 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
     this.waypoints.set(newWaypoints);
     this.updateRouteDisplay();
     this.fitMapToWaypoints();
-  }
-
-  hasUnsavedChanges(): boolean {
-    // Check form changes
-    const currentFormValue = this.routeForm.value;
-    const formChanged = 
-      currentFormValue.name !== this.originalFormValue.name ||
-      currentFormValue.description !== this.originalFormValue.description ||
-      currentFormValue.enabled !== this.originalFormValue.enabled;
-    
-    // Check waypoint changes
-    const currentWaypoints = this.waypoints();
-    const waypointsChanged = 
-      currentWaypoints.length !== this.originalWaypoints.length ||
-      !currentWaypoints.every((wp, i) => 
-        this.originalWaypoints[i] && 
-        wp.lat === this.originalWaypoints[i].lat && 
-        wp.lng === this.originalWaypoints[i].lng
-      );
-    
-    return formChanged || waypointsChanged;
   }
 
   onCancel(): void {

@@ -429,8 +429,18 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit, OnC
     
     if (map.isStyleLoaded()) {
       initializeRoute();
+      // Ensure map layout is correct after initialization
+      setTimeout(() => {
+        this.mapComponent.resize();
+      }, 100);
     } else {
-      map.once('styledata', initializeRoute);
+      map.once('styledata', () => {
+        initializeRoute();
+        // Ensure map layout is correct after initialization
+        setTimeout(() => {
+          this.mapComponent.resize();
+        }, 100);
+      });
     }
   }
 
