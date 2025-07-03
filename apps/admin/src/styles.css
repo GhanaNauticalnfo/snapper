@@ -23,33 +23,6 @@
 /* Ensure map container has proper dimensions */
 .route-form-host .map-section {
   position: relative;
-  overflow: visible !important;
-}
-
-/* Fix for coordinate display and zoom controls in route form */
-.route-form-host .coordinate-display {
-  position: absolute !important;
-  bottom: 60px !important;
-  right: 10px !important;
-  z-index: 10001 !important;
-  pointer-events: auto !important;
-  display: flex !important;
-  align-items: flex-end !important;
-  gap: 8px !important;
-}
-
-.route-form-host .coordinate-display .coordinate-text {
-  pointer-events: none !important;
-}
-
-.route-form-host .coordinate-display .zoom-controls {
-  pointer-events: auto !important;
-  z-index: 10002 !important;
-}
-
-.route-form-host .map-container {
-  position: relative !important;
-  overflow: visible !important;
 }
 
 @tailwind base;
