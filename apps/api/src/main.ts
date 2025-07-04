@@ -11,7 +11,9 @@ import { AppModule } from './app/app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'api';
-  app.setGlobalPrefix(globalPrefix);
+  app.setGlobalPrefix(globalPrefix, {
+    exclude: ['/']  // Exclude root path from global prefix so redirect works
+  });
 
   // Enable validation for DTOs
   app.useGlobalPipes(new ValidationPipe({

@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config'; // Import ConfigService
 import { AppController } from './app.controller';
+import { RootController } from './root.controller';
 import { AppService } from './app.service';
 import { KmlDatasetModule } from './kml-dataset/kml-dataset.module';
 import { VoltaDepthModule } from './volta-depth/volta-depth.module';
@@ -53,7 +54,7 @@ import { ResourceSettingsModule } from './resource-settings/resource-settings.mo
     LandingSitesModule,
     ResourceSettingsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, RootController],
   providers: [AppService],
 })
 //
