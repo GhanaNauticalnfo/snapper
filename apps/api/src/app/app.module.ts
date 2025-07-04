@@ -22,7 +22,7 @@ import { ResourceSettingsModule } from './resource-settings/resource-settings.mo
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // Good practice: Makes ConfigService available everywhere
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      envFilePath: `.env.${process.env.NODE_ENV || 'local'}`,
     }),
     TypeOrmModule.forRootAsync({
       // Make ConfigModule available for injection into the factory

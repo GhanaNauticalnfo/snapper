@@ -24,7 +24,7 @@ export const typeOrmModuleOptionsFactory = (configService: ConfigService): TypeO
     // Get runtime logging preference directly from ConfigService
     const loggingSetting = configService.get<string | boolean>(
         'TYPEORM_LOGGING',
-        configService.get<string>('NODE_ENV', 'development') !== 'production' // Default based on NODE_ENV
+        configService.get<string>('NODE_ENV', 'local') !== 'prod' // Default based on NODE_ENV
     );
     const runtimeLogging = getLoggerOptions(loggingSetting);
 
@@ -36,7 +36,7 @@ export const typeOrmModuleOptionsFactory = (configService: ConfigService): TypeO
     const username = configService.get<string>('DATABASE_USER'); // No default needed
     const password = configService.get<string>('DATABASE_PASSWORD'); // No default needed
     const database = configService.get<string>('DATABASE_NAME'); // No default needed
-    const sslEnabled = configService.get<string | boolean>('DATABASE_SSL', process.env.NODE_ENV === 'production'); // Default SSL based on NODE_ENV
+    const sslEnabled = configService.get<string | boolean>('DATABASE_SSL', process.env.NODE_ENV === 'prod'); // Default SSL based on NODE_ENV
 
     const sslOptions = (sslEnabled === 'true' || sslEnabled === true)
         ? { rejectUnauthorized: false } // Basic SSL, adjust as needed

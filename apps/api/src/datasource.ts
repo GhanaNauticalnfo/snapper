@@ -4,9 +4,9 @@ import * as path from 'path';
 import * as dotenv from 'dotenv'; // Import dotenv
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
-// Explicitly load the .env.development file from the project root
+// Explicitly load the .env.local file from the project root
 // Path is relative from apps/api/src/datasource.ts up to the root
-const envPath = path.resolve(__dirname, '../../../.env.development');
+const envPath = path.resolve(__dirname, '../../../.env.local');
 const result = dotenv.config({ path: envPath });
 
 if (result.error) {
@@ -52,7 +52,7 @@ export const dataSourceOptions: PostgresConnectionOptions = {
     migrationsTableName: 'migrations',
     synchronize: false,
     logging: process.env.TYPEORM_LOGGING === 'true',
-    ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_SSL === 'true'
+    ssl: process.env.NODE_ENV === 'prod' || process.env.DATABASE_SSL === 'true'
         ? { rejectUnauthorized: false }
         : false,
 };

@@ -4,87 +4,119 @@ This document explains how environment configurations work across all Snapper ap
 
 ## Overview
 
-Snapper uses a 3-environment setup:
+Snapper uses a 4-environment setup:
 
-- **Development**: Local development with proxy to localhost API
-- **Test**: Remote test environment using test API server
-- **Production**: Remote production environment using production API server
+- **Local**: Local development with proxy to localhost API (default when no configuration specified)
+- **Dev**: Kubernetes development namespace deployment
+- **Test**: Kubernetes test/QA namespace deployment
+- **Prod**: Kubernetes production namespace deployment
 
 ## Environment Structure
 
 ### Admin App (`apps/admin/`)
 
 **Files:**
-- `src/environments/environment.ts` (Production)
-- `src/environments/environment.development.ts` (Development) 
-- `src/environments/environment.test.ts` (Test)
+- `src/environments/environment.ts` (Default - imports the appropriate environment)
+- `src/environments/environment.local.ts` (Local development)
+- `src/environments/environment.dev.ts` (K8s dev namespace)
+- `src/environments/environment.test.ts` (K8s test namespace)
+- `src/environments/environment.prod.ts` (K8s production namespace)
 
 **API URLs:**
-- **Development**: `/api` → proxied to `http://localhost:3000/api`
+- **Local**: `/api` → proxied to `http://localhost:3000/api`
+- **Dev**: `https://snapper-dev-api.ghananautical.info/api`
 - **Test**: `https://snapper-test-api.ghananautical.info/api`
-- **Production**: `https://snapper-api.ghananautical.info/api`
+- **Prod**: `https://snapper-api.ghananautical.info/api`
 
 ### Frontend App (`apps/frontend/`)
 
 **Files:**
-- `src/environments/environment.ts` (Production)
-- `src/environments/environment.development.ts` (Development)
-- `src/environments/environment.test.ts` (Test)
+- `src/environments/environment.ts` (Default - imports the appropriate environment)
+- `src/environments/environment.local.ts` (Local development)
+- `src/environments/environment.dev.ts` (K8s dev namespace)
+- `src/environments/environment.test.ts` (K8s test namespace)
+- `src/environments/environment.prod.ts` (K8s production namespace)
 
 **API URLs:**
-- **Development**: `http://localhost:3000/api`
+- **Local**: `http://localhost:3000/api`
+- **Dev**: `https://snapper-dev-api.ghananautical.info/api`
 - **Test**: `https://snapper-test-api.ghananautical.info/api`
-- **Production**: `https://snapper-api.ghananautical.info/api`
+- **Prod**: `https://snapper-api.ghananautical.info/api`
 
 ### API App (`apps/api/`)
 
-The API uses environment variables for configuration rather than environment files:
+The API uses environment variables for configuration loaded from `.env.{NODE_ENV}` files:
+
+**Environment Files:**
+- `.env.local` (Local development - default)
+- `.env.dev` (K8s dev namespace)
+- `.env.test` (K8s test namespace)
+- `.env.prod` (K8s production namespace)
 
 **Environment Variables:**
 - `DATABASE_URL` or `DATABASE_HOST`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME`
 - `DATABASE_PORT` (default: 5432)
 - `DATABASE_SSL` (default: based on NODE_ENV)
 - `TYPEORM_LOGGING` (default: based on NODE_ENV)
+- `NODE_ENV` (local, dev, test, or prod)
 
 ## Build Configurations
 
-### Development (Default for serve)
+### Local Development (Default for serve)
 
 ```bash
-# Automatically uses development environment
+# Automatically uses local environment (localhost)
 npx nx serve admin &     # Port 4201, uses proxy to localhost:3000
 npx nx serve frontend &  # Port 4200, connects to localhost:3000
+npx nx serve api &       # Port 3000, uses .env.local
 ```
 
 **Configuration:**
-- `defaultConfiguration: "development"` in serve target
-- Uses development environment files
+- `defaultConfiguration: "local"` in serve target
+- Uses local environment files
 - Admin uses proxy configuration
 - Optimized for development (source maps, no optimization)
 
-### Test Environment
+### Dev Environment (K8s Development Namespace)
 
 ```bash
-# Build for test deployment
+# Build for K8s dev deployment
+npx nx build admin --configuration=dev
+npx nx build frontend --configuration=dev
+NODE_ENV=dev npm run start:api  # Uses .env.dev
+```
+
+**Configuration:**
+- Uses dev environment files
+- Connects to K8s dev namespace services
+- Optimized build (minified, no source maps)
+
+### Test Environment (K8s Test Namespace)
+
+```bash
+# Build for K8s test deployment
 npx nx build admin --configuration=test
 npx nx build frontend --configuration=test
+NODE_ENV=test npm run start:api  # Uses .env.test
 ```
 
 **Configuration:**
 - Uses test environment files
-- Connects to test API server
+- Connects to K8s test namespace services
 - Optimized build (minified, no source maps)
 
-### Production Environment
+### Prod Environment (K8s Production Namespace)
 
 ```bash
-# Build for production deployment
-npx nx build admin --configuration=production
-npx nx build frontend --configuration=production
+# Build for K8s production deployment
+npx nx build admin --configuration=prod
+npx nx build frontend --configuration=prod
+NODE_ENV=prod npm run start:api  # Uses .env.prod
 ```
 
 **Configuration:**
-- Uses production environment files (default)
+- Uses prod environment files
+- Connects to K8s production namespace services
 - Connects to production API server
 - Fully optimized build
 

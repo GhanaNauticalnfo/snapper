@@ -38,7 +38,7 @@
         "scripts": []
       },
       "configurations": {
-        "production": {
+        "prod": {
           "budgets": [
             {
               "type": "initial",
@@ -51,16 +51,34 @@
               "maximumError": "20kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/admin/src/environments/environment.ts",
+              "with": "apps/admin/src/environments/environment.prod.ts"
+            }
+          ]
         },
-        "development": {
+        "local": {
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true,
           "fileReplacements": [
             {
               "replace": "apps/admin/src/environments/environment.ts",
-              "with": "apps/admin/src/environments/environment.development.ts"
+              "with": "apps/admin/src/environments/environment.local.ts"
+            }
+          ]
+        },
+        "dev": {
+          "optimization": true,
+          "outputHashing": "all",
+          "sourceMap": false,
+          "extractLicenses": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/admin/src/environments/environment.ts",
+              "with": "apps/admin/src/environments/environment.dev.ts"
             }
           ]
         },
@@ -77,16 +95,16 @@
           ]
         }
       },
-      "defaultConfiguration": "production"
+      "defaultConfiguration": "prod"
     },
     "serve": {
       "executor": "@angular-devkit/build-angular:dev-server",
       "configurations": {
-        "production": {
-          "buildTarget": "admin:build:production"
+        "prod": {
+          "buildTarget": "admin:build:prod"
         },
-        "development": {
-          "buildTarget": "admin:build:development"
+        "local": {
+          "buildTarget": "admin:build:local"
         }
       },
       "options": {
@@ -95,7 +113,7 @@
         "open": true,
         "proxyConfig": "apps/admin/proxy.conf.json"
       },
-      "defaultConfiguration": "development"
+      "defaultConfiguration": "local"
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
