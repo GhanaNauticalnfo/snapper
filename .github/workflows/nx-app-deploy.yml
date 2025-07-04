@@ -161,17 +161,18 @@ jobs:
       # This step runs only if the database doesn't exist yet
       - name: Apply PostgreSQL deployment
         run: |
-          # Convert environment name if needed (production -> prod)
+          # Convert environment name to namespace format
           ENV_NAME="${{ inputs.environment }}"
           if [ "$ENV_NAME" == "production" ]; then
             ENV_NAME="prod"
           fi
+          NAMESPACE="ghanawaters-${ENV_NAME}"
           
-          if ! kubectl get deployment ghanawaters-postgres -n $ENV_NAME &> /dev/null; then
+          if ! kubectl get deployment ghanawaters-postgres -n $NAMESPACE &> /dev/null; then
             kubectl apply -f apps/${{ inputs.app_name }}/kubernetes/postgres-$ENV_NAME.yaml
-            echo "PostgreSQL deployment created for $ENV_NAME environment"
+            echo "PostgreSQL deployment created for $NAMESPACE namespace"
           else
-            echo "PostgreSQL deployment already exists for $ENV_NAME environment, skipping"
+            echo "PostgreSQL deployment already exists for $NAMESPACE namespace, skipping"
           fi
           
   build-and-push:
@@ -250,11 +251,12 @@ jobs:
       
       - name: Deploy to Kubernetes
         run: |
-          # Convert environment name if needed (production -> prod)
+          # Convert environment name to namespace format
           ENV_NAME="${{ inputs.environment }}"
           if [ "$ENV_NAME" == "production" ]; then
             ENV_NAME="prod"
           fi
+          NAMESPACE="ghanawaters-${ENV_NAME}"
           
           # Create directory structure if it doesn't exist
           mkdir -p k8s/$ENV_NAME
@@ -273,10 +275,10 @@ jobs:
           fi
           
           # Update the container image
-          kubectl set image deployment/${{ inputs.image_name }} ${{ inputs.image_name }}=ghananauticalinfo/${{ inputs.image_name }}:${IMAGE_TAG} -n $ENV_NAME
+          kubectl set image deployment/${{ inputs.image_name }} ${{ inputs.image_name }}=ghananauticalinfo/${{ inputs.image_name }}:${IMAGE_TAG} -n $NAMESPACE
           
           # Wait for rollout to complete
-          kubectl rollout status deployment/${{ inputs.image_name }} -n $ENV_NAME
+          kubectl rollout status deployment/${{ inputs.image_name }} -n $NAMESPACE
   
   run-migrations:
     needs: [check-affected, deploy]
@@ -313,11 +315,12 @@ jobs:
       
       - name: Run database migrations
         run: |
-          # Convert environment name if needed (production -> prod)
+          # Convert environment name to namespace format
           ENV_NAME="${{ inputs.environment }}"
           if [ "$ENV_NAME" == "production" ]; then
             ENV_NAME="prod"
           fi
+          NAMESPACE="ghanawaters-${ENV_NAME}"
           
           TIMESTAMP=$(date +%s)
           BRANCH="${{ inputs.environment == 'prod' && 'main' || inputs.branch_name }}"
@@ -333,26 +336,26 @@ jobs:
           echo "Waiting for job to complete..."
           
           # Wait for job to complete
-          kubectl wait --for=condition=complete job/ghanawaters-api-migrations-$TIMESTAMP --namespace $ENV_NAME --timeout=300s
+          kubectl wait --for=condition=complete job/ghanawaters-api-migrations-$TIMESTAMP --namespace $NAMESPACE --timeout=300s
           
           if [ $? -eq 0 ]; then
             echo "Migration completed successfully"
             
             # Show logs
-            POD_NAME=$(kubectl get pods -n $ENV_NAME -l job-name=ghanawaters-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
+            POD_NAME=$(kubectl get pods -n $NAMESPACE -l job-name=ghanawaters-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
             echo "Migration logs:"
-            kubectl logs $POD_NAME -n $ENV_NAME
+            kubectl logs $POD_NAME -n $NAMESPACE
             
             # Cleanup
             echo "Cleaning up job..."
-            kubectl delete job ghanawaters-api-migrations-$TIMESTAMP -n $ENV_NAME
+            kubectl delete job ghanawaters-api-migrations-$TIMESTAMP -n $NAMESPACE
           else
             echo "Migration failed or timed out"
             
             # Show logs for debugging
-            POD_NAME=$(kubectl get pods -n $ENV_NAME -l job-name=ghanawaters-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
+            POD_NAME=$(kubectl get pods -n $NAMESPACE -l job-name=ghanawaters-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
             echo "Migration logs:"
-            kubectl logs $POD_NAME -n $ENV_NAME
+            kubectl logs $POD_NAME -n $NAMESPACE
             
             # Don't fail the workflow since deployment already happened
             echo "::warning::Migration job failed but deployment was completed"

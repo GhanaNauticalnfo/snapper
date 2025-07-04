@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ghanawaters-postgres
-  namespace: prod
+  namespace: ghanawaters-prod
   labels:
     app: ghanawaters-postgres
     env: prod
@@ -81,7 +81,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ghanawaters-postgres-service
-  namespace: prod
+  namespace: ghanawaters-prod
 spec:
   selector:
     app: ghanawaters-postgres
@@ -95,7 +95,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: ghanawaters-postgres-pvc
-  namespace: prod
+  namespace: ghanawaters-prod
 spec:
   accessModes:
     - ReadWriteOnce

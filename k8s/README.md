@@ -51,10 +51,10 @@ Migrations should be run manually after deployment:
 
 ```bash
 # For test environment
-kubectl create job --from=cronjob/snapper-api-migrations snapper-api-migrations-$(date +%s) -n test
+kubectl create job --from=cronjob/snapper-api-migrations snapper-api-migrations-$(date +%s) -n ghanawaters-test
 
 # For prod environment
-kubectl create job --from=cronjob/snapper-api-migrations snapper-api-migrations-$(date +%s) -n prod
+kubectl create job --from=cronjob/snapper-api-migrations snapper-api-migrations-$(date +%s) -n ghanawaters-prod
 ```
 
 ## Environment Differences
@@ -97,7 +97,7 @@ kubectl create secret generic snapper-postgres-secret \
   --from-literal=POSTGRES_PASSWORD=<password> \
   --from-literal=POSTGRES_DB=snapper_db \
   --from-literal=DATABASE_URL=postgresql://snapper_user:<password>@snapper-postgres-service:5432/snapper_db \
-  -n <namespace>
+  -n <namespace>  # e.g., ghanawaters-dev, ghanawaters-test, ghanawaters-prod
 ```
 
 ## Updating Image Tags

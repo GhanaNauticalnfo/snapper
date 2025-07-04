@@ -6,6 +6,7 @@ ENVIRONMENT=$1
 
 if [ "$ENVIRONMENT" != "test" ] && [ "$ENVIRONMENT" != "prod" ]; then
   echo "Usage: $0 [test|prod]"
+  echo "Note: This will create the secret in namespace ghanawaters-$ENVIRONMENT"
   exit 1
 fi
 
@@ -24,7 +25,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: ghanawaters-postgres-secret
-  namespace: $ENVIRONMENT
+  namespace: ghanawaters-$ENVIRONMENT
 type: Opaque
 stringData:
   POSTGRES_USER: "${POSTGRES_USER}"
@@ -33,7 +34,7 @@ stringData:
   DATABASE_URL: "${DATABASE_URL}"
 EOF
 
-echo "PostgreSQL secret created/updated for $ENVIRONMENT environment"
+echo "PostgreSQL secret created/updated in ghanawaters-$ENVIRONMENT namespace"
 echo ""
 echo "Save these credentials in a secure location:"
 echo "--------------------------------------------"

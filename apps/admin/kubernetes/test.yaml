@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ghanawaters-admin
-  namespace: test
+  namespace: ghanawaters-test
   labels:
     app: ghanawaters-admin
     env: test
@@ -29,7 +29,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ghanawaters-admin-service
-  namespace: test
+  namespace: ghanawaters-test
 spec:
   selector:
     app: ghanawaters-admin
@@ -43,7 +43,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ghanawaters-admin-ingress
-  namespace: test
+  namespace: ghanawaters-test
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:

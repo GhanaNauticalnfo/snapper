@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ghanawaters-frontend
-  namespace: prod
+  namespace: ghanawaters-prod
   labels:
     app: ghanawaters-frontend
     env: prod
@@ -29,7 +29,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ghanawaters-frontend-service
-  namespace: prod
+  namespace: ghanawaters-prod
 spec:
   selector:
     app: ghanawaters-frontend
@@ -43,7 +43,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ghanawaters-frontend-ingress
-  namespace: prod
+  namespace: ghanawaters-prod
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:

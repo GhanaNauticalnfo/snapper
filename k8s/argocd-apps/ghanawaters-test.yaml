@@ -13,7 +13,7 @@ spec:
     path: k8s/overlays/test
   destination:
     server: https://kubernetes.default.svc
-    namespace: test
+    namespace: ghanawaters-test
   syncPolicy:
     automated:
       prune: true

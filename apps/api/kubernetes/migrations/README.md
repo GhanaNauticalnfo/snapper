@@ -18,19 +18,19 @@ This will:
 ### Monitor the Reset Process
 ```bash
 # Watch job status
-kubectl get jobs -n test -w
+kubectl get jobs -n ghanawaters-test -w
 
 # View reset logs
-kubectl logs -f job/snapper-api-reset-database -n test
+kubectl logs -f job/snapper-api-reset-database -n ghanawaters-test
 
 # Check if reset completed successfully
-kubectl describe job snapper-api-reset-database -n test
+kubectl describe job snapper-api-reset-database -n ghanawaters-test
 ```
 
 ### Clean Up After Reset
 ```bash
 # Delete the completed job
-kubectl delete job snapper-api-reset-database -n test
+kubectl delete job snapper-api-reset-database -n ghanawaters-test
 ```
 
 ## When to Use Database Reset
@@ -73,14 +73,14 @@ npm run db:reset:test
 ### Job Failed
 ```bash
 # Check job events
-kubectl describe job snapper-api-reset-database -n test
+kubectl describe job snapper-api-reset-database -n ghanawaters-test
 
 # View detailed logs
-kubectl logs job/snapper-api-reset-database -n test
+kubectl logs job/snapper-api-reset-database -n ghanawaters-test
 ```
 
 ### Database Connection Issues
-- Verify `snapper-postgres-secret` exists in test namespace
+- Verify `snapper-postgres-secret` exists in ghanawaters-test namespace
 - Check DATABASE_URL is correctly configured
 - Ensure PostgreSQL service is running
 

@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: ghanawaters-api-reset-database
-  namespace: test
+  namespace: ghanawaters-test
   labels:
     app: ghanawaters-api
     env: test
