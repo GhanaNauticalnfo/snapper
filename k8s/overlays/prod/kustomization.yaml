@@ -8,14 +8,15 @@ resources:
   - ../../base/api
   - ../../base/frontend
   - ../../base/database
+  - ../../base/jobs
 
 images:
   - name: ghananauticalinfo/ghanawaters-admin
-    newTag: latest
+    newTag: IMAGE_TAG
   - name: ghananauticalinfo/ghanawaters-api
-    newTag: latest
+    newTag: IMAGE_TAG
   - name: ghananauticalinfo/ghanawaters-frontend
-    newTag: latest
+    newTag: IMAGE_TAG
 
 patches:
   - path: patches/ingress-hosts.yaml

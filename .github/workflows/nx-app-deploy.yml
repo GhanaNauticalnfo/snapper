@@ -54,8 +54,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version-file: '.nvmrc'
           cache: 'npm'
+      
+      - name: Cache Nx
+        uses: actions/cache@v4
+        with:
+          path: |
+            .nx
+            node_modules/.cache/nx
+          key: nx-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ runner.os }}-
           
       - name: Install dependencies
         run: npm ci
@@ -175,7 +185,7 @@ jobs:
             echo "PostgreSQL deployment already exists for $NAMESPACE namespace, skipping"
           fi
           
-  build-and-push:
+  build-app:
     needs: [check-affected]
     # Skip if not affected by changes and not production with manual trigger
     if: |
@@ -186,6 +196,81 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      
+      - name: Cache Nx
+        uses: actions/cache@v4
+        with:
+          path: |
+            .nx
+            node_modules/.cache/nx
+          key: nx-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ runner.os }}-
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: |
+          if [ "${{ inputs.app_name }}" == "api" ]; then
+            # Build CLI files first for API
+            npm run build:cli
+            # Copy CLI build output to preserve it
+            cp -r /tmp/cli_build ./cli_build_temp || true
+          fi
+          
+          # Build the main application
+          npx nx build ${{ inputs.app_name }} --configuration=${{ inputs.environment }}
+          
+          # For API, restore CLI files
+          if [ "${{ inputs.app_name }}" == "api" ] && [ -d "./cli_build_temp" ]; then
+            cp -r ./cli_build_temp/* /tmp/cli_build/ || true
+          fi
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.app_name }}-build-${{ github.sha }}
+          path: |
+            dist/apps/${{ inputs.app_name }}
+            /tmp/cli_build
+          retention-days: 1
+  
+  build-and-push:
+    needs: [check-affected, build-app]
+    # Skip if not affected by changes and not production with manual trigger
+    if: |
+      needs.check-affected.outputs.is_affected == 'true' ||
+      (inputs.environment == 'prod' && github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ inputs.app_name }}-build-${{ github.sha }}
+          path: ./build-artifacts
+      
+      - name: Prepare build context
+        run: |
+          # Move artifacts to correct locations
+          mkdir -p dist/apps/${{ inputs.app_name }}
+          cp -r ./build-artifacts/dist/apps/${{ inputs.app_name }}/* dist/apps/${{ inputs.app_name }}/ || true
+          
+          # For API, handle CLI build
+          if [ "${{ inputs.app_name }}" == "api" ] && [ -d "./build-artifacts/tmp/cli_build" ]; then
+            mkdir -p /tmp
+            cp -r ./build-artifacts/tmp/cli_build /tmp/
+          fi
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -206,7 +291,7 @@ jobs:
           fi
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: ./apps/${{ inputs.app_name }}/Dockerfile
@@ -214,6 +299,9 @@ jobs:
           tags: ${{ steps.docker_tags.outputs.tags }}
           build-args: |
             ENVIRONMENT=${{ inputs.environment }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
           
   deploy:
     needs: [check-affected, build-and-push]
@@ -249,6 +337,12 @@ jobs:
             doctl kubernetes cluster kubeconfig save $CLUSTER_ID
           fi
       
+      - name: Install kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+          kustomize version
+      
       - name: Deploy to Kubernetes
         run: |
           # Convert environment name to namespace format
@@ -258,27 +352,62 @@ jobs:
           fi
           NAMESPACE="ghanawaters-${ENV_NAME}"
           
-          # Create directory structure if it doesn't exist
-          mkdir -p k8s/$ENV_NAME
-          
-          # Copy the deployment file to the expected location
-          cp apps/${{ inputs.app_name }}/kubernetes/$ENV_NAME.yaml k8s/$ENV_NAME/deployment.yaml
-          
-          # Apply Kubernetes manifests
-          kubectl apply -f k8s/$ENV_NAME/deployment.yaml
-          
-          # Set the image name based on environment
+          # Set the image tag based on environment
           if [ "${{ inputs.environment }}" == "prod" ]; then
             IMAGE_TAG="prod-${{ github.sha }}"
           else
             IMAGE_TAG="test-${{ inputs.branch_name }}-${{ github.sha }}"
           fi
           
-          # Update the container image
-          kubectl set image deployment/${{ inputs.image_name }} ${{ inputs.image_name }}=ghananauticalinfo/${{ inputs.image_name }}:${IMAGE_TAG} -n $NAMESPACE
+          echo "Deploying to ${ENV_NAME} environment with image tag: ${IMAGE_TAG}"
+          
+          # Update the image tags in kustomization.yaml
+          cd k8s/overlays/${ENV_NAME}
+          
+          # Update each image separately to handle the correct format
+          kustomize edit set image ghananauticalinfo/ghanawaters-admin:IMAGE_TAG=ghananauticalinfo/ghanawaters-admin:${IMAGE_TAG}
+          kustomize edit set image ghananauticalinfo/ghanawaters-api:IMAGE_TAG=ghananauticalinfo/ghanawaters-api:${IMAGE_TAG}
+          kustomize edit set image ghananauticalinfo/ghanawaters-frontend:IMAGE_TAG=ghananauticalinfo/ghanawaters-frontend:${IMAGE_TAG}
+          
+          # Show the updated kustomization.yaml for verification
+          echo "Updated kustomization.yaml:"
+          cat kustomization.yaml
+          
+          # Apply the kustomization
+          echo "Applying kustomization..."
+          kubectl apply -k .
           
           # Wait for rollout to complete
+          echo "Waiting for rollout to complete..."
           kubectl rollout status deployment/${{ inputs.image_name }} -n $NAMESPACE
+      
+      - name: Commit updated image tags for GitOps
+        if: github.event_name == 'push' && inputs.environment == 'prod'
+        run: |
+          # Recreate the image tag variable
+          if [ "${{ inputs.environment }}" == "prod" ]; then
+            IMAGE_TAG="prod-${{ github.sha }}"
+          else
+            IMAGE_TAG="test-${{ inputs.branch_name }}-${{ github.sha }}"
+          fi
+          
+          # Configure git
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Check if there are changes to commit
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            # Commit the changes
+            git add k8s/overlays/*/kustomization.yaml
+            git commit -m "chore: update image tags to ${IMAGE_TAG} [skip ci]"
+            
+            # Push the changes
+            git push origin HEAD:${GITHUB_REF#refs/heads/} || {
+              echo "Push failed, possibly due to concurrent updates. This is non-critical."
+            }
+          fi
   
   run-migrations:
     needs: [check-affected, deploy]
