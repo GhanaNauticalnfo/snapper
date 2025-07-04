@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ghanawaters-admin-service
+spec:
+  selector:
+    app: ghanawaters-admin
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP

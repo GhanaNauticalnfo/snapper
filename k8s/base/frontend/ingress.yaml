@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ghanawaters-frontend-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - frontend.example.com  # Will be patched in overlays
+    secretName: ghanawaters-frontend-tls
+  rules:
+  - host: frontend.example.com  # Will be patched in overlays
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ghanawaters-frontend-service
+            port:
+              number: 80

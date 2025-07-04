@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghanawaters-api
+  labels:
+    app: ghanawaters-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghanawaters-api
+  template:
+    metadata:
+      labels:
+        app: ghanawaters-api
+    spec:
+      containers:
+      - name: ghanawaters-api
+        image: ghananauticalinfo/ghanawaters-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"  # Will be patched in overlays
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ghanawaters-postgres-secret
+              key: DATABASE_URL

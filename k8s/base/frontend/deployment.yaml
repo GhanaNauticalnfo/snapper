@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghanawaters-frontend
+  labels:
+    app: ghanawaters-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghanawaters-frontend
+  template:
+    metadata:
+      labels:
+        app: ghanawaters-frontend
+    spec:
+      containers:
+      - name: ghanawaters-frontend
+        image: ghananauticalinfo/ghanawaters-frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
