@@ -96,7 +96,7 @@ jobs:
       app_name: ${{ matrix.app }}
       environment: ${{ needs.determine-environment.outputs.environment }}
       image_name: ghanawaters-${{ matrix.app }}
-      domain_name: ${{ matrix.app == 'api' && 'ghanawaters-test-api.ghananautical.info' || matrix.app == 'admin' && 'ghanawaters-test-admin.ghananautical.info' || 'ghanawaters-test.ghananautical.info' }}
+      domain_name: ${{ needs.determine-environment.outputs.environment == 'dev' && (matrix.app == 'api' && 'ghanawaters-dev-api.ghananautical.info' || matrix.app == 'admin' && 'ghanawaters-dev-admin.ghananautical.info' || 'ghanawaters-dev.ghananautical.info') || needs.determine-environment.outputs.environment == 'test' && (matrix.app == 'api' && 'ghanawaters-test-api.ghananautical.info' || matrix.app == 'admin' && 'ghanawaters-test-admin.ghananautical.info' || 'ghanawaters-test.ghananautical.info') || (matrix.app == 'api' && 'ghanawaters-api.ghananautical.info' || matrix.app == 'admin' && 'ghanawaters-admin.ghananautical.info' || 'ghanawaters.ghananautical.info') }}
       branch_name: ${{ github.ref_name }}
       compare_branch: main
       setup_database: ${{ matrix.app == 'api' }}
