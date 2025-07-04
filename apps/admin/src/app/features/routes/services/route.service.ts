@@ -29,11 +29,16 @@ export class RouteService {
 
 
   create(route: Route): Observable<Route> {
-    return this.http.post<Route>(this.apiUrl, route);
+    // Remove id from the route object as it's not part of RouteInputDto
+    const { id: _, ...routeData } = route;
+    return this.http.post<Route>(this.apiUrl, routeData);
   }
 
   update(id: number, route: Route): Observable<Route> {
-    return this.http.put<Route>(`${this.apiUrl}/${id}`, route);
+    // Remove id from the route object as it's not part of RouteInputDto
+    const { id: _, ...routeData } = route;
+    console.log('RouteService.update - Sending route data:', JSON.stringify(routeData, null, 2));
+    return this.http.put<Route>(`${this.apiUrl}/${id}`, routeData);
   }
 
   delete(id: number): Observable<void> {

@@ -1,18 +1,20 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsBoolean, IsArray, IsOptional, MinLength, ArrayMinSize, ValidateNested } from 'class-validator';
+import { IsString, IsBoolean, IsArray, IsOptional, MinLength, ArrayMinSize, ValidateNested, IsNumber, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Waypoint } from '@snapper/shared-models';
 
-class WaypointDto implements Waypoint {
+export class WaypointDto implements Waypoint {
   @ApiPropertyOptional({ description: 'Unique identifier for the waypoint' })
   @IsOptional()
   @IsString()
   id?: string;
 
   @ApiProperty({ description: 'Latitude coordinate' })
+  @IsNumber()
   lat: number;
 
   @ApiProperty({ description: 'Longitude coordinate' })
+  @IsNumber()
   lng: number;
 
   @ApiPropertyOptional({ description: 'Waypoint name' })
@@ -21,6 +23,9 @@ class WaypointDto implements Waypoint {
   name?: string;
 
   @ApiProperty({ description: 'Order of the waypoint in the route' })
+  @IsNumber()
+  @IsInt()
+  @Min(0)
   order: number;
 }
 
