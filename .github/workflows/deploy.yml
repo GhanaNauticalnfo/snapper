@@ -128,3 +128,4 @@ jobs:
             echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
             echo "**Apps deployed:** api, admin, frontend" >> $GITHUB_STEP_SUMMARY
           fi
+# Deployment trigger: 2025-01-04
