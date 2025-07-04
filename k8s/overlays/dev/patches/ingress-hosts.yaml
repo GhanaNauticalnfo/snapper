@@ -7,7 +7,7 @@ spec:
   tls:
   - hosts:
     - ghanawaters-dev-admin.ghananautical.info
-    secretName: dev-ghanawaters-admin-tls
+    secretName: dev-ghanawaters-admin-tls-staging
   rules:
   - host: ghanawaters-dev-admin.ghananautical.info
 ---
@@ -20,7 +20,7 @@ spec:
   tls:
   - hosts:
     - ghanawaters-dev-api.ghananautical.info
-    secretName: dev-ghanawaters-api-tls
+    secretName: dev-ghanawaters-api-tls-staging
   rules:
   - host: ghanawaters-dev-api.ghananautical.info
 ---
