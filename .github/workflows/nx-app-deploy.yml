@@ -368,10 +368,10 @@ jobs:
           # Update the image tags in kustomization.yaml
           cd k8s/overlays/${ENV_NAME}
           
-          # Update each image separately to handle the correct format
-          kustomize edit set image ghananauticalinfo/ghanawaters-admin:IMAGE_TAG=ghananauticalinfo/ghanawaters-admin:${IMAGE_TAG}
-          kustomize edit set image ghananauticalinfo/ghanawaters-api:IMAGE_TAG=ghananauticalinfo/ghanawaters-api:${IMAGE_TAG}
-          kustomize edit set image ghananauticalinfo/ghanawaters-frontend:IMAGE_TAG=ghananauticalinfo/ghanawaters-frontend:${IMAGE_TAG}
+          # Update each image - use the base image name without :IMAGE_TAG
+          kustomize edit set image ghananauticalinfo/ghanawaters-admin=${IMAGE_TAG}
+          kustomize edit set image ghananauticalinfo/ghanawaters-api=${IMAGE_TAG}
+          kustomize edit set image ghananauticalinfo/ghanawaters-frontend=${IMAGE_TAG}
           
           # Show the updated kustomization.yaml for verification
           echo "Updated kustomization.yaml:"
@@ -385,7 +385,15 @@ jobs:
           echo "Testing kubectl connection:"
           kubectl cluster-info
           echo "Applying resources..."
-          kubectl apply -k . --v=5
+          # First try to apply, if it fails due to immutable fields, replace the resources
+          if ! kubectl apply -k . --v=5; then
+            echo "Apply failed, checking for immutable field errors..."
+            # Delete the migration job if it exists (jobs are immutable)
+            kubectl delete job ghanawaters-api-migrations -n $NAMESPACE --ignore-not-found
+            # For deployments with immutable field issues, we'll use server-side apply
+            echo "Retrying with server-side apply..."
+            kubectl apply -k . --server-side --force-conflicts
+          fi
           
           # Wait for rollout to complete
           echo "Waiting for rollout to complete..."
