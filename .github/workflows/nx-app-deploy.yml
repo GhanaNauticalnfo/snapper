@@ -361,6 +361,10 @@ jobs:
           
           echo "Deploying to ${ENV_NAME} environment with image tag: ${IMAGE_TAG}"
           
+          # Ensure namespace exists
+          echo "Creating namespace if it doesn't exist..."
+          kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
+          
           # Update the image tags in kustomization.yaml
           cd k8s/overlays/${ENV_NAME}
           
@@ -375,7 +379,13 @@ jobs:
           
           # Apply the kustomization
           echo "Applying kustomization..."
-          kubectl apply -k .
+          echo "Current directory: $(pwd)"
+          echo "Files in directory:"
+          ls -la
+          echo "Testing kubectl connection:"
+          kubectl cluster-info
+          echo "Applying resources..."
+          kubectl apply -k . --v=5
           
           # Wait for rollout to complete
           echo "Waiting for rollout to complete..."
