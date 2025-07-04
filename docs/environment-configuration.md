@@ -1,10 +1,10 @@
 # Environment Configuration Guide
 
-This document explains how environment configurations work across all Snapper applications (Admin, Frontend, and API).
+This document explains how environment configurations work across all Ghana Waters applications (Admin, Frontend, and API).
 
 ## Overview
 
-Snapper uses a 4-environment setup:
+Ghana Waters uses a 4-environment setup:
 
 - **Local**: Local development with proxy to localhost API (default when no configuration specified)
 - **Dev**: Kubernetes development namespace deployment
@@ -24,9 +24,9 @@ Snapper uses a 4-environment setup:
 
 **API URLs:**
 - **Local**: `/api` → proxied to `http://localhost:3000/api`
-- **Dev**: `https://snapper-dev-api.ghananautical.info/api`
-- **Test**: `https://snapper-test-api.ghananautical.info/api`
-- **Prod**: `https://snapper-api.ghananautical.info/api`
+- **Dev**: `https://ghanawaters-dev-api.ghananautical.info/api`
+- **Test**: `https://ghanawaters-test-api.ghananautical.info/api`
+- **Prod**: `https://ghanawaters-api.ghananautical.info/api`
 
 ### Frontend App (`apps/frontend/`)
 
@@ -39,9 +39,9 @@ Snapper uses a 4-environment setup:
 
 **API URLs:**
 - **Local**: `http://localhost:3000/api`
-- **Dev**: `https://snapper-dev-api.ghananautical.info/api`
-- **Test**: `https://snapper-test-api.ghananautical.info/api`
-- **Prod**: `https://snapper-api.ghananautical.info/api`
+- **Dev**: `https://ghanawaters-dev-api.ghananautical.info/api`
+- **Test**: `https://ghanawaters-test-api.ghananautical.info/api`
+- **Prod**: `https://ghanawaters-api.ghananautical.info/api`
 
 ### API App (`apps/api/`)
 
@@ -125,7 +125,7 @@ NODE_ENV=prod npm run start:api  # Uses .env.prod
 ### 1. Start Local Development
 
 ```bash
-cd snapper
+cd ghanawaters
 
 # Start infrastructure
 npm run db:up
@@ -168,7 +168,7 @@ export const environment = {
 ```typescript
 export const environment = {
   production: false,
-  apiUrl: 'https://snapper-test-api.ghananautical.info/api'
+  apiUrl: 'https://ghanawaters-test-api.ghananautical.info/api'
 };
 ```
 
@@ -176,7 +176,7 @@ export const environment = {
 ```typescript
 export const environment = {
   production: true,
-  apiUrl: 'https://snapper-api.ghananautical.info/api'
+  apiUrl: 'https://ghanawaters-api.ghananautical.info/api'
 };
 ```
 
@@ -234,23 +234,23 @@ For API deployment, set these environment variables:
 ```bash
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
-DATABASE_USER=snapper_user
-DATABASE_PASSWORD=snapper_password
-DATABASE_NAME=snapper_db
+DATABASE_USER=ghanawaters_user
+DATABASE_PASSWORD=ghanawaters_password
+DATABASE_NAME=ghanawaters_db
 DATABASE_SSL=false
 TYPEORM_LOGGING=true
 ```
 
 ### Test
 ```bash
-DATABASE_URL=postgresql://user:pass@test-db-host:5432/snapper_test
+DATABASE_URL=postgresql://user:pass@test-db-host:5432/ghanawaters_test
 DATABASE_SSL=true
 TYPEORM_LOGGING=false
 ```
 
 ### Production
 ```bash
-DATABASE_URL=postgresql://user:pass@prod-db-host:5432/snapper_prod
+DATABASE_URL=postgresql://user:pass@prod-db-host:5432/ghanawaters_prod
 DATABASE_SSL=true
 TYPEORM_LOGGING=false
 ```

@@ -10,11 +10,11 @@ resources:
   - ../../base/database
 
 images:
-  - name: ghananauticalinfo/snapper-admin
+  - name: ghananauticalinfo/ghanawaters-admin
     newTag: test-develop
-  - name: ghananauticalinfo/snapper-api
+  - name: ghananauticalinfo/ghanawaters-api
     newTag: test-develop
-  - name: ghananauticalinfo/snapper-frontend
+  - name: ghananauticalinfo/ghanawaters-frontend
     newTag: test-develop
 
 patches:

@@ -9,7 +9,7 @@ import { AppMenuComponent } from './menu/app.menu.component';
 import { DomHandler } from 'primeng/dom';
 import { PrimeNG } from 'primeng/config';
 import { AppConfigService } from '../service/appconfigservice';
-import { DebugPanelComponent } from '@snapper/map';
+import { DebugPanelComponent } from '@ghanawaters/map';
 
 @Component({
   selector: 'app-main',

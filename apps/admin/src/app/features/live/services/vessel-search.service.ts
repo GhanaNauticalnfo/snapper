@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Map as MapLibreMap } from 'maplibre-gl';
-import { LayerManagerService } from '@snapper/map';
+import { LayerManagerService } from '@ghanawaters/map';
 import { VesselWithLocation } from '../components/vessel-search.component';
 
 @Injectable({

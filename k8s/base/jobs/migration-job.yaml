@@ -1,13 +1,13 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  generateName: snapper-api-migrations-
+  generateName: ghanawaters-api-migrations-
 spec:
   template:
     spec:
       containers:
       - name: migrations
-        image: ghananauticalinfo/snapper-api:latest  # Will be patched in overlays
+        image: ghananauticalinfo/ghanawaters-api:latest  # Will be patched in overlays
         command: ["/bin/sh", "-c"]
         args:
           - |
@@ -20,7 +20,7 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: snapper-postgres-secret
+              name: ghanawaters-postgres-secret
               key: DATABASE_URL
       restartPolicy: Never
   backoffLimit: 3

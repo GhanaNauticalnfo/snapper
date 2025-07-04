@@ -1,23 +1,23 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: snapper-api-reset-database
+  name: ghanawaters-api-reset-database
   namespace: test
   labels:
-    app: snapper-api
+    app: ghanawaters-api
     env: test
     operation: reset-database
 spec:
   template:
     metadata:
       labels:
-        app: snapper-api
+        app: ghanawaters-api
         env: test
         operation: reset-database
     spec:
       containers:
       - name: reset-database
-        image: ghananauticalinfo/snapper-api:test-develop
+        image: ghananauticalinfo/ghanawaters-api:test-develop
         command: ["/bin/sh", "-c"]
         args:
           - |
@@ -52,7 +52,7 @@ spec:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: snapper-postgres-secret
+              name: ghanawaters-postgres-secret
               key: DATABASE_URL
         - name: TYPEORM_LOGGING
           value: "true"

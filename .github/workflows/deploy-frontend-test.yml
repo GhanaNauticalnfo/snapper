@@ -1,5 +1,5 @@
-# File: .github/workflows/deploy-snapper-frontend-test.yml
-name: Deploy Snapper Frontend to Test
+# File: .github/workflows/deploy-ghanawaters-frontend-test.yml
+name: Deploy Ghanawaters Frontend to Test
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'nx.json'
-      - '.github/workflows/deploy-snapper-frontend-test.yml'
+      - '.github/workflows/deploy-ghanawaters-frontend-test.yml'
 
 jobs:
   extract-branch:
@@ -27,8 +27,8 @@ jobs:
     with:
       app_name: frontend
       environment: test
-      image_name: snapper-frontend
-      domain_name: snapper-test.ghananautical.info
+      image_name: ghanawaters-frontend
+      domain_name: ghanawaters-test.ghananautical.info
       branch_name: ${{ needs.extract-branch.outputs.branch_name }}
       compare_branch: main
     secrets: inherit

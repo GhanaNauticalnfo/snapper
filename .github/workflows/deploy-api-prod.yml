@@ -1,5 +1,5 @@
 # File: .github/workflows/deploy-api-prod.yml
-name: Deploy Snapper API to Production
+name: Deploy Ghanawaters API to Production
 
 on:
   push:
@@ -41,8 +41,8 @@ jobs:
     with:
       app_name: api
       environment: prod
-      image_name: snapper-api
-      domain_name: snapper-api.ghananautical.info
+      image_name: ghanawaters-api
+      domain_name: ghanawaters-api.ghananautical.info
       branch_name: main
       compare_branch: develop
       setup_database: true

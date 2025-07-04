@@ -2,8 +2,8 @@ import { Component, Input, Output, EventEmitter, signal, OnInit, OnDestroy, OnCh
 import { CommonModule } from '@angular/common';
 import { VesselDataset } from '../models/vessel-dataset.model';
 import { VesselDatasetService } from '../services/vessel-dataset.service';
-import { OSM_STYLE, MapComponent, MapConfig } from '@snapper/map';
-import { TimeAgoPipe } from '@snapper/shared';
+import { OSM_STYLE, MapComponent, MapConfig } from '@ghanawaters/map';
+import { TimeAgoPipe } from '@ghanawaters/shared';
 import { HttpClient } from '@angular/common/http';
 import { io, Socket } from 'socket.io-client';
 

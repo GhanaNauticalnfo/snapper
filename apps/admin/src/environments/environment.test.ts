@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://snapper-test-api.ghananautical.info/api',
-  frontendUrl: 'https://snapper-test-app.ghananautical.info'
+  apiUrl: 'https://ghanawaters-test-api.ghananautical.info/api',
+  frontendUrl: 'https://ghanawaters-test.ghananautical.info'
 };

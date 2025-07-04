@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Waypoint } from '@snapper/shared-models';
+import { Waypoint } from '@ghanawaters/shared-models';
 
 export class RouteResponseDto {
   @ApiProperty({ description: 'Unique identifier for the route' })

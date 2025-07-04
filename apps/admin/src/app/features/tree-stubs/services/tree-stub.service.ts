@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { TreeStubGroup, TreeStub, TreeStubGroupInputDto, TreeStubInputDto, TreeStubGroupResponseDto, TreeStubResponseDto } from '@snapper/shared-models';
+import { TreeStubGroup, TreeStub, TreeStubGroupInputDto, TreeStubInputDto, TreeStubGroupResponseDto, TreeStubResponseDto } from '@ghanawaters/shared-models';
 
 @Injectable({
   providedIn: 'root'

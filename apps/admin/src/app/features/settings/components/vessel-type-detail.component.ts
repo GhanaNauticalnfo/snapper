@@ -15,7 +15,7 @@ import { ColorPickerModule, ColorPicker } from 'primeng/colorpicker';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { VesselTypeService, VesselType } from '../services/vessel-type.service';
-import { BoatIconComponent } from '@snapper/shared';
+import { BoatIconComponent } from '@ghanawaters/shared';
 
 @Component({
   selector: 'app-vessel-type-detail',

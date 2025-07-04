@@ -1,5 +1,5 @@
 # File: .github/workflows/deploy-api-test.yml
-name: Deploy Snapper API to Test
+name: Deploy Ghanawaters API to Test
 
 on:
   push:
@@ -27,8 +27,8 @@ jobs:
     with:
       app_name: api
       environment: test
-      image_name: snapper-api
-      domain_name: snapper-test-api.ghananautical.info
+      image_name: ghanawaters-api
+      domain_name: ghanawaters-test-api.ghananautical.info
       branch_name: ${{ needs.extract-branch.outputs.branch_name }}
       compare_branch: main
       setup_database: true

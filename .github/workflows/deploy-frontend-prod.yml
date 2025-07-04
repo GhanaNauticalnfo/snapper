@@ -1,5 +1,5 @@
-# File: .github/workflows/deploy-snapper-frontend-prod.yml
-name: Deploy Snapper Frontend to Production
+# File: .github/workflows/deploy-ghanawaters-frontend-prod.yml
+name: Deploy Ghanawaters Frontend to Production
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'nx.json'
-      - '.github/workflows/deploy-snapper-frontend-prod.yml'
+      - '.github/workflows/deploy-ghanawaters-frontend-prod.yml'
   workflow_dispatch:
     inputs:
       confirm_deployment:
@@ -41,7 +41,7 @@ jobs:
     with:
       app_name: frontend
       environment: prod
-      image_name: snapper-frontend
-      domain_name: snapper.ghananautical.info
+      image_name: ghanawaters-frontend
+      domain_name: ghanawaters.ghananautical.info
       compare_branch: main
     secrets: inherit

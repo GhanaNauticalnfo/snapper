@@ -12,7 +12,7 @@ import {
   DepthLayerService,
   DebugPanelComponent,
   DebugLogService
-} from '@snapper/map';
+} from '@ghanawaters/map';
 import { VesselSearchComponent, VesselWithLocation } from './components/vessel-search.component';
 import { VesselSearchService } from './services/vessel-search.service';
 

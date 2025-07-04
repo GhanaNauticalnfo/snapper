@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: snapper-postgres
+  name: ghanawaters-postgres
   namespace: test
   labels:
-    app: snapper-postgres
+    app: ghanawaters-postgres
     env: test
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: snapper-postgres
+      app: ghanawaters-postgres
       env: test
   template:
     metadata:
       labels:
-        app: snapper-postgres
+        app: ghanawaters-postgres
         env: test
     spec:
       containers:
@@ -28,17 +28,17 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
-              name: snapper-postgres-secret
+              name: ghanawaters-postgres-secret
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: snapper-postgres-secret
+              name: ghanawaters-postgres-secret
               key: POSTGRES_PASSWORD
         - name: POSTGRES_DB
           valueFrom:
             secretKeyRef:
-              name: snapper-postgres-secret
+              name: ghanawaters-postgres-secret
               key: POSTGRES_DB
         # Add this environment variable to fix the "directory not empty" issue
         - name: PGDATA
@@ -78,16 +78,16 @@ spec:
       volumes:
       - name: postgres-data
         persistentVolumeClaim:
-          claimName: snapper-postgres-pvc
+          claimName: ghanawaters-postgres-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: snapper-postgres-service
+  name: ghanawaters-postgres-service
   namespace: test
 spec:
   selector:
-    app: snapper-postgres
+    app: ghanawaters-postgres
     env: test
   ports:
   - port: 5432
@@ -97,7 +97,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: snapper-postgres-pvc
+  name: ghanawaters-postgres-pvc
   namespace: test
 spec:
   accessModes:

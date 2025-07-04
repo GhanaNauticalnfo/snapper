@@ -2,7 +2,7 @@ import { Component, inject, signal, output, OnInit, TemplateRef, ViewChild } fro
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, map, catchError, of, Observable } from 'rxjs';
-import { SearchDropdownComponent, SearchDropdownConfig, SearchDropdownItem } from '@snapper/shared';
+import { SearchDropdownComponent, SearchDropdownConfig, SearchDropdownItem } from '@ghanawaters/shared';
 
 export interface Vessel {
   id: number;

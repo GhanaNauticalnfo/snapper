@@ -13,7 +13,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { CheckboxModule } from 'primeng/checkbox';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TreeStubService } from './services/tree-stub.service';
-import { TreeStubGroupResponseDto, TreeStubGroupInputDto } from '@snapper/shared-models';
+import { TreeStubGroupResponseDto, TreeStubGroupInputDto } from '@ghanawaters/shared-models';
 
 @Component({
   selector: 'app-tree-stubs',

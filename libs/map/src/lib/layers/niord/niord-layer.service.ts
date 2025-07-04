@@ -5,7 +5,7 @@ import { Map, GeoJSONSource } from 'maplibre-gl';
 import { BaseLayerService } from '../base-layer.service';
 import { lastValueFrom } from 'rxjs';
 // Import from shared models library
-import { NiordMessage, NiordResponse } from '@snapper/shared-models';
+import { NiordMessage, NiordResponse } from '@ghanawaters/shared-models';
 
 @Injectable({
   providedIn: 'root'

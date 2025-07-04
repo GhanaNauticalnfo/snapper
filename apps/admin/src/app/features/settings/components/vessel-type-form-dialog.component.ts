@@ -9,7 +9,7 @@ import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { VesselTypeService, VesselType } from '../services/vessel-type.service';
-import { BoatIconComponent } from '@snapper/shared';
+import { BoatIconComponent } from '@ghanawaters/shared';
 
 @Component({
   selector: 'app-vessel-type-form-dialog',

@@ -13,17 +13,17 @@ fi
 POSTGRES_PASSWORD=$(openssl rand -base64 18 | tr -dc 'a-zA-Z0-9' | head -c 24)
 
 # Set database configuration
-POSTGRES_USER="snapper_user"
-POSTGRES_DB="snapper_db"
+POSTGRES_USER="ghanawaters_user"
+POSTGRES_DB="ghanawaters_db"
 # Notice that the host is the k8s service name for this environment
-DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@snapper-postgres-service:5432/${POSTGRES_DB}"
+DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@ghanawaters-postgres-service:5432/${POSTGRES_DB}"
 
 # Create the secret manifest and apply it (this will update if it exists)
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Secret
 metadata:
-  name: snapper-postgres-secret
+  name: ghanawaters-postgres-secret
   namespace: $ENVIRONMENT
 type: Opaque
 stringData:

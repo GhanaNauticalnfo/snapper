@@ -1,10 +1,10 @@
-# Snapper - Ghana Maritime Navigation System
+# Ghana Waters - Ghana Maritime Navigation System
 
 A comprehensive maritime navigation and tracking system for Ghana's waterways, built with Angular, NestJS, and MapLibre.
 
 ## Overview
 
-Snapper provides real-time vessel tracking, navigation aids, and offline-capable map data for maritime operations. The system consists of:
+Ghana Waters provides real-time vessel tracking, navigation aids, and offline-capable map data for maritime operations. The system consists of:
 
 - **Admin Dashboard** - Vessel management and monitoring interface
 - **Public Frontend** - Public-facing map with navigation data
@@ -40,8 +40,8 @@ Snapper provides real-time vessel tracking, navigation aids, and offline-capable
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/snapper.git
-cd snapper
+git clone https://github.com/your-org/ghanawaters.git
+cd ghanawaters
 
 # Install dependencies
 npm install
@@ -70,7 +70,7 @@ npx nx serve admin
 ## Project Structure
 
 ```
-snapper/
+ghanawaters/
 ├── apps/
 │   ├── admin/         # Admin dashboard (Angular + PrimeNG)
 │   ├── api/          # Backend API (NestJS)
@@ -146,9 +146,9 @@ Create `.env.development` in the root directory:
 # Database
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
-DATABASE_USER=snapper_user
-DATABASE_PASSWORD=snapper_password
-DATABASE_NAME=snapper_db
+DATABASE_USER=ghanawaters_user
+DATABASE_PASSWORD=ghanawaters_password
+DATABASE_NAME=ghanawaters_db
 DATABASE_SSL=false
 
 # TypeORM

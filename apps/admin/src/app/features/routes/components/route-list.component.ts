@@ -2,7 +2,7 @@ import { Component, OnInit, AfterViewInit, ChangeDetectionStrategy, TemplateRef,
 import { CommonModule } from '@angular/common';
 import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
-import { ResourceListComponent, ResourceListConfig, ResourceAction } from '@snapper/shared';
+import { ResourceListComponent, ResourceListConfig, ResourceAction } from '@ghanawaters/shared';
 import { RouteService } from '../services/route.service';
 import { Route } from '../models/route.model';
 import { RouteFormComponent } from './route-form-modern.component';

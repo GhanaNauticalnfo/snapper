@@ -9,8 +9,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TagModule } from 'primeng/tag';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { TreeStubService } from '../services/tree-stub.service';
-import { TreeStubGroupResponseDto, TreeStubResponseDto } from '@snapper/shared-models';
-import { MapComponent, LayerManagerService } from '@snapper/map';
+import { TreeStubGroupResponseDto, TreeStubResponseDto } from '@ghanawaters/shared-models';
+import { MapComponent, LayerManagerService } from '@ghanawaters/map';
 import { TreeStubLayerService } from '../services/tree-stub-layer.service';
 
 @Component({

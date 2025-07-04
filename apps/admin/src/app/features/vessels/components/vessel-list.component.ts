@@ -2,7 +2,7 @@ import { Component, OnInit, AfterViewInit, TemplateRef, signal, viewChild, injec
 import { CommonModule } from '@angular/common';
 import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
-import { ResourceListComponent, ResourceListConfig, ResourceAction, TimeAgoPipe, VesselIdPipe } from '@snapper/shared';
+import { ResourceListComponent, ResourceListConfig, ResourceAction, TimeAgoPipe, VesselIdPipe } from '@ghanawaters/shared';
 import { VesselService } from '../services/vessel.service';
 import { VesselResponseDto, CreateVesselDto, UpdateVesselDto, Vessel } from '../models/vessel.dto';
 import { VesselResourceFormComponent } from './vessel-resource-form.component';

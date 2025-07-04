@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { SETTING_KEYS, SETTING_DEFAULTS } from '@snapper/shared-models';
+import { SETTING_KEYS, SETTING_DEFAULTS } from '@ghanawaters/shared-models';
 
 export interface Setting {
   key: string;

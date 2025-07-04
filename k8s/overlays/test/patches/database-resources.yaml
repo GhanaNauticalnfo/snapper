@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: snapper-postgres
+  name: ghanawaters-postgres
 spec:
   template:
     spec:
@@ -18,7 +18,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: snapper-postgres-pvc
+  name: ghanawaters-postgres-pvc
 spec:
   resources:
     requests:

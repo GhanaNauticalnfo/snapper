@@ -11,7 +11,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
 import { VesselTypeService, VesselType } from '../services/vessel-type.service';
-import { BoatIconComponent } from '@snapper/shared';
+import { BoatIconComponent } from '@ghanawaters/shared';
 import { VesselTypeFormDialogComponent } from './vessel-type-form-dialog.component';
 
 

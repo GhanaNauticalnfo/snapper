@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsBoolean, IsArray, IsOptional, MinLength, ArrayMinSize, ValidateNested, IsNumber, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Waypoint } from '@snapper/shared-models';
+import { Waypoint } from '@ghanawaters/shared-models';
 
 export class WaypointDto implements Waypoint {
   @ApiPropertyOptional({ description: 'Unique identifier for the waypoint' })

@@ -3,7 +3,7 @@ import { connect, MqttClient } from 'mqtt';
 import { TrackingService } from './tracking.service';
 import { VesselService } from '../vessel.service';
 import { VesselTelemetryInputDto } from './dto/vessel-telemetry-input.dto';
-import { GeoPoint } from '@snapper/shared-models';
+import { GeoPoint } from '@ghanawaters/shared-models';
 
 @Injectable()
 export class MqttTrackingService implements OnModuleInit {

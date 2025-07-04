@@ -2,7 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, Jo
 import { ApiProperty } from '@nestjs/swagger';
 import { Vessel } from '../vessel.entity';
 import { VesselTelemetryResponseDto } from './dto/vessel-telemetry-response.dto';
-import { GeoPoint } from '@snapper/shared-models';
+import { GeoPoint } from '@ghanawaters/shared-models';
 
 @Entity('vessel_telemetry')
 export class VesselTelemetry {

@@ -1,4 +1,4 @@
-import { GeoPoint } from '@snapper/shared-models';
+import { GeoPoint } from '@ghanawaters/shared-models';
 
 export interface CreateLandingSiteDto {
   name: string;

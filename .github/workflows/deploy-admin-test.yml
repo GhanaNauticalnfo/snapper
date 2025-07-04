@@ -1,5 +1,5 @@
-# File: .github/workflows/deploy-snapper-frontend-test.yml
-name: Deploy Snapper Admin to Test
+# File: .github/workflows/deploy-ghanawaters-admin-test.yml
+name: Deploy Ghanawaters Admin to Test
 
 on:
   push:
@@ -27,8 +27,8 @@ jobs:
     with:
       app_name: admin
       environment: test
-      image_name: snapper-admin
-      domain_name: snapper-test-admin.ghananautical.info
+      image_name: ghanawaters-admin
+      domain_name: ghanawaters-test-admin.ghananautical.info
       branch_name: ${{ needs.extract-branch.outputs.branch_name }}
       compare_branch: main
     secrets: inherit

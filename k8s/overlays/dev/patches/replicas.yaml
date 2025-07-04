@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: snapper-admin
+  name: ghanawaters-admin
 spec:
   replicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: snapper-api
+  name: ghanawaters-api
 spec:
   replicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: snapper-frontend
+  name: ghanawaters-frontend
 spec:
   replicas: 1

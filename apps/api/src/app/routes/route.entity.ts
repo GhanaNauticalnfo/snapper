@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Waypoint } from '@snapper/shared-models';
+import { Waypoint } from '@ghanawaters/shared-models';
 import { RouteResponseDto } from './dto/route-response.dto';
 
 @Entity('routes')

@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty, IsOptional, IsBoolean, ValidateNested, IsObject, IsNumber, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { GeoPoint } from '@snapper/shared-models';
+import { GeoPoint } from '@ghanawaters/shared-models';
 
 class GeoPointDto implements GeoPoint {
   @ApiProperty({ example: 'Point' })

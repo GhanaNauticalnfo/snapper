@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { GeoPoint } from '@snapper/shared-models';
+import { GeoPoint } from '@ghanawaters/shared-models';
 
 export class VesselTelemetryResponseDto {
   @ApiProperty({ description: 'Unique identifier for the vessel telemetry record' })

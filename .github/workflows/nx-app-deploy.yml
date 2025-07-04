@@ -15,11 +15,11 @@ on:
       image_name:
         required: true
         type: string
-        description: 'The Docker image name (e.g., snapper-frontend)'
+        description: 'The Docker image name (e.g., ghanawaters-frontend)'
       domain_name:
         required: true
         type: string
-        description: 'The domain name for the app (e.g., snapper.ghananautical.info)'
+        description: 'The domain name for the app (e.g., ghanawaters.ghananautical.info)'
       branch_name:
         required: false
         type: string
@@ -167,7 +167,7 @@ jobs:
             ENV_NAME="prod"
           fi
           
-          if ! kubectl get deployment snapper-postgres -n $ENV_NAME &> /dev/null; then
+          if ! kubectl get deployment ghanawaters-postgres -n $ENV_NAME &> /dev/null; then
             kubectl apply -f apps/${{ inputs.app_name }}/kubernetes/postgres-$ENV_NAME.yaml
             echo "PostgreSQL deployment created for $ENV_NAME environment"
           else
@@ -329,28 +329,28 @@ jobs:
             sed "s/{BRANCH}/$BRANCH/g" | \
             kubectl apply -f -
           
-          echo "Migration job created: snapper-api-migrations-$TIMESTAMP"
+          echo "Migration job created: ghanawaters-api-migrations-$TIMESTAMP"
           echo "Waiting for job to complete..."
           
           # Wait for job to complete
-          kubectl wait --for=condition=complete job/snapper-api-migrations-$TIMESTAMP --namespace $ENV_NAME --timeout=300s
+          kubectl wait --for=condition=complete job/ghanawaters-api-migrations-$TIMESTAMP --namespace $ENV_NAME --timeout=300s
           
           if [ $? -eq 0 ]; then
             echo "Migration completed successfully"
             
             # Show logs
-            POD_NAME=$(kubectl get pods -n $ENV_NAME -l job-name=snapper-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
+            POD_NAME=$(kubectl get pods -n $ENV_NAME -l job-name=ghanawaters-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
             echo "Migration logs:"
             kubectl logs $POD_NAME -n $ENV_NAME
             
             # Cleanup
             echo "Cleaning up job..."
-            kubectl delete job snapper-api-migrations-$TIMESTAMP -n $ENV_NAME
+            kubectl delete job ghanawaters-api-migrations-$TIMESTAMP -n $ENV_NAME
           else
             echo "Migration failed or timed out"
             
             # Show logs for debugging
-            POD_NAME=$(kubectl get pods -n $ENV_NAME -l job-name=snapper-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
+            POD_NAME=$(kubectl get pods -n $ENV_NAME -l job-name=ghanawaters-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
             echo "Migration logs:"
             kubectl logs $POD_NAME -n $ENV_NAME
             

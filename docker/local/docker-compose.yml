@@ -1,20 +1,20 @@
 services:
-  snapper-postgres:
+  ghanawaters-postgres:
     image: postgis/postgis:17-3.5-alpine
-    container_name: snapper-postgres
+    container_name: ghanawaters-postgres
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: ${DATABASE_USER:-snapper_user}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-snapper_password}
-      POSTGRES_DB: ${DATABASE_NAME:-snapper_db}
+      POSTGRES_USER: ${DATABASE_USER:-ghanawaters_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-ghanawaters_password}
+      POSTGRES_DB: ${DATABASE_NAME:-ghanawaters_db}
     volumes:
-      - snapper-postgres-data:/var/lib/postgresql/data
+      - ghanawaters-postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
     networks:
-      - snapper-network
+      - ghanawaters-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-snapper_user} -d ${DATABASE_NAME:-snapper_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-ghanawaters_user} -d ${DATABASE_NAME:-ghanawaters_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,10 +23,10 @@ services:
     image: ghcr.io/maplibre/martin:latest
     container_name: martin_tileserver
     depends_on:
-      snapper-postgres:
+      ghanawaters-postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${DATABASE_USER:-snapper_user}:${DATABASE_PASSWORD:-snapper_password}@snapper-postgres:5432/${DATABASE_NAME:-snapper_db}
+      DATABASE_URL: postgresql://${DATABASE_USER:-ghanawaters_user}:${DATABASE_PASSWORD:-ghanawaters_password}@ghanawaters-postgres:5432/${DATABASE_NAME:-ghanawaters_db}
     volumes:
       - ../../support/martin/config.yaml:/config.yaml  # Mount the config file
     command: --config /config.yaml --webui enable-for-all  # Use the config file
@@ -34,12 +34,12 @@ services:
       - "4000:3000"
     restart: unless-stopped
     networks:
-      - snapper-network
+      - ghanawaters-network
       
  
   artemis:
     image: apache/activemq-artemis:latest
-    container_name: snapper-artemis
+    container_name: ghanawaters-artemis
     environment:
       ARTEMIS_USERNAME: ${ARTEMIS_USER:-artemis}
       ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD:-artemis_password}
@@ -55,7 +55,7 @@ services:
  #     - ./artemis-keycloak-config:/var/lib/artemis/keycloak-config
     restart: unless-stopped
     networks:
-      - snapper-network
+      - ghanawaters-network
 #    depends_on:
 #      - keycloak
     healthcheck:
@@ -67,12 +67,12 @@ services:
   keycloak:
     profiles: ["keycloak"]  # KEYCLOAK IS DISABLED FOR NOW
     image: quay.io/keycloak/keycloak:latest
-    container_name: snapper-keycloak
+    container_name: ghanawaters-keycloak
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://snapper-postgres:5432/${DATABASE_NAME:-snapper_db}
-      KC_DB_USERNAME: ${DATABASE_USER:-snapper_user}
-      KC_DB_PASSWORD: ${DATABASE_PASSWORD:-snapper_password}
+      KC_DB_URL: jdbc:postgresql://ghanawaters-postgres:5432/${DATABASE_NAME:-ghanawaters_db}
+      KC_DB_USERNAME: ${DATABASE_USER:-ghanawaters_user}
+      KC_DB_PASSWORD: ${DATABASE_PASSWORD:-ghanawaters_password}
       KC_DB_SCHEMA: keycloak
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin_password}
@@ -83,9 +83,9 @@ services:
       - "8080:8080"
     restart: unless-stopped
     networks:
-      - snapper-network
+      - ghanawaters-network
     depends_on:
-      snapper-postgres:
+      ghanawaters-postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health/ready"]
@@ -94,11 +94,11 @@ services:
       retries: 3
 
 networks:
-  snapper-network:
+  ghanawaters-network:
     driver: bridge
 
 volumes:
-  snapper-postgres-data:
+  ghanawaters-postgres-data:
     driver: local
   artemis-data:
     driver: local

@@ -4,7 +4,7 @@ import { DatePipe } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 import { DestroyRef } from '@angular/core';
 // Import from shared models library
-import { NiordMessage, NiordResponse } from '@snapper/shared-models';
+import { NiordMessage, NiordResponse } from '@ghanawaters/shared-models';
 
 @Component({
   selector: 'lib-niord-messages',

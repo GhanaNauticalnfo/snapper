@@ -9,7 +9,7 @@ import { routes } from './app.routes';
 import { MessageService, ConfirmationService } from 'primeng/api'; // Import MessageService and ConfirmationService
 import { DialogService } from 'primeng/dynamicdialog';
 import Noir from '../themes/app-theme';
-import { DebugLogService } from '@snapper/map';
+import { DebugLogService } from '@ghanawaters/map';
 
 export const appConfig: ApplicationConfig = {
   providers: [

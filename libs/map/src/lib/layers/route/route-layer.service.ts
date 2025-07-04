@@ -3,7 +3,7 @@ import { Map as MaplibreMap, LngLatBounds, Marker } from 'maplibre-gl';
 import { BaseLayerService } from '../base-layer.service';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { SETTING_KEYS, SETTING_DEFAULTS } from '@snapper/shared-models';
+import { SETTING_KEYS, SETTING_DEFAULTS } from '@ghanawaters/shared-models';
 
 export interface RouteWaypoint {
   id: string;

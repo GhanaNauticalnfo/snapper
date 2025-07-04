@@ -4,7 +4,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { VesselTelemetry } from './tracking/vessel-telemetry.entity';
 import { VesselType } from './type/vessel-type.entity';
 import { VesselResponseDto } from './dto/vessel-response.dto';
-import { GeoPoint } from '@snapper/shared-models';
+import { GeoPoint } from '@ghanawaters/shared-models';
 
 @Entity()
 export class Vessel {

@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: snapper-test
+  name: ghanawaters-migrations
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,20 +10,11 @@ spec:
   source:
     repoURL: https://github.com/YOUR_ORG/YOUR_REPO  # Replace with your repo
     targetRevision: HEAD
-    path: k8s/overlays/test
+    path: k8s/base/jobs
   destination:
     server: https://kubernetes.default.svc
-    namespace: test
+    namespace: default  # Will be overridden by namespace-specific runs
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-      allowEmpty: false
+    # Manual sync only - migrations should be run deliberately
     syncOptions:
-    - CreateNamespace=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 3m
+    - CreateNamespace=false

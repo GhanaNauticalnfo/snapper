@@ -9,7 +9,7 @@ import { VesselType } from './type/vessel-type.entity';
 import { CreateVesselDto } from './dto/create-vessel.dto';
 import { UpdateVesselDto } from './dto/update-vessel.dto';
 import { VesselResponseDto } from './dto/vessel-response.dto';
-import { GeoPoint } from '@snapper/shared-models';
+import { GeoPoint } from '@ghanawaters/shared-models';
 import { ResourceSettingsService } from '../resource-settings/resource-settings.service';
 
 @Injectable()

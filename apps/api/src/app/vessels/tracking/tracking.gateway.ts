@@ -12,7 +12,7 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { VesselTelemetry } from './vessel-telemetry.entity';
 import { Vessel } from '../vessel.entity';
-import { GeoPoint, isGeoPoint } from '@snapper/shared-models';
+import { GeoPoint, isGeoPoint } from '@ghanawaters/shared-models';
 
 interface PositionUpdate {
   vesselId: number;

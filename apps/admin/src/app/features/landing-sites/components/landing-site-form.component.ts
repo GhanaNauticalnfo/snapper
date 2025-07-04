@@ -9,8 +9,8 @@ import { DividerModule } from 'primeng/divider';
 import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
 import { LandingSite } from '../models/landing-site.model';
-import { MapComponent, MapConfig, OSM_STYLE } from '@snapper/map';
-import { GeoPoint } from '@snapper/shared-models';
+import { MapComponent, MapConfig, OSM_STYLE } from '@ghanawaters/map';
+import { GeoPoint } from '@ghanawaters/shared-models';
 import { Map as MaplibreMap, Marker, LngLatLike } from 'maplibre-gl';
 
 @Component({

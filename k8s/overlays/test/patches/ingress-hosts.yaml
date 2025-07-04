@@ -2,37 +2,37 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: snapper-admin-ingress
+  name: ghanawaters-admin-ingress
 spec:
   tls:
   - hosts:
-    - snapper-test-admin.ghananautical.info
-    secretName: test-snapper-admin-tls
+    - ghanawaters-test-admin.ghananautical.info
+    secretName: test-ghanawaters-admin-tls
   rules:
-  - host: snapper-test-admin.ghananautical.info
+  - host: ghanawaters-test-admin.ghananautical.info
 ---
 # API Ingress
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: snapper-api-ingress
+  name: ghanawaters-api-ingress
 spec:
   tls:
   - hosts:
-    - snapper-test-api.ghananautical.info
-    secretName: test-snapper-api-tls
+    - ghanawaters-test-api.ghananautical.info
+    secretName: test-ghanawaters-api-tls
   rules:
-  - host: snapper-test-api.ghananautical.info
+  - host: ghanawaters-test-api.ghananautical.info
 ---
 # Frontend Ingress
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: snapper-frontend-ingress
+  name: ghanawaters-frontend-ingress
 spec:
   tls:
   - hosts:
-    - snapper-test.ghananautical.info
-    secretName: test-snapper-tls
+    - ghanawaters-test.ghananautical.info
+    secretName: test-ghanawaters-tls
   rules:
-  - host: snapper-test.ghananautical.info
+  - host: ghanawaters-test.ghananautical.info

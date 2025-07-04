@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ResourceListComponent, ResourceListConfig, ResourceAction } from '@snapper/shared';
+import { ResourceListComponent, ResourceListConfig, ResourceAction } from '@ghanawaters/shared';
 import { LandingSiteService } from '../services/landing-site.service';
 import { LandingSiteResponseDto, CreateLandingSiteDto, UpdateLandingSiteDto } from '../models/landing-site.dto';
 import { LandingSiteFormComponent } from './landing-site-form.component';

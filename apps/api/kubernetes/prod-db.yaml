@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: snapper-postgres
+  name: ghanawaters-postgres
   namespace: prod
   labels:
-    app: snapper-postgres
+    app: ghanawaters-postgres
     env: prod
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: snapper-postgres
+      app: ghanawaters-postgres
       env: prod
   template:
     metadata:
       labels:
-        app: snapper-postgres
+        app: ghanawaters-postgres
         env: prod
     spec:
       containers:
@@ -28,17 +28,17 @@ spec:
         - name: POSTGRES_USER
           valueFrom:
             secretKeyRef:
-              name: snapper-postgres-secret
+              name: ghanawaters-postgres-secret
               key: POSTGRES_USER
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: snapper-postgres-secret
+              name: ghanawaters-postgres-secret
               key: POSTGRES_PASSWORD
         - name: POSTGRES_DB
           valueFrom:
             secretKeyRef:
-              name: snapper-postgres-secret
+              name: ghanawaters-postgres-secret
               key: POSTGRES_DB
         resources:
           requests:
@@ -75,16 +75,16 @@ spec:
       volumes:
       - name: postgres-data
         persistentVolumeClaim:
-          claimName: snapper-postgres-pvc
+          claimName: ghanawaters-postgres-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: snapper-postgres-service
+  name: ghanawaters-postgres-service
   namespace: prod
 spec:
   selector:
-    app: snapper-postgres
+    app: ghanawaters-postgres
     env: prod
   ports:
   - port: 5432
@@ -94,7 +94,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: snapper-postgres-pvc
+  name: ghanawaters-postgres-pvc
   namespace: prod
 spec:
   accessModes:

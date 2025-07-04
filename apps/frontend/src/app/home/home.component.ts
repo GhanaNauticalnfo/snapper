@@ -1,5 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
-import { MapComponent as SharedMapComponent, MapConfig, OSM_STYLE } from '@snapper/map';
+import { MapComponent as SharedMapComponent, MapConfig, OSM_STYLE } from '@ghanawaters/map';
 import { VesselSearchComponent, VesselWithLocation } from '../vessel-search/vessel-search.component';
 
 @Component({

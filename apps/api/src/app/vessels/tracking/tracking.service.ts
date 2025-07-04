@@ -7,7 +7,7 @@ import { VesselTelemetryResponseDto } from './dto/vessel-telemetry-response.dto'
 import { TrackingGateway } from './tracking.gateway';
 import { VesselService } from '../vessel.service';
 import { Vessel } from '../vessel.entity';
-import { GeoPoint } from '@snapper/shared-models';
+import { GeoPoint } from '@ghanawaters/shared-models';
 
 @Injectable()
 export class TrackingService {
