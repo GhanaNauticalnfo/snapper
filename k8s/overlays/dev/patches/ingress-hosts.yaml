@@ -1,0 +1,38 @@
+# Admin Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: snapper-admin-ingress
+spec:
+  tls:
+  - hosts:
+    - snapper-dev-admin.ghananautical.info
+    secretName: dev-snapper-admin-tls
+  rules:
+  - host: snapper-dev-admin.ghananautical.info
+---
+# API Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: snapper-api-ingress
+spec:
+  tls:
+  - hosts:
+    - snapper-dev-api.ghananautical.info
+    secretName: dev-snapper-api-tls
+  rules:
+  - host: snapper-dev-api.ghananautical.info
+---
+# Frontend Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: snapper-frontend-ingress
+spec:
+  tls:
+  - hosts:
+    - snapper-dev.ghananautical.info
+    secretName: dev-snapper-tls
+  rules:
+  - host: snapper-dev.ghananautical.info
