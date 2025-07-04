@@ -4,22 +4,25 @@ kind: Kustomization
 namespace: ghanawaters-dev
 
 resources:
-  - ../../base/admin
-  - ../../base/api
-  - ../../base/frontend
-  - ../../base/database
-  - ../../base/jobs
+- ../../base/admin
+- ../../base/api
+- ../../base/frontend
+- ../../base/database
+- ../../base/jobs
 
 images:
-  - name: ghananauticalinfo/ghanawaters-admin
-    newTag: IMAGE_TAG
-  - name: ghananauticalinfo/ghanawaters-api
-    newTag: IMAGE_TAG
-  - name: ghananauticalinfo/ghanawaters-frontend
-    newTag: IMAGE_TAG
+- name: ghananauticalinfo/ghanawaters-admin
+  newName: ghananauticalinfo/ghanawaters-admin
+  newTag: test-develop-8ab7b9b94c5f7e2d1c60c7a00be73771a1880317
+- name: ghananauticalinfo/ghanawaters-api
+  newName: ghananauticalinfo/ghanawaters-api
+  newTag: test-develop-8ab7b9b94c5f7e2d1c60c7a00be73771a1880317
+- name: ghananauticalinfo/ghanawaters-frontend
+  newName: ghananauticalinfo/ghanawaters-frontend
+  newTag: test-develop-8ab7b9b94c5f7e2d1c60c7a00be73771a1880317
 
 patches:
-  - path: patches/ingress-hosts.yaml
-  - path: patches/replicas.yaml
-  - path: patches/database-resources.yaml
-  - path: patches/node-env.yaml
+- path: patches/ingress-hosts.yaml
+- path: patches/replicas.yaml
+- path: patches/database-resources.yaml
+- path: patches/node-env.yaml
