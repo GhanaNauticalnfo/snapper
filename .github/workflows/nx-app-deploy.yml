@@ -368,39 +368,45 @@ jobs:
           # Update the image tags in kustomization.yaml
           cd k8s/overlays/${ENV_NAME}
           
-          # Update each image - use the base image name without :IMAGE_TAG
-          kustomize edit set image ghananauticalinfo/ghanawaters-admin=${IMAGE_TAG}
-          kustomize edit set image ghananauticalinfo/ghanawaters-api=${IMAGE_TAG}
-          kustomize edit set image ghananauticalinfo/ghanawaters-frontend=${IMAGE_TAG}
+          # Update each image - use full image with new tag
+          kustomize edit set image ghananauticalinfo/ghanawaters-admin=ghananauticalinfo/ghanawaters-admin:${IMAGE_TAG}
+          kustomize edit set image ghananauticalinfo/ghanawaters-api=ghananauticalinfo/ghanawaters-api:${IMAGE_TAG}
+          kustomize edit set image ghananauticalinfo/ghanawaters-frontend=ghananauticalinfo/ghanawaters-frontend:${IMAGE_TAG}
           
           # Show the updated kustomization.yaml for verification
           echo "Updated kustomization.yaml:"
           cat kustomization.yaml
           
-          # Apply the kustomization
-          echo "Applying kustomization..."
-          echo "Current directory: $(pwd)"
-          echo "Files in directory:"
-          ls -la
-          echo "Testing kubectl connection:"
-          kubectl cluster-info
-          echo "Applying resources..."
-          # First try to apply, if it fails due to immutable fields, replace the resources
-          if ! kubectl apply -k . --v=5; then
-            echo "Apply failed, checking for immutable field errors..."
-            # Delete the migration job if it exists (jobs are immutable)
-            kubectl delete job ghanawaters-api-migrations -n $NAMESPACE --ignore-not-found
-            # For deployments with immutable field issues, we'll use server-side apply
-            echo "Retrying with server-side apply..."
-            kubectl apply -k . --server-side --force-conflicts
+          # For dev environment, we use ArgoCD for deployment
+          if [ "${{ inputs.environment }}" == "dev" ]; then
+            echo "Dev environment uses ArgoCD for deployment. Skipping direct kubectl apply."
+            echo "ArgoCD will automatically sync the changes."
+          else
+            # For test/prod, apply the kustomization directly
+            echo "Applying kustomization..."
+            echo "Current directory: $(pwd)"
+            echo "Files in directory:"
+            ls -la
+            echo "Testing kubectl connection:"
+            kubectl cluster-info
+            echo "Applying resources..."
+            # First try to apply, if it fails due to immutable fields, replace the resources
+            if ! kubectl apply -k . --v=5; then
+              echo "Apply failed, checking for immutable field errors..."
+              # Delete the migration job if it exists (jobs are immutable)
+              kubectl delete job ghanawaters-api-migrations -n $NAMESPACE --ignore-not-found
+              # For deployments with immutable field issues, we'll use server-side apply
+              echo "Retrying with server-side apply..."
+              kubectl apply -k . --server-side --force-conflicts
+            fi
+            
+            # Wait for rollout to complete
+            echo "Waiting for rollout to complete..."
+            kubectl rollout status deployment/${{ inputs.image_name }} -n $NAMESPACE
           fi
-          
-          # Wait for rollout to complete
-          echo "Waiting for rollout to complete..."
-          kubectl rollout status deployment/${{ inputs.image_name }} -n $NAMESPACE
       
       - name: Commit updated image tags for GitOps
-        if: github.event_name == 'push' && inputs.environment == 'prod'
+        if: github.event_name == 'push' && (inputs.environment == 'prod' || inputs.environment == 'dev')
         run: |
           # Recreate the image tag variable
           if [ "${{ inputs.environment }}" == "prod" ]; then
