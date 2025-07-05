@@ -9,4 +9,4 @@ spec:
       - name: ghanawaters-api
         env:
         - name: NODE_ENV
-          value: "development"
+          value: "dev"

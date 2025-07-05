@@ -20,7 +20,7 @@ spec:
             npm run migration:run
         env:
         - name: NODE_ENV
-          value: "production"  # Will be patched in overlays
+          value: "prod"  # Will be patched in overlays
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:

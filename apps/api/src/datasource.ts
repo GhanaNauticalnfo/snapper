@@ -4,24 +4,29 @@ import * as path from 'path';
 import * as dotenv from 'dotenv'; // Import dotenv
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
-// Explicitly load the .env.local file from the project root
-// Path is relative from apps/api/src/datasource.ts up to the root
-const envPath = path.resolve(__dirname, '../../../.env.local');
-const result = dotenv.config({ path: envPath });
+// Only load .env.local file in development mode
+const isDevelopment = process.env.NODE_ENV === 'dev' || !process.env.NODE_ENV;
 
-if (result.error) {
-    console.warn(`[DataSource CLI] Warning: Could not load .env file from ${envPath}:`, result.error.message);
-    // Don't throw an error here, maybe env vars are set globally
+if (isDevelopment) {
+    // Explicitly load the .env.local file from the project root
+    // Path is relative from apps/api/src/datasource.ts up to the root
+    const envPath = path.resolve(__dirname, '../../../.env.local');
+    const result = dotenv.config({ path: envPath });
+
+    if (result.error) {
+        console.warn(`[DataSource CLI] Warning: Could not load .env file from ${envPath}:`, result.error.message);
+    } else {
+        console.log(`[DataSource CLI] Loaded environment variables from: ${envPath}`);
+    }
 } else {
-    console.log(`[DataSource CLI] Loaded environment variables from: ${envPath}`);
+    console.log(`[DataSource CLI] Running in ${process.env.NODE_ENV} mode, using environment variables`);
 }
 
 // Check necessary variables AFTER attempting to load .env
 if (!process.env.DATABASE_HOST && !process.env.DATABASE_URL) {
-     console.error("[DataSource CLI] Error: DB connection details missing after attempting to load .env.");
-     console.error("[DataSource CLI] Ensure DATABASE_URL or DATABASE_HOST/PORT/USER/PASSWORD/NAME are set in .env.development or globally.");
-     // Optionally, throw an error here if you absolutely require the .env file
-     // throw new Error("Database configuration missing.");
+     console.error("[DataSource CLI] Error: DB connection details missing.");
+     console.error("[DataSource CLI] Ensure DATABASE_URL or DATABASE_HOST/PORT/USER/PASSWORD/NAME are set.");
+     throw new Error("Database configuration missing. Please set DATABASE_URL or individual database connection parameters.");
 }
 
 
@@ -38,6 +43,17 @@ console.log(`[DataSource CLI] Mode: ${isCompiled ? 'JS (Compiled via TSC)' : 'TS
 console.log(`[DataSource CLI] __dirname: ${__dirname}`);
 console.log(`[DataSource CLI] Effective Entities Path: ${entities[0]}`);
 console.log(`[DataSource CLI] Effective Migrations Path: ${migrations[0]}`);
+
+// Log database configuration (without exposing sensitive data)
+if (process.env.DATABASE_URL) {
+    console.log(`[DataSource CLI] Using DATABASE_URL for connection`);
+} else {
+    console.log(`[DataSource CLI] Using individual database parameters:`);
+    console.log(`[DataSource CLI] - Host: ${process.env.DATABASE_HOST}`);
+    console.log(`[DataSource CLI] - Port: ${process.env.DATABASE_PORT || '5432'}`);
+    console.log(`[DataSource CLI] - Database: ${process.env.DATABASE_NAME}`);
+    console.log(`[DataSource CLI] - User: ${process.env.DATABASE_USER}`);
+}
 
 export const dataSourceOptions: PostgresConnectionOptions = {
     type: 'postgres',

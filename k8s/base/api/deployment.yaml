@@ -40,7 +40,7 @@ spec:
             exit 0
         env:
         - name: NODE_ENV
-          value: "production"  # Will be patched in overlays
+          value: "prod"  # Will be patched in overlays
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
@@ -54,7 +54,7 @@ spec:
         - containerPort: 3000
         env:
         - name: NODE_ENV
-          value: "production"  # Will be patched in overlays
+          value: "prod"  # Will be patched in overlays
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
