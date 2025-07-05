@@ -22,3 +22,4 @@ patches:
   - path: patches/ingress-hosts.yaml
   - path: patches/replicas.yaml
   - path: patches/database-resources.yaml
+  - path: patches/migration-command.yaml

@@ -19,6 +19,8 @@
     "migration:revert:dev": "npm run typeorm:ts -- migration:revert",
     "migration:run": "npm run typeorm:js -- migration:run",
     "migration:revert": "npm run typeorm:js -- migration:revert",
+    "migration:check": "npm run typeorm:js -- migration:show",
+    "migration:check:dev": "npm run typeorm:ts -- migration:show",
     "db:reset:dev": "npm run typeorm:ts -- schema:drop && npm run migration:run:dev",
     "db:reset:test": "node scripts/reset-database.js",
     "typeorm": "npm run typeorm:js --"
