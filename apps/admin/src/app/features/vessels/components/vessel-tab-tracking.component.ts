@@ -6,6 +6,7 @@ import { OSM_STYLE, MapComponent, MapConfig } from '@ghanawaters/map';
 import { TimeAgoPipe } from '@ghanawaters/shared';
 import { HttpClient } from '@angular/common/http';
 import { io, Socket } from 'socket.io-client';
+import { environment } from '../../../../environments/environment';
 
 // PrimeNG imports
 import { ButtonModule } from 'primeng/button';
@@ -668,7 +669,13 @@ export class VesselTabTrackingComponent implements OnInit, OnDestroy, OnChanges,
     this.disconnectLiveTracking();
     
     // Setup WebSocket connection for live tracking
-    this.socket = io('http://localhost:3000/tracking', {
+    // Derive WebSocket URL from API URL
+    const wsUrl = environment.apiUrl
+      .replace('/api', '')
+      .replace('https://', 'wss://')
+      .replace('http://', 'ws://');
+    
+    this.socket = io(`${wsUrl}/tracking`, {
       transports: ['websocket']
     });
 
@@ -933,7 +940,7 @@ export class VesselTabTrackingComponent implements OnInit, OnDestroy, OnChanges,
       const speed = Math.random() * 5 + 8; // Speed between 8-13 knots
       
       // Send position update with heading that matches movement direction
-      this.http.post(`/api/vessels/${this.vessel?.id}/telemetry`, {
+      this.http.post(`${environment.apiUrl}/vessels/${this.vessel?.id}/telemetry`, {
         position: {
           type: 'Point',
           coordinates: [currentLng, currentLat]

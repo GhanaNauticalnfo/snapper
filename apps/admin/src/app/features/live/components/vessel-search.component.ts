@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, map, catchError, of, Observable } from 'rxjs';
 import { SearchDropdownComponent, SearchDropdownConfig, SearchDropdownItem } from '@ghanawaters/shared';
+import { environment } from '../../../../environments/environment';
 
 export interface Vessel {
   id: number;
@@ -229,10 +230,10 @@ export class VesselSearchComponent implements OnInit {
   }
   
   private getActiveVessels(): Observable<Vessel[]> {
-    return this.http.get<Vessel[]>('/api/vessels');
+    return this.http.get<Vessel[]>(`${environment.apiUrl}/vessels`);
   }
   
   private getVesselTelemetry(vesselId: number, limit: number = 1): Observable<VesselTelemetry[]> {
-    return this.http.get<VesselTelemetry[]>(`/api/vessels/${vesselId}/telemetry?limit=${limit}`);
+    return this.http.get<VesselTelemetry[]>(`${environment.apiUrl}/vessels/${vesselId}/telemetry?limit=${limit}`);
   }
 }

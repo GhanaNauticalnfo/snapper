@@ -552,7 +552,7 @@ export class VesselTabDeviceComponent implements OnInit, OnChanges {
     if (!this.vessel) return;
     
     this.loadingDevices.set(true);
-    this.http.get<Device[]>(`/api/devices?vessel_id=${this.vessel.id}`).subscribe({
+    this.http.get<Device[]>(`${environment.apiUrl}/devices?vessel_id=${this.vessel.id}`).subscribe({
       next: (devices: Device[]) => {
         const pending = devices.find(d => d.state === 'pending');
         const active = devices.find(d => d.state === 'active');
@@ -578,7 +578,7 @@ export class VesselTabDeviceComponent implements OnInit, OnChanges {
     if (!this.vessel) return;
     
     this.loadingDevices.set(true);
-    this.http.post<Device>(`/api/devices`, { vessel_id: this.vessel.id }).subscribe({
+    this.http.post<Device>(`${environment.apiUrl}/devices`, { vessel_id: this.vessel.id }).subscribe({
       next: (device: Device) => {
         this.pendingDevice.set(device);
         this.messageService.add({
@@ -609,7 +609,7 @@ export class VesselTabDeviceComponent implements OnInit, OnChanges {
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.loadingDevices.set(true);
-        this.http.delete(`/api/devices/${device.device_id}`).subscribe({
+        this.http.delete(`${environment.apiUrl}/devices/${device.device_id}`).subscribe({
           next: () => {
             this.pendingDevice.set(null);
             this.messageService.add({
@@ -642,7 +642,7 @@ export class VesselTabDeviceComponent implements OnInit, OnChanges {
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.loadingDevices.set(true);
-        this.http.delete(`/api/devices/${device.device_id}`).subscribe({
+        this.http.delete(`${environment.apiUrl}/devices/${device.device_id}`).subscribe({
           next: () => {
             this.activeDevice.set(null);
             this.messageService.add({

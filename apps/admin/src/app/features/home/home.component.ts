@@ -2,6 +2,7 @@
 import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 interface VesselTypeCount {
   id: number;
@@ -221,7 +222,7 @@ export class HomeComponent implements OnInit {
 
   private loadStatistics() {
     // Fetch all vessels and count by type
-    this.http.get<Vessel[]>('/api/vessels').subscribe({
+    this.http.get<Vessel[]>(`${environment.apiUrl}/vessels`).subscribe({
       next: (vessels) => {
         // Set total vessel count
         this.totalVessels.set(vessels.length);
@@ -255,13 +256,13 @@ export class HomeComponent implements OnInit {
     });
 
     // Fetch routes count
-    this.http.get<any[]>('/api/routes').subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/routes`).subscribe({
       next: (routes) => this.totalRoutes.set(routes.length),
       error: (err) => console.error('Failed to load routes:', err)
     });
 
     // Fetch landing sites count
-    this.http.get<any[]>('/api/landing-sites').subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/landing-sites`).subscribe({
       next: (sites) => this.totalLandingSites.set(sites.length),
       error: (err) => console.error('Failed to load landing sites:', err)
     });
