@@ -4,10 +4,10 @@ import * as path from 'path';
 import * as dotenv from 'dotenv'; // Import dotenv
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
-// Only load .env.local file in development mode
-const isDevelopment = process.env.NODE_ENV === 'dev' || !process.env.NODE_ENV;
+// Only load .env.local file in local development mode
+const isLocalDev = process.env.NODE_ENV === 'local' || !process.env.NODE_ENV;
 
-if (isDevelopment) {
+if (isLocalDev) {
     // Explicitly load the .env.local file from the project root
     // Path is relative from apps/api/src/datasource.ts up to the root
     const envPath = path.resolve(__dirname, '../../../.env.local');
