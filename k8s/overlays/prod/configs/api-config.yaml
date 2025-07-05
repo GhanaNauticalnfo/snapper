@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ghanawaters-api-config
+  namespace: ghanawaters-prod
+data:
+  ALLOWED_ORIGINS: "https://ghanawaters-admin.ghananautical.info,https://ghanawaters.ghananautical.info"

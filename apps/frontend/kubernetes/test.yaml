@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: snapper-frontend
-  namespace: test
+  name: ghanawaters-frontend
+  namespace: ghanawaters-test
   labels:
-    app: snapper-frontend
+    app: ghanawaters-frontend
     env: test
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: snapper-frontend
+      app: ghanawaters-frontend
       env: test
   template:
     metadata:
       labels:
-        app: snapper-frontend
+        app: ghanawaters-frontend
         env: test
     spec:
       containers:
-      - name: snapper-frontend
-        image: ghananauticalinfo/snapper-frontend:test-develop
+      - name: ghanawaters-frontend
+        image: ghananauticalinfo/ghanawaters-frontend:test-develop
         imagePullPolicy: Always
         ports:
         - containerPort: 80
@@ -28,11 +28,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: snapper-frontend-service
-  namespace: test
+  name: ghanawaters-frontend-service
+  namespace: ghanawaters-test
 spec:
   selector:
-    app: snapper-frontend
+    app: ghanawaters-frontend
     env: test
   ports:
   - port: 80
@@ -42,24 +42,24 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: snapper-frontend-ingress
-  namespace: test
+  name: ghanawaters-frontend-ingress
+  namespace: ghanawaters-test
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - test-snapper.ghananautical.info
-    secretName: test-snapper-tls
+    - ghanawaters-test.ghananautical.info
+    secretName: test-ghanawaters-tls
   rules:
-  - host: test-snapper.ghananautical.info
+  - host: ghanawaters-test.ghananautical.info
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: snapper-frontend-service
+            name: ghanawaters-frontend-service
             port:
               number: 80

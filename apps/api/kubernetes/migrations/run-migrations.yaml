@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ghanawaters-api-migrations-{TIMESTAMP}
+  namespace: ghanawaters-{ENVIRONMENT}  # Replace with: ghanawaters-dev, ghanawaters-test or ghanawaters-prod
+spec:
+  template:
+    spec:
+      containers:
+      - name: migrations
+        image: ghananauticalinfo/ghanawaters-api:{ENVIRONMENT}-{BRANCH}  # Replace with actual image tag
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            cd /app
+            echo "Running migrations for ${NODE_ENV} environment..."
+            npm run migration:run
+        env:
+        - name: NODE_ENV
+          value: "{ENVIRONMENT}"  # Replace with actual environment 
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ghanawaters-postgres-secret
+              key: DATABASE_URL
+      restartPolicy: Never
+  backoffLimit: 3

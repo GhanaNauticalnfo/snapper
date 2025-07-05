@@ -1,5 +1,4 @@
-import { getJestProjectsAsync } from '@nx/jest';
-
-export default async () => ({
-  projects: await getJestProjectsAsync(),
-});
+module.exports = {
+  // Point to the preset file which will contain the core config
+  preset: './jest.preset.js',
+};

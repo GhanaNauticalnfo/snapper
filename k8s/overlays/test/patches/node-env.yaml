@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghanawaters-api
+spec:
+  template:
+    spec:
+      containers:
+      - name: ghanawaters-api
+        env:
+        - name: NODE_ENV
+          value: "test"

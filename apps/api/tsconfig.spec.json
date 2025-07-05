@@ -1,0 +1,16 @@
+// apps/api/tsconfig.spec.json (NEW FILE)
+{
+    "extends": "./tsconfig.json", // Extend the app's base tsconfig
+    "compilerOptions": {
+      "outDir": "../../dist/out-tsc/apps/api", // Specific outDir
+      "module": "commonjs", // Ensure tests compile to CommonJS
+      "types": ["jest", "node"] // Include test types
+    },
+    // Include all test files within the api app source
+    "include": [
+      "jest.config.ts",
+      "src/**/*.spec.ts",
+      "src/**/*.test.ts",
+      "src/**/*.d.ts"
+    ]
+  }

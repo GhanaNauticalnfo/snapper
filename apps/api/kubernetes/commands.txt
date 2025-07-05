@@ -1,0 +1,13 @@
+Show tables in test database
+
+kubectl exec -it $(kubectl get pods -n ghanawaters-test -l app=snapper-postgres -o name) -n ghanawaters-test -- \
+  psql -U $(kubectl get secret snapper-postgres-secret -n ghanawaters-test -o jsonpath='{.data.POSTGRES_USER}' | base64 --decode) \
+  -d $(kubectl get secret snapper-postgres-secret -n ghanawaters-test -o jsonpath='{.data.POSTGRES_DB}' | base64 --decode) \
+  -c "\dt"  # List tables
+
+Show tables in the prod database
+# For production environment
+kubectl exec -it $(kubectl get pods -n ghanawaters-prod -l app=snapper-postgres -o name) -n ghanawaters-prod -- \
+  psql -U $(kubectl get secret snapper-postgres-secret -n ghanawaters-prod -o jsonpath='{.data.POSTGRES_USER}' | base64 --decode) \
+  -d $(kubectl get secret snapper-postgres-secret -n ghanawaters-prod -o jsonpath='{.data.POSTGRES_DB}' | base64 --decode) \
+  -c "\dt"  # List tables

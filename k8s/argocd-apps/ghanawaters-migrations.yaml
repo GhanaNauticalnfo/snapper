@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ghanawaters-migrations
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/GhanaNauticalnfo/snapper.git
+    targetRevision: HEAD
+    path: k8s/base/jobs
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default  # Will be overridden by namespace-specific runs
+  syncPolicy:
+    # Manual sync only - migrations should be run deliberately
+    syncOptions:
+    - CreateNamespace=false

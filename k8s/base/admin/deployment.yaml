@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghanawaters-admin
+  labels:
+    app: ghanawaters-admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghanawaters-admin
+  template:
+    metadata:
+      labels:
+        app: ghanawaters-admin
+    spec:
+      containers:
+      - name: ghanawaters-admin
+        image: ghananauticalinfo/ghanawaters-admin:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80

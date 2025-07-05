@@ -1,0 +1,25 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+      // Output to a temporary, separate directory
+      "outDir": "/tmp/cli_build/apps/api", // Changed!
+      "rootDir": "./src", // Source root remains the same
+      "module": "CommonJS",
+      "declaration": false,
+      "sourceMap": false,
+      "skipLibCheck": true
+    },
+    "include": [
+      "src/datasource.ts",
+      "src/migrations/**/*.ts",
+      "src/**/*.entity.ts" // Keep entities included for TypeORM analysis
+    ],
+    "exclude": [
+      "**/*.spec.ts",
+      "**/*.test.ts",
+      "src/main.ts",
+      // Exclude app folder if entities are not located there
+      "src/app/**/*",
+      "src/config/database.config.ts"
+    ]
+  }

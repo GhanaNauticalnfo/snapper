@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ghanawaters-api-config
+  namespace: ghanawaters-dev
+data:
+  ALLOWED_ORIGINS: "https://ghanawaters-dev-admin.ghananautical.info,https://ghanawaters-dev.ghananautical.info,http://localhost:4200,http://localhost:4201,http://localhost:4202,http://localhost:4203"

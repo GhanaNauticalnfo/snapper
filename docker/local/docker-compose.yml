@@ -1,0 +1,106 @@
+services:
+  ghanawaters-postgres:
+    image: postgis/postgis:17-3.5-alpine
+    container_name: ghanawaters-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-ghanawaters_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-ghanawaters_password}
+      POSTGRES_DB: ${DATABASE_NAME:-ghanawaters_db}
+    volumes:
+      - ghanawaters-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - ghanawaters-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-ghanawaters_user} -d ${DATABASE_NAME:-ghanawaters_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  martin:
+    image: ghcr.io/maplibre/martin:latest
+    container_name: martin_tileserver
+    depends_on:
+      ghanawaters-postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DATABASE_USER:-ghanawaters_user}:${DATABASE_PASSWORD:-ghanawaters_password}@ghanawaters-postgres:5432/${DATABASE_NAME:-ghanawaters_db}
+    volumes:
+      - ../../support/martin/config.yaml:/config.yaml  # Mount the config file
+    command: --config /config.yaml --webui enable-for-all  # Use the config file
+    ports:
+      - "4000:3000"
+    restart: unless-stopped
+    networks:
+      - ghanawaters-network
+      
+ 
+  artemis:
+    image: apache/activemq-artemis:latest
+    container_name: ghanawaters-artemis
+    environment:
+      ARTEMIS_USERNAME: ${ARTEMIS_USER:-artemis}
+      ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD:-artemis_password}
+      RESTORE_CONFIGURATION: true
+      ENABLE_JMX_EXPORTER: true
+    ports:
+      - "8161:8161"  # Web console
+      - "1883:1883"  # MQTT
+      - "61616:61616"  # Core protocol (for admin connections)
+    volumes:
+      - artemis-data:/var/lib/artemis/data
+      - artemis-config:/var/lib/artemis/etc
+ #     - ./artemis-keycloak-config:/var/lib/artemis/keycloak-config
+    restart: unless-stopped
+    networks:
+      - ghanawaters-network
+#    depends_on:
+#      - keycloak
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8161"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  keycloak:
+    profiles: ["keycloak"]  # KEYCLOAK IS DISABLED FOR NOW
+    image: quay.io/keycloak/keycloak:latest
+    container_name: ghanawaters-keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://ghanawaters-postgres:5432/${DATABASE_NAME:-ghanawaters_db}
+      KC_DB_USERNAME: ${DATABASE_USER:-ghanawaters_user}
+      KC_DB_PASSWORD: ${DATABASE_PASSWORD:-ghanawaters_password}
+      KC_DB_SCHEMA: keycloak
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin_password}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
+    command: 
+      - start-dev
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - ghanawaters-network
+    depends_on:
+      ghanawaters-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  ghanawaters-network:
+    driver: bridge
+
+volumes:
+  ghanawaters-postgres-data:
+    driver: local
+  artemis-data:
+    driver: local
+  artemis-config:
+    driver: local
