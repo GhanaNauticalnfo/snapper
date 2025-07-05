@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: ghanawaters-api-migrations-{TIMESTAMP}
-  namespace: {ENVIRONMENT}  # Replace with: test or prod
+  namespace: ghanawaters-{ENVIRONMENT}  # Replace with: ghanawaters-dev, ghanawaters-test or ghanawaters-prod
 spec:
   template:
     spec:
