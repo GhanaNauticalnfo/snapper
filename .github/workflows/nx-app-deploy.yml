@@ -173,9 +173,6 @@ jobs:
         run: |
           # Convert environment name to namespace format
           ENV_NAME="${{ inputs.environment }}"
-          if [ "$ENV_NAME" == "production" ]; then
-            ENV_NAME="prod"
-          fi
           NAMESPACE="ghanawaters-${ENV_NAME}"
           
           if ! kubectl get deployment ghanawaters-postgres -n $NAMESPACE &> /dev/null; then

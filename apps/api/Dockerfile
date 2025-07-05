@@ -16,7 +16,7 @@ RUN ls -lR /tmp/cli_build || echo "/tmp/cli_build not found"
 RUN if [ -f /tmp/cli_build/apps/api/datasource.js ]; then echo "/tmp cli_build/datasource.js FOUND"; else echo "/tmp cli_build/datasource.js NOT FOUND"; fi
 
 # Build main app to /app/dist/apps/api (this might clean dist/apps/api, but that's ok now)
-ARG ENVIRONMENT=production
+ARG ENVIRONMENT=prod
 RUN echo "--- Running nx build api (Webpack to dist) ---"
 RUN npx nx build api --configuration=${ENVIRONMENT}
 RUN echo "--- Contents of /app/dist/apps/api after nx build ---"

@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 
 # Build with specified environment
-ARG ENVIRONMENT=production
+ARG ENVIRONMENT=prod
 RUN npx nx build frontend --configuration=${ENVIRONMENT}
 
 # Stage 2: Serve the app with Nginx
