@@ -16,6 +16,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ghanawaters-api-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   tls:
   - hosts:
@@ -25,7 +27,7 @@ spec:
   - host: ghanawaters-api.ghananautical.info
     http:
       paths:
-      - path: /
+      - path: /api(/|$)(.*)
         pathType: Prefix
         backend:
           service:
