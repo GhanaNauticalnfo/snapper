@@ -20,9 +20,11 @@ images:
     newTag: IMAGE_TAG
 
 patches:
-  - path: patches/ingress-hosts.yaml
   - path: patches/replicas.yaml
   - path: patches/database-resources.yaml
   - path: patches/node-env.yaml
   - path: patches/migration-command.yaml
   - path: patches/api-configmap.yaml
+
+patchesStrategicMerge:
+  - patches/ingress-hosts.yaml
