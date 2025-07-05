@@ -13,8 +13,10 @@ RUN npm ci
 COPY . .
 
 # Build with specified environment
-ARG ENVIRONMENT=production
-RUN npx nx build admin --configuration=${ENVIRONMENT}
+# Map environment names to build configurations
+ARG ENVIRONMENT=prod
+RUN if [ "$ENVIRONMENT" = "production" ]; then ENVIRONMENT="prod"; fi && \
+    npx nx build admin --configuration=${ENVIRONMENT}
 
 # Stage 2: Serve the app with Nginx
 FROM nginx:alpine
