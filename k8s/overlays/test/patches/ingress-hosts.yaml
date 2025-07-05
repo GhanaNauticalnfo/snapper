@@ -3,6 +3,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ghanawaters-admin-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   tls:
   - hosts:
@@ -25,6 +27,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ghanawaters-api-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   tls:
   - hosts:
@@ -47,6 +51,8 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ghanawaters-frontend-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   tls:
   - hosts:
