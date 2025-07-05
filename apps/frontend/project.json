@@ -32,7 +32,7 @@
         "scripts": []
       },
       "configurations": {
-        "production": {
+        "prod": {
           "budgets": [
             {
               "type": "initial",
@@ -45,33 +45,67 @@
               "maximumError": "8kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/frontend/src/environments/environment.ts",
+              "with": "apps/frontend/src/environments/environment.prod.ts"
+            }
+          ]
         },
-        "development": {
+        "local": {
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true,
           "fileReplacements": [
             {
               "replace": "apps/frontend/src/environments/environment.ts",
-              "with": "apps/frontend/src/environments/environment.development.ts"
+              "with": "apps/frontend/src/environments/environment.local.ts"
+            }
+          ]
+        },
+        "dev": {
+          "optimization": true,
+          "outputHashing": "all",
+          "sourceMap": false,
+          "extractLicenses": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/frontend/src/environments/environment.ts",
+              "with": "apps/frontend/src/environments/environment.dev.ts"
+            }
+          ]
+        },
+        "test": {
+          "optimization": true,
+          "outputHashing": "all",
+          "sourceMap": false,
+          "extractLicenses": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/frontend/src/environments/environment.ts",
+              "with": "apps/frontend/src/environments/environment.test.ts"
             }
           ]
         }
       },
-      "defaultConfiguration": "production"
+      "defaultConfiguration": "prod"
     },
     "serve": {
       "executor": "@angular-devkit/build-angular:dev-server",
       "configurations": {
-        "production": {
-          "buildTarget": "frontend:build:production"
+        "prod": {
+          "buildTarget": "frontend:build:prod"
         },
-        "development": {
-          "buildTarget": "frontend:build:development"
+        "local": {
+          "buildTarget": "frontend:build:local"
         }
       },
-      "defaultConfiguration": "development"
+      "options": {
+        "port": 4200,
+        "host": "0.0.0.0"
+      },
+      "defaultConfiguration": "local"
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",

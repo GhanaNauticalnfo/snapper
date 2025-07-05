@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghanawaters-admin
+  namespace: ghanawaters-test
+  labels:
+    app: ghanawaters-admin
+    env: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghanawaters-admin
+      env: test
+  template:
+    metadata:
+      labels:
+        app: ghanawaters-admin
+        env: test
+    spec:
+      containers:
+      - name: ghanawaters-admin
+        image: ghananauticalinfo/ghanawaters-admin:test-develop
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ghanawaters-admin-service
+  namespace: ghanawaters-test
+spec:
+  selector:
+    app: ghanawaters-admin
+    env: test
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ghanawaters-admin-ingress
+  namespace: ghanawaters-test
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - ghanawaters-test-admin.ghananautical.info
+    secretName: test-ghanawaters-admin-tls
+  rules:
+  - host: ghanawaters-test-admin.ghananautical.info
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ghanawaters-admin-service
+            port:
+              number: 80

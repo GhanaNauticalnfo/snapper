@@ -15,8 +15,11 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@snapper/shared": ["libs/shared/src/index.ts"]
-    }
+      "@ghanawaters/map": ["libs/map/src/index.ts"],
+      "@ghanawaters/shared": ["libs/shared/src/index.ts"],
+      "@ghanawaters/shared-models": ["libs/shared-models/src/index.ts"]
+    },
+    "resolveJsonModule": true
   },
   "exclude": ["node_modules", "tmp"]
 }

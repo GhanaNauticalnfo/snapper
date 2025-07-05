@@ -1,0 +1,61 @@
+{
+    "data": [
+        {
+            "name": "Home",
+            "icon": "pi pi-home",
+            "routerLink": "/home"
+        },
+        {
+            "name": "Vessels",
+            "icon": "pi pi-compass",
+            "routerLink": "/vessels"
+        },
+        {
+            "name": "Routes",
+            "icon": "pi pi-directions",
+            "routerLink": "/features/routes"
+        },
+        {
+            "name": "Landing Sites",
+            "icon": "pi pi-map-marker",
+            "routerLink": "/landing-sites"
+        },
+        {
+            "name": "Features",
+            "icon": "pi pi-folder",
+            "children": [
+                {
+                    "name": "Tree Stubs",
+                    "icon": "pi pi-sitemap",
+                    "routerLink": "/features/tree-stubs"
+                },
+                {
+                    "name": "KML DataSets",
+                    "icon": "pi pi-map",
+                    "routerLink": "/features/kml"
+                },
+                {
+                    "name": "Volta Depths",
+                    "icon": "pi pi-chart-line",
+                    "routerLink": "/features/volta-depth"
+                }
+            ]
+        },
+        {
+            "name": "Live",
+            "icon": "pi pi-compass",
+            "routerLink": "/live"
+        },
+        {
+            "name": "Exports",
+            "icon": "pi pi-chart-line",
+            "routerLink": "/exports"
+        },
+
+        {
+            "name": "Settings",
+            "icon": "pi pi-cog",
+            "routerLink": "/settings"
+        }
+    ]
+}

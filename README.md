@@ -1,77 +1,222 @@
-# Snapper
+# Ghana Waters - Ghana Maritime Navigation System
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+A comprehensive maritime navigation and tracking system for Ghana's waterways, built with Angular, NestJS, and MapLibre.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+## Overview
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+Ghana Waters provides real-time vessel tracking, navigation aids, and offline-capable map data for maritime operations. The system consists of:
 
-## Finish your CI setup
+- **Admin Dashboard** - Vessel management and monitoring interface
+- **Public Frontend** - Public-facing map with navigation data
+- **API Backend** - RESTful API with real-time MQTT support
+- **Android App** - Mobile vessel tracking and navigation (separate repository)
 
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/mWgIvZ535r)
+## Key Features
 
+- 🚢 **Real-time Vessel Tracking** - Track vessels via GPS with MQTT updates
+- 🗺️ **Offline Maps** - Sync navigation data for offline use
+- 📍 **Navigation Aids** - Routes and waypoints for navigation
+- 🔒 **Secure Authentication** - Device token system for vessel tracking
+- 📊 **Spatial Data** - PostGIS-powered geographic queries
+- 🔄 **Incremental Sync** - Efficient data synchronization
 
-## Run tasks
+## Tech Stack
 
-To run tasks with Nx use:
+- **Frontend**: Angular 19, PrimeNG, MapLibre GL JS
+- **Backend**: NestJS 10, TypeORM, PostgreSQL 17 with PostGIS
+- **Infrastructure**: Docker, Nx monorepo, TypeScript
+- **Real-time**: Apache Artemis MQTT broker
+- **Maps**: Martin vector tile server
 
-```sh
-npx nx <target> <project-name>
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- Docker and Docker Compose
+- PostgreSQL client tools (optional)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/ghanawaters.git
+cd ghanawaters
+
+# Install dependencies
+npm install
+
+# Start infrastructure (PostgreSQL, Martin, Artemis)
+npm run db:up
+
+# Run database migrations
+npm run migration:run:dev
+
+# Start the API server
+npx nx serve api
+
+# In another terminal, start the admin dashboard
+npx nx serve admin
 ```
 
-For example:
+### Access Points
 
-```sh
-npx nx build myproject
+- Admin Dashboard: http://localhost:4201
+- Public Frontend: http://localhost:4200
+- API: http://localhost:3000
+- Martin Tiles: http://localhost:4000
+- Artemis Console: http://localhost:8161 (admin/admin)
+
+## Project Structure
+
+```
+ghanawaters/
+├── apps/
+│   ├── admin/         # Admin dashboard (Angular + PrimeNG)
+│   ├── api/          # Backend API (NestJS)
+│   └── frontend/     # Public map interface (Angular + MapLibre)
+├── libs/
+│   ├── map/          # Shared MapLibre components
+│   └── shared-models/ # Shared TypeScript models
+├── docker/           # Docker configurations
+└── docs/            # Documentation
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+## Development
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### Common Commands
 
-## Add new projects
+```bash
+# Development
+npx nx serve api          # Start API server
+npx nx serve admin        # Start admin dashboard
+npx nx serve frontend     # Start public frontend
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+# Testing
+npx nx test api           # Run API tests
+npx nx test admin         # Run admin tests
+npx nx affected:test      # Test affected projects
 
-To install a new plugin you can use the `nx add` command. Here's an example of adding the React plugin:
-```sh
-npx nx add @nx/react
+# Building
+npx nx build api          # Build API
+npx nx build admin        # Build admin dashboard
+
+# Database
+npm run migration:generate -- --name=YourMigrationName
+npm run migration:run:dev
+npm run migration:revert:dev
+
+# Infrastructure
+npm run db:up            # Start all services
+npm run db:down          # Stop all services
+npm run db:logs          # View service logs
 ```
 
-Use the plugin's generator to create new projects. For example, to create a new React app or library:
+### API Endpoints
 
-```sh
-# Generate an app
-npx nx g @nx/react:app demo
+Key endpoints include:
 
-# Generate a library
-npx nx g @nx/react:lib some-lib
+- `GET /api/data/sync?since={timestamp}` - Sync endpoint for offline data
+- `GET/POST/PUT/DELETE /api/routes` - Navigation routes
+- `GET/POST/PUT/DELETE /api/markers` - Map markers
+- `GET/POST/PUT/DELETE /api/hazards` - Navigation hazards
+- `POST /api/devices/activate` - Device activation
+- `POST /api/vessels/telemetry/report` - Position reporting
+
+See [API Reference](docs/api-reference.md) for complete documentation.
+
+## Offline Sync Feature
+
+The system includes a sophisticated offline-first sync mechanism:
+
+- **Incremental Updates** - Only sync changed data
+- **Conflict Resolution** - Server version wins
+- **Background Sync** - Automatic periodic updates
+- **Local Storage** - Room database on Android
+
+See [Sync Feature Documentation](docs/sync-feature.md) for implementation details.
+
+## Configuration
+
+### Environment Variables
+
+Create `.env.development` in the root directory:
+
+```env
+# Database
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=ghanawaters_user
+DATABASE_PASSWORD=ghanawaters_password
+DATABASE_NAME=ghanawaters_db
+DATABASE_SSL=false
+
+# TypeORM
+TYPEORM_LOGGING=true
+
+# Artemis MQTT
+ARTEMIS_USER=artemis
+ARTEMIS_PASSWORD=artemis
 ```
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+### Production Deployment
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+For production deployment:
 
+1. Update environment variables for production database
+2. Enable SSL for database connections
+3. Configure proper authentication (Keycloak)
+4. Set up reverse proxy (nginx)
+5. Enable CORS for your domains
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## Testing
 
-## Install Nx Console
+```bash
+# Unit tests
+npx nx test api
+npx nx test admin
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+# E2E tests
+npx nx e2e api-e2e
+npx nx e2e admin-e2e
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+# Run all tests
+npx nx run-many -t test
+```
 
-## Useful links
+## Contributing
 
-Learn more:
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- [Learn more about this workspace setup](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### Code Style
 
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- Run `npx nx lint` before committing
+- Follow Angular and NestJS conventions
+- Write tests for new features
+- Update documentation as needed
+
+## Documentation
+
+- [Sync Feature Guide](docs/sync-feature.md) - Offline sync implementation
+- [API Reference](docs/api-reference.md) - Complete API documentation
+- [Migration Guide](docs/sync-migration-guide.md) - Adding sync to features
+- [Architecture Decisions](docs/architecture.md) - System design choices
+
+## License
+
+This project is proprietary software for the Ghana Maritime Authority.
+
+## Support
+
+For issues and questions:
+- Create an issue in the repository
+- Contact the development team
+- Check existing documentation
+
+---
+
+Built with ❤️ for safer maritime navigation in Ghana

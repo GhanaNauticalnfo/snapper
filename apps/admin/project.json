@@ -23,58 +23,97 @@
           {
             "glob": "**/*",
             "input": "apps/admin/public"
+          },
+          {
+            "glob": "**/*",
+            "input": "apps/admin/src/assets",
+            "output": "/assets"
           }
         ],
         "styles": [
+          "apps/admin/src/assets/styles/global.scss",
+          "node_modules/primeicons/primeicons.css",
           "apps/admin/src/styles.css"
         ],
         "scripts": []
       },
       "configurations": {
-        "production": {
+        "prod": {
           "budgets": [
             {
               "type": "initial",
-              "maximumWarning": "500kb",
-              "maximumError": "1mb"
+              "maximumWarning": "3mb",
+              "maximumError": "4mb"
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "4kb",
-              "maximumError": "8kb"
+              "maximumWarning": "12kb",
+              "maximumError": "20kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/admin/src/environments/environment.ts",
+              "with": "apps/admin/src/environments/environment.prod.ts"
+            }
+          ]
         },
-        "development": {
+        "local": {
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true,
           "fileReplacements": [
             {
               "replace": "apps/admin/src/environments/environment.ts",
-              "with": "apps/admin/src/environments/environment.development.ts"
+              "with": "apps/admin/src/environments/environment.local.ts"
+            }
+          ]
+        },
+        "dev": {
+          "optimization": true,
+          "outputHashing": "all",
+          "sourceMap": false,
+          "extractLicenses": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/admin/src/environments/environment.ts",
+              "with": "apps/admin/src/environments/environment.dev.ts"
+            }
+          ]
+        },
+        "test": {
+          "optimization": true,
+          "outputHashing": "all",
+          "sourceMap": false,
+          "extractLicenses": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/admin/src/environments/environment.ts",
+              "with": "apps/admin/src/environments/environment.test.ts"
             }
           ]
         }
       },
-      "defaultConfiguration": "production"
+      "defaultConfiguration": "prod"
     },
     "serve": {
       "executor": "@angular-devkit/build-angular:dev-server",
       "configurations": {
-        "production": {
-          "buildTarget": "admin:build:production"
+        "prod": {
+          "buildTarget": "admin:build:prod"
         },
-        "development": {
-          "buildTarget": "admin:build:development"
+        "local": {
+          "buildTarget": "admin:build:local"
         }
       },
       "options": {
         "port": 4201,
-        "open": true
+        "host": "0.0.0.0",
+        "open": true,
+        "proxyConfig": "apps/admin/proxy.conf.json"
       },
-      "defaultConfiguration": "development"
+      "defaultConfiguration": "local"
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",

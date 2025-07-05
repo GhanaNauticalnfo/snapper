@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghanawaters-postgres
+  namespace: ghanawaters-dev
+  labels:
+    app: ghanawaters-postgres
+    env: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghanawaters-postgres
+      env: test
+  template:
+    metadata:
+      labels:
+        app: ghanawaters-postgres
+        env: test
+    spec:
+      containers:
+      - name: postgres
+        image: postgis/postgis:17-3.5-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: ghanawaters-postgres-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ghanawaters-postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: ghanawaters-postgres-secret
+              key: POSTGRES_DB
+        # Add this environment variable to fix the "directory not empty" issue
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "300m"
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - exec pg_isready -U $POSTGRES_USER -d $POSTGRES_DB
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: ghanawaters-postgres-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ghanawaters-postgres-service
+  namespace: ghanawaters-dev
+spec:
+  selector:
+    app: ghanawaters-postgres
+    env: test
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ghanawaters-postgres-pvc
+  namespace: ghanawaters-dev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

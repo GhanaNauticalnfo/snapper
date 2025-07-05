@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: ghanawaters-test
+
+resources:
+  - ../../base/admin
+  - ../../base/api
+  - ../../base/frontend
+  - ../../base/database
+  - ../../base/jobs
+  - configs/api-config.yaml
+
+images:
+  - name: ghananauticalinfo/ghanawaters-admin
+    newTag: IMAGE_TAG
+  - name: ghananauticalinfo/ghanawaters-api
+    newTag: IMAGE_TAG
+  - name: ghananauticalinfo/ghanawaters-frontend
+    newTag: IMAGE_TAG
+
+patches:
+  - path: patches/ingress-hosts.yaml
+  - path: patches/replicas.yaml
+  - path: patches/database-resources.yaml
+  - path: patches/node-env.yaml
+  - path: patches/migration-command.yaml
+  - path: patches/api-configmap.yaml

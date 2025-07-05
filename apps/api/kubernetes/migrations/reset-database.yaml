@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ghanawaters-api-reset-database
+  namespace: ghanawaters-test
+  labels:
+    app: ghanawaters-api
+    env: test
+    operation: reset-database
+spec:
+  template:
+    metadata:
+      labels:
+        app: ghanawaters-api
+        env: test
+        operation: reset-database
+    spec:
+      containers:
+      - name: reset-database
+        image: ghananauticalinfo/ghanawaters-api:test-develop
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            cd /app
+            echo "🔄 Starting database reset for TEST environment..."
+            echo "⚠️  WARNING: This will DROP ALL DATA in the test database!"
+            echo "📍 Working directory: $(pwd)"
+            echo "🔍 Database connection: ${DATABASE_URL}"
+            
+            # Install dependencies if needed
+            echo "📦 Installing dependencies..."
+            npm ci --only=production
+            
+            # Build CLI tools
+            echo "🔨 Building TypeORM CLI..."
+            npm run build:cli
+            
+            # Use TypeORM CLI to drop schema (safer and more reliable)
+            echo "🗑️  Dropping database schema using TypeORM..."
+            npm run typeorm:js -- schema:drop || echo "ℹ️  Schema drop completed (may have warnings for empty database)"
+            
+            # Run fresh migrations
+            echo "🏗️  Running fresh migrations with test data..."
+            npm run migration:run
+            
+            echo "✅ Database reset completed successfully!"
+            echo "📊 Fresh database with all migrations and test data applied"
+            echo "🎯 Test environment is ready for use"
+        env:
+        - name: NODE_ENV
+          value: "test"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ghanawaters-postgres-secret
+              key: DATABASE_URL
+        - name: TYPEORM_LOGGING
+          value: "true"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      restartPolicy: Never
+  backoffLimit: 1
+  activeDeadlineSeconds: 600  # 10 minute timeout

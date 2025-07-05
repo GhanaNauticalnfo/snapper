@@ -1,0 +1,65 @@
+# Admin Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ghanawaters-admin-ingress
+spec:
+  tls:
+  - hosts:
+    - ghanawaters-admin.ghananautical.info
+    secretName: prod-ghanawaters-admin-tls
+  rules:
+  - host: ghanawaters-admin.ghananautical.info
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ghanawaters-admin-service
+            port:
+              number: 80
+---
+# API Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ghanawaters-api-ingress
+spec:
+  tls:
+  - hosts:
+    - ghanawaters-api.ghananautical.info
+    secretName: prod-ghanawaters-api-tls
+  rules:
+  - host: ghanawaters-api.ghananautical.info
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ghanawaters-api-service
+            port:
+              number: 80
+---
+# Frontend Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ghanawaters-frontend-ingress
+spec:
+  tls:
+  - hosts:
+    - ghanawaters.ghananautical.info
+    secretName: ghanawaters-tls
+  rules:
+  - host: ghanawaters.ghananautical.info
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ghanawaters-frontend-service
+            port:
+              number: 80

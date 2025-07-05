@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghanawaters-api
+  labels:
+    app: ghanawaters-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghanawaters-api
+  template:
+    metadata:
+      labels:
+        app: ghanawaters-api
+    spec:
+      initContainers:
+      - name: wait-for-migrations
+        image: ghananauticalinfo/ghanawaters-api:latest
+        imagePullPolicy: Always
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "Checking if database migrations are complete..."
+            max_attempts=60
+            attempt=0
+            
+            while [ $attempt -lt $max_attempts ]; do
+              if npm run migration:check 2>&1 | grep -q "No migrations are pending"; then
+                echo "Database is ready - all migrations applied!"
+                exit 0
+              else
+                echo "Waiting for migrations to complete... (attempt $((attempt + 1))/$max_attempts)"
+                sleep 5
+                attempt=$((attempt + 1))
+              fi
+            done
+            
+            echo "WARNING: Timeout waiting for migrations, proceeding anyway..."
+            exit 0
+        env:
+        - name: NODE_ENV
+          value: "prod"  # Will be patched in overlays
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ghanawaters-postgres-secret
+              key: DATABASE_URL
+      containers:
+      - name: ghanawaters-api
+        image: ghananauticalinfo/ghanawaters-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "prod"  # Will be patched in overlays
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ghanawaters-postgres-secret
+              key: DATABASE_URL

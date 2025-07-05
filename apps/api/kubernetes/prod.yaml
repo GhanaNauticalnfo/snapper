@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghanawaters-api
+  namespace: ghanawaters-prod
+  labels:
+    app: ghanawaters-api
+    env: prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghanawaters-api
+      env: prod
+  template:
+    metadata:
+      labels:
+        app: ghanawaters-api
+        env: prod
+    spec:
+      containers:
+      - name: ghanawaters-api
+        image: ghananauticalinfo/ghanawaters-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "prod"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ghanawaters-postgres-secret
+              key: DATABASE_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ghanawaters-api-service
+  namespace: ghanawaters-prod
+spec:
+  selector:
+    app: ghanawaters-api
+    env: prod
+  ports:
+  - port: 80
+    targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ghanawaters-api-ingress
+  namespace: ghanawaters-prod
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - ghanawaters-api.ghananautical.info
+    secretName: prod-ghanawaters-api-tls
+  rules:
+  - host: ghanawaters-api.ghananautical.info
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ghanawaters-api-service
+            port:
+              number: 80

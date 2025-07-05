@@ -4,6 +4,8 @@ const { join } = require('path');
 module.exports = {
   output: {
     path: join(__dirname, '../../dist/apps/api'),
+    filename: 'main.js', // Explicitly define output filename (common default)
+    clean: false // Prevent webpack from cleaning the output directory
   },
   plugins: [
     new NxAppWebpackPlugin({

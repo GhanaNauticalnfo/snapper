@@ -2,10 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>admin</title>
+    <title>Snapper</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:400|Roboto:500|Roboto:600|Roboto:700'" />
+    <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    
+    <script>
+      (function () {
+          const APP_CONFIG_KEY = 'appConfigState';
+          const storedConfig = localStorage.getItem(APP_CONFIG_KEY);
+
+          if (storedConfig) {
+              const parsedConfig = JSON.parse(storedConfig);
+              if (parsedConfig.darkTheme) {
+                  document.documentElement.classList.add('p-dark');
+              } else {
+                  document.documentElement.classList.remove('p-dark');
+              }
+          }
+      })();
+  </script>
   </head>
   <body>
     <app-root></app-root>

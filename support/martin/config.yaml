@@ -1,0 +1,14 @@
+# martin-config.yaml
+pool:
+  max_size: 20
+
+sources:
+  volta_depth_tile_feature:
+    type: "postgis"
+    query: "SELECT id, fid, \"groupCode\" as group_code, description, geom FROM volta_depth_tile_feature WHERE geom && !bbox!"
+    tile_size: 4096
+    max_zoom: 18
+    min_zoom: 8
+    buffer_size: 64
+    cache_size_mb: 0
+    clip_geom: true

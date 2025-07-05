@@ -1,1 +1,674 @@
-/* You can add global styles to this file, and also import other style files */
+/* MapLibre GL CSS */
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+/* Fix for MapLibre controls positioning in route form dialogs */
+.route-form-host .maplibregl-map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.route-form-host .maplibregl-ctrl-top-right,
+.route-form-host .maplibregl-ctrl-bottom-right,
+.route-form-host .maplibregl-ctrl-top-left,
+.route-form-host .maplibregl-ctrl-bottom-left {
+  position: absolute;
+}
+
+.route-form-host .maplibregl-ctrl-attrib {
+  background-color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+/* Ensure map container has proper dimensions */
+.route-form-host .map-section {
+  position: relative;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fix for PrimeNG ColorPicker touch event passive listeners */
+.p-colorpicker .p-colorpicker-panel {
+  touch-action: manipulation;
+}
+
+/* Ensure color picker overlay has proper z-index and closes properly */
+.p-colorpicker-panel {
+  z-index: 1100 !important; /* Above other overlays */
+}
+
+/* Color picker overlay mask */
+.p-colorpicker-panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1099;
+  background-color: transparent;
+}
+
+/* Common page header styling */
+.page-header {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1rem;
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* Features component styling */
+.features-host .card {
+  margin: 1rem;
+}
+
+/* Settings component styling */
+.settings-host .p-fieldset .p-fieldset-legend {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  padding: 0.5rem 1rem;
+}
+
+.settings-host .p-colorpicker > .p-inputtext {
+  display: none;
+}
+
+.settings-host .p-colorpicker-preview {
+  width: 40px !important;
+  height: 40px !important;
+  border: 2px solid var(--surface-border);
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* Vessel Details Dialog styling */
+.vessel-details-dialog .p-dialog-content {
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.vessel-details-dialog .vessel-tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.vessel-details-dialog .p-tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.vessel-details-dialog .p-tabpanels {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.vessel-details-dialog .p-tabpanel {
+  padding: 1.5rem;
+  height: 100%;
+}
+
+/* Special handling for tracking tab */
+.vessel-details-dialog .p-tabpanel:has(app-vessel-tab-tracking) {
+  padding: 0;
+  overflow: hidden;
+}
+
+.features-host .features-tabs .p-tablist {
+  margin-bottom: 1rem;
+}
+
+.features-host .features-tabs .p-tabpanel {
+  padding: 0;
+}
+
+/* Route dialog fixes */
+.route-list-host .p-dialog {
+  z-index: 1050 !important;
+}
+
+.route-list-host .p-dialog-mask {
+  z-index: 1049 !important;
+}
+
+/* Waypoint editor dialog needs higher z-index to appear above map markers */
+.route-list-host app-waypoint-editor-dialog .p-dialog {
+  z-index: 9999 !important;
+}
+
+.route-list-host app-waypoint-editor-dialog .p-dialog-mask {
+  z-index: 9998 !important;
+}
+
+/* Ensure MapLibre markers in route form don't interfere with dialogs */
+.route-list-host .maplibregl-marker {
+  z-index: 1 !important;
+}
+
+/* Ensure the waypoint markers specifically have appropriate z-index */
+.route-list-host .waypoint-marker {
+  z-index: 1 !important;
+}
+
+/* Ensure form inputs in dialog are interactive */
+.route-list-host .p-dialog .p-inputtext,
+.route-list-host .p-dialog .p-textarea,
+.route-list-host .p-dialog .p-inputswitch,
+.route-list-host .p-dialog .p-colorpicker {
+  position: relative;
+  z-index: auto;
+}
+
+/* Global styles */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body.map-fullscreen-active {
+  overflow: hidden; /* Prevent scrolling */
+  margin: 0;
+  padding: 0;
+}
+
+/* Hide all other page elements when in fullscreen mode */
+body.map-fullscreen-active > *:not(.map-container) {
+  display: none !important;
+}
+
+/* Exception for the map container */
+body.map-fullscreen-active .map-container.fullscreen {
+  display: block !important;
+}
+
+/* Settings tabs styling */
+.settings-host .settings-tabs {
+  border: none;
+}
+
+.settings-host .settings-tabs .p-tabview-nav {
+  border-bottom: 2px solid var(--surface-300);
+  background: var(--surface-50);
+  padding: 0;
+}
+
+/* Vessel list search icon positioning fix */
+.vessel-list-host .p-iconfield {
+  position: relative;
+  display: inline-block;
+}
+
+.vessel-list-host .p-iconfield .p-inputicon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
+  color: var(--text-color-secondary);
+}
+
+.vessel-list-host .p-iconfield .p-inputtext {
+  padding-left: 2.5rem !important;
+}
+
+.settings-host .settings-tabs .p-tabview-nav li .p-tabview-nav-link {
+  border: none;
+  padding: 0.75rem 1rem;
+  color: var(--text-color-secondary);
+  background: transparent;
+  font-weight: 500;
+}
+
+.settings-host .settings-tabs .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  color: var(--primary-color);
+  background: transparent;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.settings-host .settings-tabs .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover {
+  color: var(--text-color);
+  background: var(--surface-hover);
+}
+
+.settings-host .settings-tabs .p-tabview-panels {
+  padding: 1.5rem 0;
+}
+
+/* Route list dialog styling */
+.route-list-host .p-dialog .p-dialog-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Color picker styling */
+.p-colorpicker-preview {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* Shared PrimeNG datatable styling */
+.kml-list-host .p-datatable-sm .p-datatable-tbody > tr > td,
+.tile-list-host .p-datatable-sm .p-datatable-tbody > tr > td,
+.vessel-list-host .p-datatable-sm .p-datatable-tbody > tr > td {
+  padding: 0.6rem 0.8rem;
+  vertical-align: middle;
+}
+
+.kml-list-host .p-datatable .p-datatable-thead > tr > th,
+.tile-list-host .p-datatable .p-datatable-thead > tr > th,
+.vessel-list-host .p-datatable .p-datatable-thead > tr > th {
+  text-align: left;
+  background-color: var(--surface-100) !important;
+  font-size: 0.85rem;
+  padding: 0.6rem 0.8rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.kml-list-host .p-datatable .p-sortable-column:not(.p-highlight):hover,
+.tile-list-host .p-datatable .p-sortable-column:not(.p-highlight):hover,
+.vessel-list-host .p-datatable .p-sortable-column:not(.p-highlight):hover {
+  background-color: var(--surface-200) !important;
+  color: var(--text-color);
+}
+
+.kml-list-host .p-datatable .p-sortable-column.p-highlight,
+.tile-list-host .p-datatable .p-sortable-column.p-highlight,
+.vessel-list-host .p-datatable .p-sortable-column.p-highlight {
+  background-color: var(--surface-100) !important;
+  color: var(--text-color);
+}
+
+.kml-list-host .p-tag,
+.tile-list-host .p-tag,
+.vessel-list-host .p-tag {
+  font-size: 0.8rem;
+}
+
+.kml-list-host .p-sortable-column .p-sortable-column-icon,
+.tile-list-host .p-sortable-column .p-sortable-column-icon,
+.vessel-list-host .p-sortable-column .p-sortable-column-icon {
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+/* Message component styling */
+.p-message-wrapper {
+  margin-bottom: 1rem;
+}
+
+/* Card component styling */
+.p-card .p-card-content {
+  padding-top: 1.5rem;
+}
+
+.p-card .p-card-footer {
+  padding-top: 1rem;
+}
+
+/* File upload component styling */
+.p-fileupload-content {
+  padding: 1.25rem;
+}
+
+.p-fileupload-buttonbar {
+  padding: 1.25rem;
+  padding-bottom: 0;
+}
+
+.p-fileupload.p-invalid .p-fileupload-content {
+  border-color: var(--red-500);
+}
+
+.p-fileupload-advanced {
+  width: 100%;
+}
+
+.p-button.p-fileupload-choose:not(.p-disabled) {
+  background-color: var(--primary-color);
+}
+
+/* Vessel List Component Styles */
+.vessel-list-host .copy-button {
+  min-width: 70px;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.vessel-list-host .copy-button .p-button-label {
+  font-weight: 500;
+}
+
+/* PrimeNG Panel customization for vessel list */
+.vessel-list-host .active-device-panel .p-panel-header {
+  background: var(--green-50);
+  border-color: var(--green-300);
+  color: var(--green-700);
+}
+
+.vessel-list-host .pending-device-panel .p-panel-header {
+  background: var(--orange-50);
+  border-color: var(--orange-300);
+  color: var(--orange-700);
+}
+
+.vessel-list-host .active-device-panel {
+  border-color: var(--green-300);
+}
+
+.vessel-list-host .pending-device-panel {
+  border-color: var(--orange-300);
+}
+
+.vessel-list-host .active-device-panel .p-panel-content,
+.vessel-list-host .pending-device-panel .p-panel-content {
+  padding: 1.25rem;
+}
+
+/* Dialog footer styles for vessel list */
+.vessel-list-host .p-dialog-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--surface-300);
+}
+
+/* Dropdown and overflow styles for vessel list */
+.vessel-list-host .inline-dropdown .p-dropdown {
+  height: 32px;
+  width: 100%;
+}
+
+/* Fix dropdown overflow issues */
+.vessel-list-host .p-dropdown-panel {
+  z-index: 9999 !important;
+}
+
+/* Global dropdown panel styling for body-appended dropdowns */
+.p-dropdown-panel {
+  z-index: 9999 !important;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1) !important;
+}
+
+.vessel-list-host .vessel-info-section {
+  overflow: visible !important;
+}
+
+.vessel-list-host .info-rows {
+  overflow: visible !important;
+}
+
+.vessel-list-host .info-row {
+  overflow: visible !important;
+  position: relative;
+}
+
+/* Progress spinner styles for vessel list */
+.vessel-list-host .status-spinner .p-progress-spinner-circle {
+  stroke-width: 4;
+}
+
+/* Confirm dialog size for vessel list */
+.vessel-list-host .p-confirmdialog {
+  width: 50vw !important;
+  max-width: 600px !important;
+}
+
+.vessel-list-host .p-confirmdialog .p-dialog-content {
+  white-space: pre-line;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* Vessel tabs styles */
+.vessel-list-host .vessel-tabs .p-tabview-nav {
+  border-bottom: 2px solid var(--surface-300);
+  background: var(--surface-50);
+  padding: 0;
+}
+
+.vessel-list-host .vessel-tabs .p-tabview-nav li .p-tabview-nav-link {
+  border: none;
+  padding: 0.75rem 1rem;
+  color: var(--text-color-secondary);
+  background: transparent;
+  font-weight: 500;
+}
+
+.vessel-list-host .vessel-tabs .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  color: var(--primary-color);
+  background: transparent;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.vessel-list-host .vessel-tabs .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover {
+  color: var(--text-color);
+  background: var(--surface-hover);
+}
+
+.vessel-list-host .vessel-tabs .p-tabview-panels {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+}
+
+.vessel-list-host .vessel-tabs .p-tabview-panel {
+  height: 100%;
+  overflow: auto;
+  padding: 0;
+}
+
+/* Vessel tracking tab - Fix zoom controls and coordinate display */
+.vessel-list-host .vessel-tabs .tracking-dialog-content {
+  position: relative;
+  overflow: visible !important;
+}
+
+.vessel-list-host .vessel-tabs .tracking-map-container {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Critical: Fix PrimeNG tab panel overflow restrictions */
+.vessel-list-host .vessel-tabs .p-tabview-panels {
+  overflow: visible !important;
+}
+
+/* Ensure coordinate display and zoom controls are properly positioned and clickable */
+.vessel-list-host .coordinate-display {
+  position: absolute !important;
+  bottom: 60px !important;
+  right: 10px !important;
+  z-index: 10001 !important;
+  pointer-events: auto !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+}
+
+.vessel-list-host .coordinate-display .coordinate-text {
+  pointer-events: none !important;
+}
+
+.vessel-list-host .coordinate-display .zoom-controls {
+  pointer-events: auto !important;
+  z-index: 10002 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.vessel-list-host .coordinate-display .zoom-btn {
+  pointer-events: auto !important;
+  z-index: 10003 !important;
+  width: 32px !important;
+  height: 32px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #333 !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.vessel-list-host .coordinate-display .zoom-btn:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+.vessel-list-host .coordinate-display .zoom-level {
+  width: 32px !important;
+  height: 24px !important;
+  background: transparent !important;
+  color: #333 !important;
+  font-size: 12px !important;
+  font-weight: bold !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+  pointer-events: none !important;
+}
+
+/* Ensure tracking tab panel doesn't clip coordinate display */
+.vessel-list-host .vessel-tabs .p-tabview-panel:has(.tracking-dialog-content) {
+  overflow: visible !important;
+}
+
+/* Fallback for browsers that don't support :has() */
+.vessel-list-host .vessel-tabs .p-tabview-panel {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Ensure the specific tracking tab panel allows overflow */
+.vessel-list-host .vessel-tabs .p-tabview-panel[aria-label*="Track"] {
+  overflow: visible !important;
+}
+
+/* Additional fixes for event handling conflicts */
+.vessel-list-host .map-container {
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* Fix for any nested dialog containers that might interfere */
+.vessel-list-host .tracking-dialog-content .map-container .coordinate-display {
+  position: absolute !important;
+  pointer-events: auto !important;
+}
+
+/* Landing Site Form component styling */
+.landing-site-form-host .coordinate-field .p-inputnumber {
+  width: 100%;
+}
+
+.landing-site-form-host .coordinate-field .p-inputnumber-input {
+  width: 100%;
+}
+
+/* Landing site dialog overflow fixes */
+.landing-site-form-host .p-dialog .p-dialog-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Landing site marker styling */
+.landing-site-marker {
+  background-color: #dc2626;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  border: 2px solid white;
+  cursor: pointer;
+}
+
+/* Download tabs styling */
+.download-host .download-tabs {
+  border: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.download-host .download-tabs .p-tablist {
+  border-bottom: 2px solid var(--surface-300);
+  background: var(--surface-50);
+  padding: 0;
+  margin-bottom: 0;
+}
+
+.download-host .download-tabs .p-tab {
+  border: none;
+  padding: 0.75rem 1rem;
+  color: var(--text-color-secondary);
+  background: transparent;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.download-host .download-tabs .p-tab[aria-selected="true"] {
+  color: var(--primary-color);
+  background: transparent;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.download-host .download-tabs .p-tab:not([aria-selected="true"]):hover {
+  color: var(--text-color);
+  background: var(--surface-hover);
+}
+
+.download-host .download-tabs .p-tabpanels {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+}
+
+.download-host .download-tabs .p-tabpanel {
+  height: 100%;
+  overflow: auto;
+  padding: 0;
+}
+
+/* Sync settings component styling */
+.sync-settings-host .p-card-content {
+  padding-top: 0;
+}
+
+.sync-settings-host .p-tag {
+  font-size: 0.75rem;
+}
