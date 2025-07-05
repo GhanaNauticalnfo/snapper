@@ -9,6 +9,7 @@ resources:
   - ../../base/frontend
   - ../../base/database
   - ../../base/jobs
+  - configs/api-config.yaml
 
 images:
   - name: ghananauticalinfo/ghanawaters-admin
@@ -24,3 +25,4 @@ patches:
   - path: patches/database-resources.yaml
   - path: patches/node-env.yaml
   - path: patches/migration-command.yaml
+  - path: patches/api-configmap.yaml

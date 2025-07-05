@@ -26,24 +26,24 @@ async function bootstrap() {
   }));
 
   // Enable CORS for cross-origin requests
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+    : [
+        // Default localhost origins for local development
+        'http://localhost:4200',
+        'http://localhost:4201', 
+        'http://localhost:4202',
+        'http://localhost:4203'
+      ];
+
   app.enableCors({
-    origin: [
-      // Production domains
-      'https://snapper-admin.ghananautical.info',
-      'https://snapper-frontend.ghananautical.info',
-      // Test domains
-      'https://snapper-test-admin.ghananautical.info',
-      'https://snapper-test-frontend.ghananautical.info',
-      // Development domains
-      'http://localhost:4200',
-      'http://localhost:4201',
-      'http://localhost:4202',
-      'http://localhost:4203'
-    ],
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
   });
+
+  Logger.log(`CORS enabled for origins: ${allowedOrigins.join(', ')}`);
 
   // Swagger configuration
   const config = new DocumentBuilder()
