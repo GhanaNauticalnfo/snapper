@@ -13,13 +13,13 @@ resources:
 images:
 - name: ghananauticalinfo/ghanawaters-admin
   newName: ghananauticalinfo/ghanawaters-admin
-  newTag: test-develop-ad9aec5c36e89bf35e60aa7694f35b0bc353fd7b
+  newTag: test-develop-54bf1be06a41f66ced46527015692f17637844ea
 - name: ghananauticalinfo/ghanawaters-api
   newName: ghananauticalinfo/ghanawaters-api
-  newTag: test-develop-ad9aec5c36e89bf35e60aa7694f35b0bc353fd7b
+  newTag: test-develop-54bf1be06a41f66ced46527015692f17637844ea
 - name: ghananauticalinfo/ghanawaters-frontend
   newName: ghananauticalinfo/ghanawaters-frontend
-  newTag: test-develop-ad9aec5c36e89bf35e60aa7694f35b0bc353fd7b
+  newTag: test-develop-54bf1be06a41f66ced46527015692f17637844ea
 
 patches:
 - path: patches/ingress-hosts.yaml
