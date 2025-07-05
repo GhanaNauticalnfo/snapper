@@ -287,7 +287,7 @@ jobs:
           if [ "${{ inputs.environment }}" == "prod" ]; then
             echo "tags=ghananauticalinfo/${{ inputs.image_name }}:latest,ghananauticalinfo/${{ inputs.image_name }}:prod-${{ github.sha }}" >> $GITHUB_OUTPUT
           else
-            echo "tags=ghananauticalinfo/${{ inputs.image_name }}:test-${{ inputs.branch_name }},ghananauticalinfo/${{ inputs.image_name }}:test-${{ inputs.branch_name }}-${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "tags=ghananauticalinfo/${{ inputs.image_name }}:${{ inputs.environment }}-${{ inputs.branch_name }},ghananauticalinfo/${{ inputs.image_name }}:${{ inputs.environment }}-${{ inputs.branch_name }}-${{ github.sha }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and push Docker image
@@ -356,7 +356,7 @@ jobs:
           if [ "${{ inputs.environment }}" == "prod" ]; then
             IMAGE_TAG="prod-${{ github.sha }}"
           else
-            IMAGE_TAG="test-${{ inputs.branch_name }}-${{ github.sha }}"
+            IMAGE_TAG="${{ inputs.environment }}-${{ inputs.branch_name }}-${{ github.sha }}"
           fi
           
           echo "Deploying to ${ENV_NAME} environment with image tag: ${IMAGE_TAG}"
@@ -412,7 +412,7 @@ jobs:
           if [ "${{ inputs.environment }}" == "prod" ]; then
             IMAGE_TAG="prod-${{ github.sha }}"
           else
-            IMAGE_TAG="test-${{ inputs.branch_name }}-${{ github.sha }}"
+            IMAGE_TAG="${{ inputs.environment }}-${{ inputs.branch_name }}-${{ github.sha }}"
           fi
           
           # Configure git
