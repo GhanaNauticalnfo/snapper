@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [develop, test, main]   # dev • test • prod
+    branches: [develop, test, main]        # dev • test • prod
   workflow_dispatch:
 
 permissions:
@@ -13,13 +13,12 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
 
-    # we build the same environment (dev / test / prod) for 3 apps
     strategy:
       matrix:
-        app: [api, admin, frontend]
+        app: [api, admin, frontend]        # three services, one env each
 
     env:
-      REGISTRY: ghcr.io/ghananauticalnfo
+      REGISTRY: ghcr.io/ghananauticalnfo   # ← change to your GHCR namespace
       NODE_VERSION: 20
 
     steps:
@@ -27,15 +26,13 @@ jobs:
       - name: Set CI_ENV
         id: env
         run: |
-          if [[ "${GITHUB_REF_NAME}" == "develop" ]]; then
-            echo "CI_ENV=dev"  >> "$GITHUB_OUTPUT"
-          elif [[ "${GITHUB_REF_NAME}" == "test" ]]; then
-            echo "CI_ENV=test" >> "$GITHUB_OUTPUT"
-          else
-            echo "CI_ENV=prod" >> "$GITHUB_OUTPUT"
-          fi
+          case "${GITHUB_REF_NAME}" in
+            develop) echo "CI_ENV=dev"  >>"$GITHUB_OUTPUT" ;;
+            test)    echo "CI_ENV=test" >>"$GITHUB_OUTPUT" ;;
+            *)       echo "CI_ENV=prod" >>"$GITHUB_OUTPUT" ;;
+          esac
 
-    # ───────── checkout & Node/npm cache ─────────
+    # ───────── checkout & install deps ─────────
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
 
@@ -43,9 +40,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-  
-      - name: Install deps                
-        run: npm ci                       
+
+      - name: Install deps
+        run: npm ci
 
     # ───────── build (Nx) ─────────
       - name: Build ${{ matrix.app }}
@@ -60,12 +57,12 @@ jobs:
 
       - name: Compute image tag
         id: meta
-        run: echo "TAG=${GITHUB_SHA::7}-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+        run: echo "TAG=${GITHUB_SHA::7}-${{ github.run_number }}" >>"$GITHUB_OUTPUT"
 
-      - name: Set up Buildx
+      - name: Set up Buildx (container driver)
         uses: docker/setup-buildx-action@v3
         with:
-          driver-opts: image=moby/buildkit
+          driver-opts: image=moby/buildkit:v0.12.4
           install: true
 
       - name: Build & push image
@@ -83,30 +80,39 @@ jobs:
     # ───────── patch overlay & commit ─────────
       - name: Install yq v4
         run: |
-            YQ_VERSION=v4.44.1
-            curl -sSL https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -o /usr/local/bin/yq
-            chmod +x /usr/local/bin/yq
+          YQ_VERSION="v4.44.1"
+          curl -sSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" \
+            -o /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
 
       - name: Bump tag in kustomization
-        env:
-          IMAGE_PATH: k8s/overlays/${{ steps.env.outputs.CI_ENV }}/kustomization.yaml
-          IMAGE_NAME: ${{ env.REGISTRY }}/ghanawaters-${{ matrix.app }}
-          NEW_TAG:    ${{ steps.meta.outputs.TAG }}
         run: |
+          CI_ENV="${{ steps.env.outputs.CI_ENV }}"
+          IMAGE_PATH="k8s/overlays/${CI_ENV}/kustomization.yaml"
+          IMAGE_NAME="${{ env.REGISTRY }}/ghanawaters-${{ matrix.app }}"
+          NEW_TAG="${{ steps.meta.outputs.TAG }}"
+
           yq eval -i '
-          (.images[] | select(.name == env(IMAGE_NAME))).newTag = env(NEW_TAG)
+            (.images[] | select(.name == strenv(IMAGE_NAME))).newTag = strenv(NEW_TAG)
           ' "$IMAGE_PATH"
+
+          echo "IMAGE_PATH=$IMAGE_PATH" >>"$GITHUB_ENV"
 
       - name: Commit & push change
         env:
           GIT_AUTHOR_NAME:  ci
           GIT_AUTHOR_EMAIL: ci@github
-          CI_ENV:           ${{ steps.env.outputs.CI_ENV }}
-          APP:              ${{ matrix.app }}
-          TAG:              ${{ steps.meta.outputs.TAG }}
+          APP:  ${{ matrix.app }}
+          TAG:  ${{ steps.meta.outputs.TAG }}
+          CI_ENV: ${{ steps.env.outputs.CI_ENV }}
         run: |
           git config user.name  "$GIT_AUTHOR_NAME"
           git config user.email "$GIT_AUTHOR_EMAIL"
           git add "$IMAGE_PATH"
-          git commit -m "[skip ci] $CI_ENV: bump $APP to $TAG" || echo "no changes"
-          git push
+
+          if git diff --cached --quiet; then
+            echo "No overlay change – nothing to commit."
+          else
+            git commit -m "[skip ci] ${CI_ENV}: bump ${APP} to ${TAG}"
+            git push
+          fi
