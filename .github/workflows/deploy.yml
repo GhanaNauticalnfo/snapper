@@ -49,8 +49,7 @@ jobs:
 
     # ───────── build (Nx) ─────────
       - name: Build ${{ matrix.app }}
-        run: npx nx run ${{ matrix.app }}:build \
-             --configuration=${{ steps.env.outputs.CI_ENV }}
+        run: npx nx run ${{ matrix.app }}:build --configuration=${{ steps.env.outputs.CI_ENV }}
 
     # ───────── docker build & push ─────────
       - uses: docker/login-action@v3
