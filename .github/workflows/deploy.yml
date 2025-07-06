@@ -81,8 +81,11 @@ jobs:
             type=registry,ref=${{ env.REGISTRY }}/ghanawaters-${{ matrix.app }}:cache,mode=max
 
     # ───────── patch overlay & commit ─────────
-      - name: Install yq
-        run: sudo apt-get update -y && sudo apt-get install -y yq
+      - name: Install yq v4
+        run: |
+            YQ_VERSION=v4.44.1
+            curl -sSL https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -o /usr/local/bin/yq
+            chmod +x /usr/local/bin/yq
 
       - name: Bump tag in kustomization
         env:
@@ -90,8 +93,8 @@ jobs:
           IMAGE_NAME: ${{ env.REGISTRY }}/ghanawaters-${{ matrix.app }}
           NEW_TAG:    ${{ steps.meta.outputs.TAG }}
         run: |
-          yq -y -i '
-            (.images[] | select(.name == env(IMAGE_NAME))).newTag = env(NEW_TAG)
+          yq eval -i '
+          (.images[] | select(.name == env(IMAGE_NAME))).newTag = env(NEW_TAG)
           ' "$IMAGE_PATH"
 
       - name: Commit & push change
