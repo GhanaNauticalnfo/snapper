@@ -86,12 +86,13 @@ jobs:
             develop) CI_ENV=dev ;; test) CI_ENV=test ;; *) CI_ENV=prod ;;
           esac
           FILE="k8s/overlays/${CI_ENV}/kustomization.yaml"
-          TAG="${{ steps.tag.outputs.TAG }}"
+          export TAG="${{ steps.tag.outputs.TAG }}"
 
           for APP in api admin frontend; do
-            IMAGE="${REGISTRY}/ghanawaters-${APP}"
-            yq eval -i \
-              '(.images[] | select(.name == strenv(IMAGE))).newTag = strenv(TAG)' "$FILE"
+            export IMAGE="${REGISTRY}/ghanawaters-${APP}"
+            yq eval -i '
+              (.images[] | select(.name == strenv(IMAGE))).newTag = strenv(TAG)
+            ' "$FILE"
           done
 
           echo "PATCHED_FILE=$FILE" >> "$GITHUB_ENV"
