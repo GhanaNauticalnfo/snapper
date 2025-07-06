@@ -12,15 +12,12 @@ resources:
   - configs/api-config.yaml
 
 images:
-  - name: ghcr.io/ghananauticalnfo/ghanawaters-admin
-    newName: ghcr.io/ghananauticalnfo/ghanawaters-admin
-    newTag: test-develop-f4d4d7d3cb69075b102f56c5855a92a337994d3f
   - name: ghcr.io/ghananauticalnfo/ghanawaters-api
-    newName: ghcr.io/ghananauticalnfo/ghanawaters-api
-    newTag: test-develop-f4d4d7d3cb69075b102f56c5855a92a337994d3f
+    newTag: test-placeholder            # ← CI will overwrite
+  - name: ghcr.io/ghananauticalnfo/ghanawaters-admin
+    newTag: test-placeholder
   - name: ghcr.io/ghananauticalnfo/ghanawaters-frontend
-    newName: ghcr.io/ghananauticalnfo/ghanawaters-frontend
-    newTag: test-develop-f4d4d7d3cb69075b102f56c5855a92a337994d3f
+    newTag: test-placeholder
 
 patches:
   - path: patches/ingress-hosts.yaml
