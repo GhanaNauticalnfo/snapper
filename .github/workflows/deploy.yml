@@ -19,7 +19,7 @@ jobs:
         app: [api, admin, frontend]
 
     env:
-      REGISTRY: ghcr.io/yourorg        # ← change to your GHCR namespace
+      REGISTRY: ghcr.io/GhanaNauticalnfo
       NODE_VERSION: 20
 
     steps:
