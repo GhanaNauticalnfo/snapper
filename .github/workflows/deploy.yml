@@ -19,7 +19,7 @@ jobs:
         app: [api, admin, frontend]
 
     env:
-      REGISTRY: ghcr.io/GhanaNauticalnfo
+      REGISTRY: ghcr.io/ghananauticalnfo
       NODE_VERSION: 20
 
     steps:
