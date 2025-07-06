@@ -7,6 +7,9 @@ spec:
     spec:
       containers:
       - name: migrations
+        env:
+        - name: NODE_ENV
+          value: "test"
         args:
           - |
             cd /app
