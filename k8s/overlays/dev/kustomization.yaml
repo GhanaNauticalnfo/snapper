@@ -4,27 +4,27 @@ kind: Kustomization
 namespace: ghanawaters-dev
 
 resources:
-- ../../base/admin
-- ../../base/api
-- ../../base/frontend
-- ../../base/database
-- ../../base/jobs
-- configs/api-config.yaml
+  # shared base components
+  - ../../base/admin
+  - ../../base/api
+  - ../../base/frontend
+  - ../../base/database
+  - ../../base/jobs
+  # configmap with env-specific values
+  - configs/api-config.yaml
 
 images:
-  - name: ghcr.io/ghananauticalnfo/ghanawaters-admin
-    newName: ghcr.io/ghananauticalnfo/ghanawaters-admin
-    newTag: dev-develop-5275d7bf8025882f7665f013ae4547e64c3e4aab
   - name: ghcr.io/ghananauticalnfo/ghanawaters-api
-    newName: ghcr.io/ghananauticalnfo/ghanawaters-api
-    newTag: dev-develop-5275d7bf8025882f7665f013ae4547e64c3e4aab
+    newTag: dev-develop-<initial-tag>
+  - name: ghcr.io/ghananauticalnfo/ghanawaters-admin
+    newTag: dev-develop-<initial-tag>
   - name: ghcr.io/ghananauticalnfo/ghanawaters-frontend
-    newName: ghcr.io/ghananauticalnfo/ghanawaters-frontend
-    newTag: dev-develop-5275d7bf8025882f7665f013ae4547e64c3e4aab
+    newTag: dev-develop-<initial-tag>
+
 patches:
-- path: patches/ingress-hosts.yaml
-- path: patches/replicas.yaml
-- path: patches/database-resources.yaml
-- path: patches/node-env.yaml
-- path: patches/migration-command.yaml
-- path: patches/api-configmap.yaml
+  - path: patches/ingress-hosts.yaml
+  - path: patches/replicas.yaml
+  - path: patches/database-resources.yaml
+  - path: patches/node-env.yaml
+  - path: patches/migration-command.yaml
+  - path: patches/api-configmap.yaml
