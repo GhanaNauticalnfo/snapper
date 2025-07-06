@@ -1,8 +1,8 @@
-name: Build & Deploy (matrix)
+name: Build & Deploy (single file)
 
 on:
   push:
-    branches: [develop, test, main]     # dev → develop  •  test → test  •  prod → main
+    branches: [develop, test, main]   # dev • test • prod
   workflow_dispatch:
 
 permissions:
@@ -10,45 +10,92 @@ permissions:
   packages: write
 
 jobs:
-  deploy:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    # we build the same environment (dev / test / prod) for 3 apps
     strategy:
       matrix:
-        include:
-          # ────────── dev ──────────
-          - app: api
-            env: dev
-            branch_match: develop
-          - app: admin
-            env: dev
-            branch_match: develop
-          - app: frontend
-            env: dev
-            branch_match: develop
-          # ────────── test ─────────
-          - app: api
-            env: test
-            branch_match: test
-          - app: admin
-            env: test
-            branch_match: test
-          - app: frontend
-            env: test
-            branch_match: test
-          # ────────── prod ─────────
-          - app: api
-            env: prod
-            branch_match: main
-          - app: admin
-            env: prod
-            branch_match: main
-          - app: frontend
-            env: prod
-            branch_match: main
+        app: [api, admin, frontend]
 
-    # Run only the rows that match the pushed branch
-    if: ${{ github.ref_name == matrix.branch_match }}
+    env:
+      REGISTRY: ghcr.io/yourorg        # ← change to your GHCR namespace
+      NODE_VERSION: 20
 
-    uses: ./.github/workflows/nx-app-deploy.yml
-    with:
-      app_name:    ${{ matrix.app }}
-      environment: ${{ matrix.env }}
+    steps:
+    # ───────── determine environment from branch ─────────
+      - name: Set CI_ENV
+        id: env
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == "develop" ]]; then
+            echo "CI_ENV=dev"  >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF_NAME}" == "test" ]]; then
+            echo "CI_ENV=test" >> "$GITHUB_OUTPUT"
+          else
+            echo "CI_ENV=prod" >> "$GITHUB_OUTPUT"
+          fi
+
+    # ───────── checkout & Node/npm cache ─────────
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+    # ───────── build (Nx) ─────────
+      - name: Build ${{ matrix.app }}
+        run: npx nx run ${{ matrix.app }}:build \
+             --configuration=${{ steps.env.outputs.CI_ENV }}
+
+    # ───────── docker build & push ─────────
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tag
+        id: meta
+        run: echo "TAG=${GITHUB_SHA::7}-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/ghanawaters-${{ matrix.app }}:${{ steps.meta.outputs.TAG }}
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/ghanawaters-${{ matrix.app }}:cache
+          cache-to: |
+            type=registry,ref=${{ env.REGISTRY }}/ghanawaters-${{ matrix.app }}:cache,mode=max
+
+    # ───────── patch overlay & commit ─────────
+      - name: Install yq
+        run: sudo apt-get update -y && sudo apt-get install -y yq
+
+      - name: Bump tag in kustomization
+        env:
+          IMAGE_PATH: k8s/overlays/${{ steps.env.outputs.CI_ENV }}/kustomization.yaml
+          IMAGE_NAME: ${{ env.REGISTRY }}/ghanawaters-${{ matrix.app }}
+          NEW_TAG:    ${{ steps.meta.outputs.TAG }}
+        run: |
+          yq -i '
+            (.images[] | select(.name == env(IMAGE_NAME))).newTag = env(NEW_TAG)
+          ' "$IMAGE_PATH"
+
+      - name: Commit & push change
+        env:
+          GIT_AUTHOR_NAME:  ci
+          GIT_AUTHOR_EMAIL: ci@github
+          CI_ENV:           ${{ steps.env.outputs.CI_ENV }}
+          APP:              ${{ matrix.app }}
+          TAG:              ${{ steps.meta.outputs.TAG }}
+        run: |
+          git config user.name  "$GIT_AUTHOR_NAME"
+          git config user.email "$GIT_AUTHOR_EMAIL"
+          git add "$IMAGE_PATH"
+          git commit -m "[skip ci] $CI_ENV: bump $APP to $TAG" || echo "no changes"
+          git push
