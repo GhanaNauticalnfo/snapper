@@ -374,12 +374,12 @@ jobs:
           echo "Updated kustomization.yaml:"
           cat kustomization.yaml
           
-          # For dev environment, we use ArgoCD for deployment
-          if [ "${{ inputs.environment }}" == "dev" ]; then
-            echo "Dev environment uses ArgoCD for deployment. Skipping direct kubectl apply."
+          # For dev and test environments, we use ArgoCD for deployment
+          if [ "${{ inputs.environment }}" == "dev" ] || [ "${{ inputs.environment }}" == "test" ]; then
+            echo "${{ inputs.environment }} environment uses ArgoCD for deployment. Skipping direct kubectl apply."
             echo "ArgoCD will automatically sync the changes."
           else
-            # For test/prod, apply the kustomization directly
+            # For prod, apply the kustomization directly
             echo "Applying kustomization..."
             echo "Current directory: $(pwd)"
             echo "Files in directory:"
@@ -403,7 +403,7 @@ jobs:
           fi
       
       - name: Commit updated image tags for GitOps
-        if: github.event_name == 'push' && (inputs.environment == 'prod' || inputs.environment == 'dev')
+        if: github.event_name == 'push' && (inputs.environment == 'prod' || inputs.environment == 'dev' || inputs.environment == 'test')
         run: |
           # Recreate the image tag variable
           if [ "${{ inputs.environment }}" == "prod" ]; then

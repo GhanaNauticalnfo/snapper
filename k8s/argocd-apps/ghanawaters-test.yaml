@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GhanaNauticalnfo/snapper.git
-    targetRevision: HEAD
+    targetRevision: test
     path: k8s/overlays/test
   destination:
     server: https://kubernetes.default.svc
