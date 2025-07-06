@@ -47,8 +47,8 @@ async function bootstrap() {
 
   // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('Snapper API')
-    .setDescription('Ghana Maritime Authority - Snapper API Documentation')
+    .setTitle('Ghana Waters API')
+    .setDescription('Ghana Maritime Authority - Ghana Waters API Documentation')
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('health', 'Application health and status')
