@@ -1,8 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: ghanawaters-prod
-
 resources:
   - ../../base/admin
   - ../../base/api
@@ -10,7 +8,6 @@ resources:
   - ../../base/database
   - ../../base/jobs
   - configs/api-config.yaml
-
 images:
   - name: ghananauticalinfo/ghanawaters-admin
     newTag: IMAGE_TAG
@@ -18,7 +15,6 @@ images:
     newTag: IMAGE_TAG
   - name: ghananauticalinfo/ghanawaters-frontend
     newTag: IMAGE_TAG
-
 patches:
   - path: patches/ingress-hosts.yaml
   - path: patches/replicas.yaml
