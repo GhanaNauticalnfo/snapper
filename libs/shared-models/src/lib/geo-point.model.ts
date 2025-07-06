@@ -1,11 +1,4 @@
 /**
- * Geographic coordinate types and utilities for the Snapper system.
- * 
- * This module provides a unified approach to handling geographic coordinates
- * across the entire codebase, ensuring type safety and consistency.
- */
-
-/**
  * Named tuple for coordinates in GeoJSON order: [longitude, latitude]
  * This follows the GeoJSON specification and PostGIS convention.
  */
