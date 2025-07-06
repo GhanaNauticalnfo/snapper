@@ -12,16 +12,15 @@ resources:
 - configs/api-config.yaml
 
 images:
-- name: ghananauticalinfo/ghanawaters-admin
-  newName: ghananauticalinfo/ghanawaters-admin
-  newTag: dev-develop-5275d7bf8025882f7665f013ae4547e64c3e4aab
-- name: ghananauticalinfo/ghanawaters-api
-  newName: ghananauticalinfo/ghanawaters-api
-  newTag: dev-develop-5275d7bf8025882f7665f013ae4547e64c3e4aab
-- name: ghananauticalinfo/ghanawaters-frontend
-  newName: ghananauticalinfo/ghanawaters-frontend
-  newTag: dev-develop-5275d7bf8025882f7665f013ae4547e64c3e4aab
-
+  - name: ghcr.io/ghananauticalnfo/ghanawaters-admin
+    newName: ghcr.io/ghananauticalnfo/ghanawaters-admin
+    newTag: dev-develop-5275d7bf8025882f7665f013ae4547e64c3e4aab
+  - name: ghcr.io/ghananauticalnfo/ghanawaters-api
+    newName: ghcr.io/ghananauticalnfo/ghanawaters-api
+    newTag: dev-develop-5275d7bf8025882f7665f013ae4547e64c3e4aab
+  - name: ghcr.io/ghananauticalnfo/ghanawaters-frontend
+    newName: ghcr.io/ghananauticalnfo/ghanawaters-frontend
+    newTag: dev-develop-5275d7bf8025882f7665f013ae4547e64c3e4aab
 patches:
 - path: patches/ingress-hosts.yaml
 - path: patches/replicas.yaml
