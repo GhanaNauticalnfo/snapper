@@ -1,407 +1,90 @@
-# File: .github/workflows/nx-app-deploy.yml
-name: Nx App Deployment
-
+name: Nx build → push → patch overlay
 on:
   workflow_call:
     inputs:
       app_name:
         required: true
         type: string
-        description: 'The name of the app to deploy (e.g., frontend)'
       environment:
         required: true
         type: string
-        description: 'The deployment environment (prod or test)'
-      image_name:
-        required: true
-        type: string
-        description: 'The Docker image name (e.g., ghanawaters-frontend)'
-      domain_name:
-        required: true
-        type: string
-        description: 'The domain name for the app (e.g., ghanawaters.ghananautical.info)'
-      branch_name:
-        required: false
-        type: string
-        description: 'Branch name for test deployments'
-        default: ''
-      compare_branch:
-        required: false
-        type: string
-        description: 'Branch to compare against for affected detection'
-        default: 'main'
-      setup_database:
-        required: false
-        type: boolean
-        description: 'Whether to set up a PostgreSQL database for this app'
-        default: false
-      run_migrations:
-        required: false
-        type: boolean
-        description: 'Whether to run database migrations after deployment'
-        default: false
+    secrets: inherit
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
-  check-affected:
+  build-and-patch:
     runs-on: ubuntu-latest
-    outputs:
-      is_affected: ${{ steps.check.outputs.is_affected }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Fetch all history for Nx affected commands
+    env:
+      REGISTRY: ghcr.io/yourorg          # ← change to your org / user
+      NODE_VERSION: 20
 
-      - name: Setup Node.js
+    steps:
+      # ─────────── checkout & deps ───────────
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0                 # Nx affected needs history
+
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-      
-      - name: Cache Nx
-        uses: actions/cache@v4
-        with:
-          path: |
-            .nx
-            node_modules/.cache/nx
-          key: nx-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            nx-${{ runner.os }}-
-          
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Check if app is affected
-        id: check
-        run: |
-          # Get the current branch
-          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          echo "Current branch: $CURRENT_BRANCH"
-          
-          # Set base and head for affected calculations
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            # For PRs, base is the target branch and head is the current branch
-            export NX_BASE="origin/${{ github.base_ref }}"
-            export NX_HEAD="HEAD"
-          elif [ "${{ inputs.environment }}" == "prod" ] && [ "$CURRENT_BRANCH" == "main" ]; then
-            # For production builds on main, check what changed in the last commit
-            export NX_BASE="origin/main~1"
-            export NX_HEAD="origin/main"
-          else
-            # For feature branches or develop, compare to main
-            export NX_BASE="origin/${{ inputs.compare_branch }}"
-            export NX_HEAD="HEAD"
-          fi
-          
-          echo "Nx affected base: $NX_BASE"
-          echo "Nx affected head: $NX_HEAD"
-          
-          # Make sure we have the latest from remote
-          git fetch origin
-          
-          # Try to get affected projects list
-          echo "Getting list of affected projects:"
-          AFFECTED_PROJECTS=$(npx nx show projects --affected --base=$NX_BASE --head=$NX_HEAD || echo "")
-          echo "Affected projects: $AFFECTED_PROJECTS"
-          
-          # Log various Git diffs to help with debugging
-          echo "Git diff for app directory:"
-          git diff --name-only $NX_BASE $NX_HEAD -- apps/${{ inputs.app_name }}/
-          
-          echo "Git diff for shared libraries:"
-          git diff --name-only $NX_BASE $NX_HEAD -- libs/
-          
-          echo "Git diff for root configuration files:"
-          git diff --name-only $NX_BASE $NX_HEAD -- package.json nx.json tsconfig*.json
-          
-          # Check if our app is in the affected list or if git shows changes
-          if echo "$AFFECTED_PROJECTS" | grep -q "${{ inputs.app_name }}"; then
-            # App found in affected projects
-            echo "${{ inputs.app_name }} is in the affected projects list!"
-            echo "is_affected=true" >> $GITHUB_OUTPUT
-          elif [ -n "$(git diff --name-only $NX_BASE $NX_HEAD -- apps/${{ inputs.app_name }}/ libs/ package.json nx.json tsconfig*.json)" ]; then
-            # Git shows relevant changes
-            echo "${{ inputs.app_name }} has changes according to git diff!"
-            echo "is_affected=true" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            # Manual trigger - force affected
-            echo "Manual trigger, considering ${{ inputs.app_name }} affected"
-            echo "is_affected=true" >> $GITHUB_OUTPUT
-          else
-            # Not affected
-            echo "${{ inputs.app_name }} is not affected by changes"
-            echo "is_affected=false" >> $GITHUB_OUTPUT
-          fi
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-  setup-database:
-    needs: check-affected
-    # Only run if database setup is requested and app is affected
-    if: |
-      inputs.setup_database == true && (
-        needs.check-affected.outputs.is_affected == 'true' ||
-        (inputs.environment == 'prod' && github.event_name == 'workflow_dispatch')
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-          
-      - name: Save DigitalOcean kubeconfig
-        run: |
-          echo "Available Kubernetes clusters:"
-          doctl kubernetes cluster list
-          
-          # Get the cluster ID instead of relying on exact name match
-          CLUSTER_NAME="${{ inputs.environment == 'prod' && secrets.PROD_CLUSTER_NAME || secrets.TEST_CLUSTER_NAME }}"
-          CLUSTER_ID=$(doctl kubernetes cluster list --format ID,Name --no-header | grep ${CLUSTER_NAME} | awk '{print $1}')
-          
-          if [ -z "$CLUSTER_ID" ]
-          then
-            echo "Could not find cluster with name containing ${CLUSTER_NAME}"
-            echo "Please check the cluster name secret and available clusters listed above"
-            exit 1
-          else
-            echo "Found cluster ID: $CLUSTER_ID"
-            doctl kubernetes cluster kubeconfig save $CLUSTER_ID
-          fi
-      
-      # This step runs only if the database doesn't exist yet
-      - name: Apply PostgreSQL deployment
-        run: |
-          # Convert environment name to namespace format
-          ENV_NAME="${{ inputs.environment }}"
-          NAMESPACE="ghanawaters-${ENV_NAME}"
-          
-          if ! kubectl get deployment ghanawaters-postgres -n $NAMESPACE &> /dev/null; then
-            kubectl apply -f apps/${{ inputs.app_name }}/kubernetes/postgres-$ENV_NAME.yaml
-            echo "PostgreSQL deployment created for $NAMESPACE namespace"
-          else
-            echo "PostgreSQL deployment already exists for $NAMESPACE namespace, skipping"
-          fi
-          
-  build-app:
-    needs: [check-affected]
-    # Skip if not affected by changes and not production with manual trigger
-    if: |
-      needs.check-affected.outputs.is_affected == 'true' ||
-      (inputs.environment == 'prod' && github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-      
-      - name: Cache Nx
-        uses: actions/cache@v4
-        with:
-          path: |
-            .nx
-            node_modules/.cache/nx
-          key: nx-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            nx-${{ runner.os }}-
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build application
-        run: |
-          if [ "${{ inputs.app_name }}" == "api" ]; then
-            # Build CLI files first for API
-            npm run build:cli
-            # Copy CLI build output to preserve it
-            cp -r /tmp/cli_build ./cli_build_temp || true
-          fi
-          
-          # Build the main application
-          npx nx build ${{ inputs.app_name }} --configuration=${{ inputs.environment }}
-          
-          # For API, restore CLI files
-          if [ "${{ inputs.app_name }}" == "api" ] && [ -d "./cli_build_temp" ]; then
-            cp -r ./cli_build_temp/* /tmp/cli_build/ || true
-          fi
-      
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.app_name }}-build-${{ github.sha }}
-          path: |
-            dist/apps/${{ inputs.app_name }}
-            /tmp/cli_build
-          retention-days: 1
-  
-  build-and-push:
-    needs: [check-affected, build-app]
-    # Skip if not affected by changes and not production with manual trigger
-    if: |
-      needs.check-affected.outputs.is_affected == 'true' ||
-      (inputs.environment == 'prod' && github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.app_name }}-build-${{ github.sha }}
-          path: ./build-artifacts
-      
-      - name: Prepare build context
-        run: |
-          # Move artifacts to correct locations
-          mkdir -p dist/apps/${{ inputs.app_name }}
-          cp -r ./build-artifacts/dist/apps/${{ inputs.app_name }}/* dist/apps/${{ inputs.app_name }}/ || true
-          
-          # For API, handle CLI build
-          if [ "${{ inputs.app_name }}" == "api" ] && [ -d "./build-artifacts/tmp/cli_build" ]; then
-            mkdir -p /tmp
-            cp -r ./build-artifacts/tmp/cli_build /tmp/
-          fi
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-        
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
-      - name: Set Docker tags
-        id: docker_tags
-        run: |
-          if [ "${{ inputs.environment }}" == "prod" ]; then
-            echo "tags=ghananauticalinfo/${{ inputs.image_name }}:latest,ghananauticalinfo/${{ inputs.image_name }}:prod-${{ github.sha }}" >> $GITHUB_OUTPUT
-          else
-            echo "tags=ghananauticalinfo/${{ inputs.image_name }}:${{ inputs.environment }}-${{ inputs.branch_name }},ghananauticalinfo/${{ inputs.image_name }}:${{ inputs.environment }}-${{ inputs.branch_name }}-${{ github.sha }}" >> $GITHUB_OUTPUT
-          fi
+      # ─────────── build app (Nx) ───────────
+      - name: Build ${{ inputs.app_name }}
+        run: npx nx run ${{ inputs.app_name }}:build --configuration=${{ inputs.environment }}
 
-      - name: Build and push Docker image
+      # ─────────── docker build & push ──────
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tag
+        id: meta
+        run: echo "tag=$(echo ${GITHUB_SHA::7})-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./apps/${{ inputs.app_name }}/Dockerfile
+          file: apps/${{ inputs.app_name }}/Dockerfile
           push: true
-          tags: ${{ steps.docker_tags.outputs.tags }}
-          build-args: |
-            ENVIRONMENT=${{ inputs.environment }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-          
-  deploy:
-    needs: [check-affected, build-and-push]
-    # Only run if build was executed
-    if: |
-      needs.check-affected.outputs.is_affected == 'true' ||
-      (inputs.environment == 'prod' && github.event_name == 'workflow_dispatch')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-          
-      - name: Save DigitalOcean kubeconfig
+          tags: ${{ env.REGISTRY }}/ghanawaters-${{ inputs.app_name }}:${{ steps.meta.outputs.tag }}
+          cache-from: |
+            type=registry,ref=${{ env.REGISTRY }}/ghanawaters-${{ inputs.app_name }}:cache
+          cache-to: |
+            type=registry,ref=${{ env.REGISTRY }}/ghanawaters-${{ inputs.app_name }}:cache,mode=max
+
+      # ─────────── patch overlay & commit ───
+      - name: Install yq
         run: |
-          echo "Available Kubernetes clusters:"
-          doctl kubernetes cluster list
-          
-          # Get the cluster ID instead of relying on exact name match
-          CLUSTER_NAME="${{ inputs.environment == 'prod' && secrets.PROD_CLUSTER_NAME || secrets.TEST_CLUSTER_NAME }}"
-          CLUSTER_ID=$(doctl kubernetes cluster list --format ID,Name --no-header | grep ${CLUSTER_NAME} | awk '{print $1}')
-          
-          if [ -z "$CLUSTER_ID" ]
-          then
-            echo "Could not find cluster with name containing ${CLUSTER_NAME}"
-            echo "Please check the cluster name secret and available clusters listed above"
-            exit 1
-          else
-            echo "Found cluster ID: $CLUSTER_ID"
-            doctl kubernetes cluster kubeconfig save $CLUSTER_ID
-          fi
-      
-      - name: Install kustomize
+          sudo apt-get update -y
+          sudo apt-get install -y yq
+
+      - name: Bump tag in kustomization
+        env:
+          IMAGE_PATH: k8s/overlays/${{ inputs.environment }}/kustomization.yaml
+          IMAGE_NAME: ${{ env.REGISTRY }}/ghanawaters-${{ inputs.app_name }}
         run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-          sudo mv kustomize /usr/local/bin/
-          kustomize version
-      
-      - name: Deploy to Kubernetes
+          yq -i '
+            (.images[] | select(.name == env(IMAGE_NAME))).newTag = "${{ steps.meta.outputs.tag }}"
+          ' "$IMAGE_PATH"
+
+      - name: Commit & push overlay change
+        env:
+          GIT_AUTHOR_NAME:  ci
+          GIT_AUTHOR_EMAIL: ci@github
         run: |
-          # Convert environment name to namespace format
-          ENV_NAME="${{ inputs.environment }}"
-          if [ "$ENV_NAME" == "production" ]; then
-            ENV_NAME="prod"
-          fi
-          NAMESPACE="ghanawaters-${ENV_NAME}"
-          
-          # Set the image tag based on environment
-          if [ "${{ inputs.environment }}" == "prod" ]; then
-            IMAGE_TAG="prod-${{ github.sha }}"
-          else
-            IMAGE_TAG="${{ inputs.environment }}-${{ inputs.branch_name }}-${{ github.sha }}"
-          fi
-          
-          echo "Deploying to ${ENV_NAME} environment with image tag: ${IMAGE_TAG}"
-          
-          # Ensure namespace exists
-          echo "Creating namespace if it doesn't exist..."
-          kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
-          
-          # Update the image tags in kustomization.yaml
-          cd k8s/overlays/${ENV_NAME}
-          
-          # Update each image - use full image with new tag
-          kustomize edit set image ghananauticalinfo/ghanawaters-admin=ghananauticalinfo/ghanawaters-admin:${IMAGE_TAG}
-          kustomize edit set image ghananauticalinfo/ghanawaters-api=ghananauticalinfo/ghanawaters-api:${IMAGE_TAG}
-          kustomize edit set image ghananauticalinfo/ghanawaters-frontend=ghananauticalinfo/ghanawaters-frontend:${IMAGE_TAG}
-          
-          # Show the updated kustomization.yaml for verification
-          echo "Updated kustomization.yaml:"
-          cat kustomization.yaml
-          
-          # All environments use ArgoCD for deployment
-          echo "${{ inputs.environment }} environment uses ArgoCD for deployment. Skipping direct kubectl apply."
-          echo "ArgoCD will automatically sync the changes from Git."
-      
-      - name: Commit updated image tags for GitOps
-        if: github.event_name == 'push' && (inputs.environment == 'prod' || inputs.environment == 'dev' || inputs.environment == 'test')
-        run: |
-          # Recreate the image tag variable
-          if [ "${{ inputs.environment }}" == "prod" ]; then
-            IMAGE_TAG="prod-${{ github.sha }}"
-          else
-            IMAGE_TAG="${{ inputs.environment }}-${{ inputs.branch_name }}-${{ github.sha }}"
-          fi
-          
-          # Configure git
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
-          # Check if there are changes to commit
-          if git diff --quiet; then
-            echo "No changes to commit"
-          else
-            # Commit the changes
-            git add k8s/overlays/${{ inputs.environment }}/kustomization.yaml
-            git commit -m "chore: update image tags to ${IMAGE_TAG} [skip ci]"
-            
-            # Push the changes
-            git push origin HEAD:${GITHUB_REF#refs/heads/} || {
-              echo "Push failed, possibly due to concurrent updates. This is non-critical."
-            }
-          fi
+          git config user.name  "$GIT_AUTHOR_NAME"
+          git config user.email "$GIT_AUTHOR_EMAIL"
+          git add k8s/overlays/${{ inputs.environment }}/kustomization.yaml
+          git commit -m "[skip ci] ${{
+            inputs.environment }}: bump ${{ inputs.app_name }} to ${{ steps.meta.outputs.tag }}" || echo "no changes"
+          git push

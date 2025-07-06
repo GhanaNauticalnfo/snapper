@@ -1,124 +1,54 @@
-name: Deploy All Applications
+name: Build & Deploy (matrix)
 
 on:
   push:
-    branches: 
-      - main
-      - develop
-      - dev
-      - test
+    branches: [develop, test, main]     # dev → develop  •  test → test  •  prod → main
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Target environment'
-        required: true
-        type: choice
-        options:
-          - dev
-          - test
-          - prod
-      prod_confirmation:
-        description: 'Type "deploy-to-production" to confirm production deployment'
-        required: false
-        type: string
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
-  determine-environment:
-    name: Determine Environment
-    runs-on: ubuntu-latest
-    outputs:
-      environment: ${{ steps.set-env.outputs.environment }}
-      should-deploy: ${{ steps.set-env.outputs.should-deploy }}
-    steps:
-      - name: Set deployment environment
-        id: set-env
-        run: |
-          echo "Event: ${{ github.event_name }}"
-          echo "Branch: ${{ github.ref_name }}"
-          
-          # Manual workflow dispatch
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            ENV="${{ inputs.environment }}"
-            
-            # Production safety check
-            if [[ "$ENV" == "prod" && "${{ inputs.prod_confirmation }}" != "deploy-to-production" ]]; then
-              echo "❌ Production deployment requires confirmation"
-              echo "should-deploy=false" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            
-            echo "environment=$ENV" >> $GITHUB_OUTPUT
-            echo "should-deploy=true" >> $GITHUB_OUTPUT
-          
-          # Automatic deployments based on branch
-          elif [[ "${{ github.event_name }}" == "push" ]]; then
-            case "${{ github.ref_name }}" in
-              main)
-                echo "environment=prod" >> $GITHUB_OUTPUT
-                echo "should-deploy=true" >> $GITHUB_OUTPUT
-                ;;
-              develop|dev)
-                echo "environment=dev" >> $GITHUB_OUTPUT
-                echo "should-deploy=true" >> $GITHUB_OUTPUT
-                ;;
-              test)
-                echo "environment=test" >> $GITHUB_OUTPUT
-                echo "should-deploy=true" >> $GITHUB_OUTPUT
-                ;;
-              *)
-                echo "Branch ${{ github.ref_name }} does not trigger deployments"
-                echo "should-deploy=false" >> $GITHUB_OUTPUT
-                ;;
-            esac
-          
-          else
-            echo "Event ${{ github.event_name }} does not trigger deployments"
-            echo "should-deploy=false" >> $GITHUB_OUTPUT
-          fi
-
-  deploy-all-apps:
-    name: Deploy All Apps to ${{ needs.determine-environment.outputs.environment }}
-    needs: determine-environment
-    if: needs.determine-environment.outputs.should-deploy == 'true'
+  deploy:
     strategy:
       matrix:
-        app: [api, admin, frontend]
-      fail-fast: false
+        include:
+          # ────────── dev ──────────
+          - app: api
+            env: dev
+            branch_match: develop
+          - app: admin
+            env: dev
+            branch_match: develop
+          - app: frontend
+            env: dev
+            branch_match: develop
+          # ────────── test ─────────
+          - app: api
+            env: test
+            branch_match: test
+          - app: admin
+            env: test
+            branch_match: test
+          - app: frontend
+            env: test
+            branch_match: test
+          # ────────── prod ─────────
+          - app: api
+            env: prod
+            branch_match: main
+          - app: admin
+            env: prod
+            branch_match: main
+          - app: frontend
+            env: prod
+            branch_match: main
+
+    # Run only the rows that match the pushed branch
+    if: ${{ github.ref_name == matrix.branch_match }}
+
     uses: ./.github/workflows/nx-app-deploy.yml
     with:
-      app_name: ${{ matrix.app }}
-      environment: ${{ needs.determine-environment.outputs.environment }}
-      image_name: ghanawaters-${{ matrix.app }}
-      domain_name: ${{ needs.determine-environment.outputs.environment == 'dev' && (matrix.app == 'api' && 'ghanawaters-dev-api.ghananautical.info' || matrix.app == 'admin' && 'ghanawaters-dev-admin.ghananautical.info' || 'ghanawaters-dev.ghananautical.info') || needs.determine-environment.outputs.environment == 'test' && (matrix.app == 'api' && 'ghanawaters-test-api.ghananautical.info' || matrix.app == 'admin' && 'ghanawaters-test-admin.ghananautical.info' || 'ghanawaters-test.ghananautical.info') || (matrix.app == 'api' && 'ghanawaters-api.ghananautical.info' || matrix.app == 'admin' && 'ghanawaters-admin.ghananautical.info' || 'ghanawaters.ghananautical.info') }}
-      branch_name: ${{ github.ref_name }}
-      compare_branch: ${{ needs.determine-environment.outputs.environment == 'test' && 'origin/develop' || 'origin/main' }}
-      setup_database: ${{ matrix.app == 'api' }}
-      run_migrations: ${{ matrix.app == 'api' }}
-    secrets: inherit
-
-  deployment-summary:
-    name: Deployment Summary
-    runs-on: ubuntu-latest
-    needs: [determine-environment, deploy-all-apps]
-    if: always()
-    steps:
-      - name: Summary
-        run: |
-          echo "## Deployment Summary 📊" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [[ "${{ needs.determine-environment.outputs.should-deploy }}" != "true" ]]; then
-            echo "❌ No deployments were triggered" >> $GITHUB_STEP_SUMMARY
-            if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.environment }}" == "prod" ]]; then
-              echo "⚠️ Production deployment requires confirmation string: 'deploy-to-production'" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "ℹ️ Branch or event does not trigger automatic deployments" >> $GITHUB_STEP_SUMMARY
-            fi
-          else
-            echo "✅ All applications deployed to **${{ needs.determine-environment.outputs.environment }}** environment" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
-            echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-            echo "**Apps deployed:** api, admin, frontend" >> $GITHUB_STEP_SUMMARY
-          fi
-# Deployment trigger: 2025-01-04 v2
+      app_name:    ${{ matrix.app }}
+      environment: ${{ matrix.env }}
