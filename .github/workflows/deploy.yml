@@ -7,8 +7,6 @@ on:
       - develop
       - dev
       - test
-  release:
-    types: [created]
   workflow_dispatch:
     inputs:
       environment:
@@ -73,11 +71,6 @@ jobs:
                 ;;
             esac
           
-          # Release event deploys to production
-          elif [[ "${{ github.event_name }}" == "release" ]]; then
-            echo "environment=prod" >> $GITHUB_OUTPUT
-            echo "should-deploy=true" >> $GITHUB_OUTPUT
-          
           else
             echo "Event ${{ github.event_name }} does not trigger deployments"
             echo "should-deploy=false" >> $GITHUB_OUTPUT
@@ -98,7 +91,7 @@ jobs:
       image_name: ghanawaters-${{ matrix.app }}
       domain_name: ${{ needs.determine-environment.outputs.environment == 'dev' && (matrix.app == 'api' && 'ghanawaters-dev-api.ghananautical.info' || matrix.app == 'admin' && 'ghanawaters-dev-admin.ghananautical.info' || 'ghanawaters-dev.ghananautical.info') || needs.determine-environment.outputs.environment == 'test' && (matrix.app == 'api' && 'ghanawaters-test-api.ghananautical.info' || matrix.app == 'admin' && 'ghanawaters-test-admin.ghananautical.info' || 'ghanawaters-test.ghananautical.info') || (matrix.app == 'api' && 'ghanawaters-api.ghananautical.info' || matrix.app == 'admin' && 'ghanawaters-admin.ghananautical.info' || 'ghanawaters.ghananautical.info') }}
       branch_name: ${{ github.ref_name }}
-      compare_branch: main
+      compare_branch: ${{ needs.determine-environment.outputs.environment == 'test' && 'origin/develop' || 'origin/main' }}
       setup_database: ${{ matrix.app == 'api' }}
       run_migrations: ${{ matrix.app == 'api' }}
     secrets: inherit

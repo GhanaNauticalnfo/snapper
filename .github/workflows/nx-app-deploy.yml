@@ -52,7 +52,7 @@ jobs:
           fetch-depth: 0  # Fetch all history for Nx affected commands
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -195,7 +195,7 @@ jobs:
           fetch-depth: 0
       
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -374,33 +374,9 @@ jobs:
           echo "Updated kustomization.yaml:"
           cat kustomization.yaml
           
-          # For dev and test environments, we use ArgoCD for deployment
-          if [ "${{ inputs.environment }}" == "dev" ] || [ "${{ inputs.environment }}" == "test" ]; then
-            echo "${{ inputs.environment }} environment uses ArgoCD for deployment. Skipping direct kubectl apply."
-            echo "ArgoCD will automatically sync the changes."
-          else
-            # For prod, apply the kustomization directly
-            echo "Applying kustomization..."
-            echo "Current directory: $(pwd)"
-            echo "Files in directory:"
-            ls -la
-            echo "Testing kubectl connection:"
-            kubectl cluster-info
-            echo "Applying resources..."
-            # First try to apply, if it fails due to immutable fields, replace the resources
-            if ! kubectl apply -k . --v=5; then
-              echo "Apply failed, checking for immutable field errors..."
-              # Delete the migration job if it exists (jobs are immutable)
-              kubectl delete job ghanawaters-api-migrations -n $NAMESPACE --ignore-not-found
-              # For deployments with immutable field issues, we'll use server-side apply
-              echo "Retrying with server-side apply..."
-              kubectl apply -k . --server-side --force-conflicts
-            fi
-            
-            # Wait for rollout to complete
-            echo "Waiting for rollout to complete..."
-            kubectl rollout status deployment/${{ inputs.image_name }} -n $NAMESPACE
-          fi
+          # All environments use ArgoCD for deployment
+          echo "${{ inputs.environment }} environment uses ArgoCD for deployment. Skipping direct kubectl apply."
+          echo "ArgoCD will automatically sync the changes from Git."
       
       - name: Commit updated image tags for GitOps
         if: github.event_name == 'push' && (inputs.environment == 'prod' || inputs.environment == 'dev' || inputs.environment == 'test')
@@ -421,92 +397,11 @@ jobs:
             echo "No changes to commit"
           else
             # Commit the changes
-            git add k8s/overlays/*/kustomization.yaml
+            git add k8s/overlays/${{ inputs.environment }}/kustomization.yaml
             git commit -m "chore: update image tags to ${IMAGE_TAG} [skip ci]"
             
             # Push the changes
             git push origin HEAD:${GITHUB_REF#refs/heads/} || {
               echo "Push failed, possibly due to concurrent updates. This is non-critical."
             }
-          fi
-  
-  run-migrations:
-    needs: [check-affected, deploy]
-    # Only run if migrations are requested and app is affected
-    if: |
-      inputs.run_migrations == true && (
-        needs.check-affected.outputs.is_affected == 'true' ||
-        (inputs.environment == 'prod' && github.event_name == 'workflow_dispatch')
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-          
-      - name: Save DigitalOcean kubeconfig
-        run: |
-          # Get the cluster ID instead of relying on exact name match
-          CLUSTER_NAME="${{ inputs.environment == 'prod' && secrets.PROD_CLUSTER_NAME || secrets.TEST_CLUSTER_NAME }}"
-          CLUSTER_ID=$(doctl kubernetes cluster list --format ID,Name --no-header | grep ${CLUSTER_NAME} | awk '{print $1}')
-          
-          if [ -z "$CLUSTER_ID" ]
-          then
-            echo "Could not find cluster with name containing ${CLUSTER_NAME}"
-            echo "Please check the cluster name secret and available clusters listed above"
-            exit 1
-          else
-            echo "Found cluster ID: $CLUSTER_ID"
-            doctl kubernetes cluster kubeconfig save $CLUSTER_ID
-          fi
-      
-      - name: Run database migrations
-        run: |
-          # Convert environment name to namespace format
-          ENV_NAME="${{ inputs.environment }}"
-          if [ "$ENV_NAME" == "production" ]; then
-            ENV_NAME="prod"
-          fi
-          NAMESPACE="ghanawaters-${ENV_NAME}"
-          
-          TIMESTAMP=$(date +%s)
-          BRANCH="${{ inputs.environment == 'prod' && 'main' || inputs.branch_name }}"
-          
-          # Create the migration job by replacing placeholders
-          cat apps/${{ inputs.app_name }}/kubernetes/migrations/run-migrations.yaml | \
-            sed "s/{TIMESTAMP}/$TIMESTAMP/g" | \
-            sed "s/{ENVIRONMENT}/$ENV_NAME/g" | \
-            sed "s/{BRANCH}/$BRANCH/g" | \
-            kubectl apply -f -
-          
-          echo "Migration job created: ghanawaters-api-migrations-$TIMESTAMP"
-          echo "Waiting for job to complete..."
-          
-          # Wait for job to complete
-          kubectl wait --for=condition=complete job/ghanawaters-api-migrations-$TIMESTAMP --namespace $NAMESPACE --timeout=300s
-          
-          if [ $? -eq 0 ]; then
-            echo "Migration completed successfully"
-            
-            # Show logs
-            POD_NAME=$(kubectl get pods -n $NAMESPACE -l job-name=ghanawaters-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
-            echo "Migration logs:"
-            kubectl logs $POD_NAME -n $NAMESPACE
-            
-            # Cleanup
-            echo "Cleaning up job..."
-            kubectl delete job ghanawaters-api-migrations-$TIMESTAMP -n $NAMESPACE
-          else
-            echo "Migration failed or timed out"
-            
-            # Show logs for debugging
-            POD_NAME=$(kubectl get pods -n $NAMESPACE -l job-name=ghanawaters-api-migrations-$TIMESTAMP -o jsonpath="{.items[0].metadata.name}")
-            echo "Migration logs:"
-            kubectl logs $POD_NAME -n $NAMESPACE
-            
-            # Don't fail the workflow since deployment already happened
-            echo "::warning::Migration job failed but deployment was completed"
           fi
