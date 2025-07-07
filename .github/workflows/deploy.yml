@@ -62,6 +62,7 @@ jobs:
             --cache-to   type=registry,ref=${REGISTRY}/ghanawaters-${{ matrix.app }}:cache,mode=max \
             --build-arg BUILD_TIME="${BUILD_TIME}" \
             --build-arg BUILD_TAG="${TAG}" \
+            --build-arg ENVIRONMENT="${{ steps.env.outputs.CI_ENV }}" \
             --file apps/${{ matrix.app }}/Dockerfile \
             --tag ${REGISTRY}/ghanawaters-${{ matrix.app }}:$TAG \
             --push .
