@@ -5,6 +5,7 @@ import { NotFoundException } from '@nestjs/common';
 import { RouteService } from './route.service';
 import { Route } from './route.entity';
 import { SyncService } from '../sync/sync.service';
+import { ResourceSettingsService } from '../resource-settings/resource-settings.service';
 
 describe('RouteService', () => {
   let service: RouteService;
@@ -19,7 +20,6 @@ describe('RouteService', () => {
       { lat: 5.5509, lng: -0.1975, order: 1 },
       { lat: 5.5609, lng: -0.1875, order: 2 },
     ],
-    color: '#FF0000',
     enabled: true,
     created: new Date('2025-01-01T12:00:00Z'),
     last_updated: new Date('2025-01-01T12:00:00Z'),
@@ -37,6 +37,10 @@ describe('RouteService', () => {
     logChange: jest.fn(),
   };
 
+  const mockResourceSettingsService = {
+    getSettingsForResource: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -48,6 +52,10 @@ describe('RouteService', () => {
         {
           provide: SyncService,
           useValue: mockSyncService,
+        },
+        {
+          provide: ResourceSettingsService,
+          useValue: mockResourceSettingsService,
         },
       ],
     }).compile();
@@ -67,26 +75,59 @@ describe('RouteService', () => {
 
   describe('findAll', () => {
     it('should return an array of routes', async () => {
-      const routes = [mockRoute as Route];
+      const mockRouteEntity = {
+        ...mockRoute,
+        toResponseDto: jest.fn().mockReturnValue({
+          id: 1,
+          name: 'Test Route',
+          description: 'Test Description',
+          waypoints: mockRoute.waypoints,
+          enabled: true,
+          created: '2025-01-01T12:00:00.000Z',
+          last_updated: '2025-01-01T12:00:00.000Z',
+          settings: { '1': 'value1' },
+        }),
+      };
+      const routes = [mockRouteEntity as Route];
       mockRepository.find.mockResolvedValue(routes);
+      mockResourceSettingsService.getSettingsForResource.mockResolvedValue({ '1': 'value1' });
 
       const result = await service.findAll();
 
       expect(repository.find).toHaveBeenCalledWith({
         order: { last_updated: 'DESC' },
       });
-      expect(result).toEqual(routes);
+      expect(mockResourceSettingsService.getSettingsForResource).toHaveBeenCalledWith('route', 1);
+      expect(mockRouteEntity.toResponseDto).toHaveBeenCalledWith({ '1': 'value1' });
+      expect(result).toHaveLength(1);
+      expect(result[0].settings).toEqual({ '1': 'value1' });
     });
   });
 
   describe('findOne', () => {
     it('should return a route by id', async () => {
-      mockRepository.findOne.mockResolvedValue(mockRoute);
+      const mockRouteEntity = {
+        ...mockRoute,
+        toResponseDto: jest.fn().mockReturnValue({
+          id: 1,
+          name: 'Test Route',
+          description: 'Test Description',
+          waypoints: mockRoute.waypoints,
+          enabled: true,
+          created: '2025-01-01T12:00:00.000Z',
+          last_updated: '2025-01-01T12:00:00.000Z',
+          settings: { '1': 'value1' },
+        }),
+      };
+      mockRepository.findOne.mockResolvedValue(mockRouteEntity);
+      mockResourceSettingsService.getSettingsForResource.mockResolvedValue({ '1': 'value1' });
 
       const result = await service.findOne(1);
 
       expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-      expect(result).toEqual(mockRoute);
+      expect(mockResourceSettingsService.getSettingsForResource).toHaveBeenCalledWith('route', 1);
+      expect(mockRouteEntity.toResponseDto).toHaveBeenCalledWith({ '1': 'value1' });
+      expect(result.settings).toEqual({ '1': 'value1' });
     });
 
     it('should throw NotFoundException when route not found', async () => {
@@ -101,6 +142,7 @@ describe('RouteService', () => {
       const createData = {
         name: 'New Route',
         waypoints: [{ lat: 5.5, lng: -0.2, order: 1 }],
+        enabled: true,
       };
       const createdRoute = { ...mockRoute, ...createData };
 
@@ -133,7 +175,7 @@ describe('RouteService', () => {
 
   describe('update', () => {
     it('should update a route and log to sync', async () => {
-      const updateData = { name: 'Updated Route' };
+      const updateData = { name: 'Updated Route', waypoints: mockRoute.waypoints || [], enabled: true };
       const updatedRoute = { ...mockRoute, ...updateData };
 
       mockRepository.findOne.mockResolvedValue(mockRoute);
@@ -160,8 +202,9 @@ describe('RouteService', () => {
 
     it('should throw NotFoundException when route not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.update(999, {})).rejects.toThrow(NotFoundException);
+      
+      const updateData = { name: 'Updated', waypoints: [], enabled: true };
+      await expect(service.update(999, updateData)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -200,10 +243,10 @@ describe('RouteService', () => {
           { lat: 5.6, lng: -0.1, order: 1 },
           { lat: 5.7, lng: -0.3, order: 3 },
         ],
-        color: '#FF0000',
         enabled: true,
         created: new Date(),
         last_updated: new Date(),
+        toResponseDto: jest.fn(),
       };
 
       mockRepository.create.mockReturnValue(testRoute);
