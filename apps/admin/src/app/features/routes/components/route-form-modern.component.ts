@@ -151,21 +151,32 @@ import { environment } from '../../../../environments/environment';
 
           <div class="form-actions">
             @if (mode() !== 'view') {
-              <button 
-                pButton 
-                type="button" 
-                label="Cancel" 
-                class="p-button-text"
-                (click)="onCancel()">
-              </button>
-              <button 
-                pButton 
-                type="button" 
-                label="Save" 
-                icon="pi pi-check"
-                (click)="saveRoute()"
-                [disabled]="!canSave()">
-              </button>
+              <div class="flex items-center justify-between w-full">
+                <div class="text-sm text-gray-500">
+                  @if (mode() === 'create' && !routeForm.valid) {
+                    <span class="text-orange-500">Please enter a route name</span>
+                  } @else if (mode() === 'create' && waypoints().length < 2) {
+                    <span class="text-orange-500">Please add at least 2 waypoints</span>
+                  }
+                </div>
+                <div class="flex gap-2">
+                  <button 
+                    pButton 
+                    type="button" 
+                    label="Cancel" 
+                    class="p-button-text"
+                    (click)="onCancel()">
+                  </button>
+                  <button 
+                    pButton 
+                    type="button" 
+                    label="Save" 
+                    icon="pi pi-check"
+                    (click)="saveRoute()"
+                    [disabled]="!canSave()">
+                  </button>
+                </div>
+              </div>
             } @else {
               <button 
                 pButton 
@@ -309,14 +320,20 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
   });
   
   canSave = computed(() => {
+    const mode = this.mode();
+    const formValid = this.routeForm.valid;
+    const waypointCount = this.waypoints().length;
+    const hasFormChanges = this.formChanged();
+    const hasWaypointChanges = this.waypointsChanged();
+    
     // For edit mode: form must be valid and have changes
-    if (this.mode() === 'edit') {
-      return this.routeForm.valid && (this.formChanged() || this.waypointsChanged());
+    if (mode === 'edit') {
+      return formValid && (hasFormChanges || hasWaypointChanges);
     }
     
     // For create mode: form must be valid and have at least 2 waypoints
-    if (this.mode() === 'create') {
-      return this.routeForm.valid && this.waypoints().length >= 2;
+    if (mode === 'create') {
+      return formValid && waypointCount >= 2;
     }
     
     return false;
@@ -439,6 +456,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private resetFormWithRouteData(): void {
     const currentRoute = this.route();
+    
     if (currentRoute) {
       // Reset form with route data
       const formData = {

@@ -5,7 +5,6 @@ export class RouteValidators {
   static routeName(): ValidatorFn[] {
     return [
       Validators.required,
-      Validators.minLength(1),
       Validators.maxLength(100)
     ];
   }

@@ -154,12 +154,8 @@ export class RouteListComponent implements OnInit, AfterViewInit {
   }
   
   showCreateDialog() {
-    this.selectedRoute.set({
-      name: '',
-      description: '',
-      waypoints: [],
-      enabled: true
-    } as Route);
+    // For create mode, set selectedRoute to null instead of empty object
+    this.selectedRoute.set(null);
     this.dialogMode.set('create');
     this.showDialog = true;
   }
