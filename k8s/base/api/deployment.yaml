@@ -16,7 +16,7 @@ spec:
     spec:
       initContainers:
       - name: wait-for-migrations
-        image: ghananauticalinfo/ghanawaters-api:latest
+        image: ghcr.io/ghananauticalnfo/ghanawaters-api:latest
         imagePullPolicy: Always
         command: ["/bin/sh", "-c"]
         args:
@@ -48,7 +48,7 @@ spec:
               key: DATABASE_URL
       containers:
       - name: ghanawaters-api
-        image: ghananauticalinfo/ghanawaters-api:latest
+        image: ghcr.io/ghananauticalnfo/ghanawaters-api:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000

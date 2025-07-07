@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: ghanawaters-frontend
-        image: ghananauticalinfo/ghanawaters-frontend:latest
+        image: ghcr.io/ghananauticalnfo/ghanawaters-frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: ghanawaters-admin
-        image: ghananauticalinfo/ghanawaters-admin:latest
+        image: ghcr.io/ghananauticalnfo/ghanawaters-admin:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
