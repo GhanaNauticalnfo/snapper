@@ -1,8 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: ghanawaters-test
-
 resources:
   - ../../base/admin
   - ../../base/api
@@ -10,15 +8,13 @@ resources:
   - ../../base/database
   - ../../base/jobs
   - configs/api-config.yaml
-
 images:
   - name: ghcr.io/ghananauticalnfo/ghanawaters-api
-    newTag: test-placeholder            # ← CI will overwrite
+    newTag: c211069-73 # ← CI will overwrite
   - name: ghcr.io/ghananauticalnfo/ghanawaters-admin
-    newTag: test-placeholder
+    newTag: c211069-73
   - name: ghcr.io/ghananauticalnfo/ghanawaters-frontend
-    newTag: test-placeholder
-
+    newTag: c211069-73
 patches:
   - path: patches/ingress-hosts.yaml
   - path: patches/replicas.yaml
