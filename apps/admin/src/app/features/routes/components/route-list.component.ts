@@ -130,7 +130,7 @@ export class RouteListComponent implements OnInit, AfterViewInit {
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'Failed to load routes'
+          detail: error.error?.message || error.message || 'Failed to load routes'
         });
       }
     });
@@ -192,7 +192,7 @@ export class RouteListComponent implements OnInit, AfterViewInit {
           this.messageService.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'Failed to create route'
+            detail: error.error?.message || error.message || 'Failed to create route'
           });
         }
       });
@@ -213,7 +213,7 @@ export class RouteListComponent implements OnInit, AfterViewInit {
           this.messageService.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'Failed to update route'
+            detail: error.error?.message || error.message || 'Failed to update route'
           });
         }
       });
@@ -235,7 +235,7 @@ export class RouteListComponent implements OnInit, AfterViewInit {
           this.messageService.add({
             severity: 'error',
             summary: 'Error',
-            detail: 'Failed to delete route'
+            detail: error.error?.message || error.message || 'Failed to delete route'
           });
         }
       });
