@@ -6,7 +6,7 @@ import { Component } from '@angular/core';
     template: `
         <div class="layout-footer">
             <div>
-                <span>Snapper {{ version }} by </span>
+                <span>Ghana Waters Admin {{ version }} by </span>
                 <a href="https://ghanamaritime.gov.gh/">Ghana Maritime Authority</a>
             </div>
         </div>
