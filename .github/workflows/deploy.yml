@@ -56,9 +56,13 @@ jobs:
         env: { TAG: "${{ github.sha }}" }
         run: |
           TAG="${GITHUB_SHA:0:7}-${GITHUB_RUN_NUMBER}"
+          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           docker buildx build \
             --cache-from type=registry,ref=${REGISTRY}/ghanawaters-${{ matrix.app }}:cache \
             --cache-to   type=registry,ref=${REGISTRY}/ghanawaters-${{ matrix.app }}:cache,mode=max \
+            --build-arg BUILD_TIME="${BUILD_TIME}" \
+            --build-arg BUILD_TAG="${TAG}" \
+            --build-arg ENVIRONMENT="${{ steps.env.outputs.CI_ENV }}" \
             --file apps/${{ matrix.app }}/Dockerfile \
             --tag ${REGISTRY}/ghanawaters-${{ matrix.app }}:$TAG \
             --push .

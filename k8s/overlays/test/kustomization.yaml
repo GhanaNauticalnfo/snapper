@@ -24,5 +24,6 @@ patches:
   - path: patches/replicas.yaml
   - path: patches/database-resources.yaml
   - path: patches/node-env.yaml
+  - path: patches/init-container-env.yaml
   - path: patches/migration-command.yaml
   - path: patches/api-configmap.yaml

@@ -26,6 +26,14 @@ RUN ls -lR /app/dist/apps/api || echo "/app/dist/apps/api not found"
 FROM node:22-alpine
 WORKDIR /app
 
+# Build arguments for build time and tag
+ARG BUILD_TIME
+ARG BUILD_TAG
+
+# Set as environment variables
+ENV BUILD_TIME=${BUILD_TIME}
+ENV BUILD_TAG=${BUILD_TAG}
+
 COPY package.json package-lock.json ./
 RUN npm ci --only=production
 
