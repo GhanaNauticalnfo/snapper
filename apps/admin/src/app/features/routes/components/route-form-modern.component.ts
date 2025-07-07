@@ -310,33 +310,35 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
   showWaypointEditorDialog = false;
   mapReady = signal(false);
   
-  // Simple change tracking
-  formChanged = signal(false);
-  originalWaypointCount = signal(0);
+  // Change tracking
+  currentFormValues = signal<{ name: string; description: string; enabled: boolean }>({ 
+    name: '', 
+    description: '', 
+    enabled: true 
+  });
+  originalFormValues = signal<{ name: string; description: string; enabled: boolean } | null>(null);
+  originalWaypoints = signal<Waypoint[]>([]);
   
   // Computed values
-  waypointsChanged = computed(() => {
-    return this.waypoints().length !== this.originalWaypointCount();
-  });
-  
   canSave = computed(() => {
     const mode = this.mode();
-    const formValid = this.routeForm.valid;
-    const waypointCount = this.waypoints().length;
-    const hasFormChanges = this.formChanged();
-    const hasWaypointChanges = this.waypointsChanged();
+    const current = this.currentFormValues();
     
-    // For edit mode: form must be valid and have changes
+    // Basic validation: name must not be empty and at least 2 waypoints
+    const hasValidName = current.name && current.name.trim().length > 0;
+    const hasEnoughWaypoints = this.waypoints().length >= 2;
+    
+    if (!hasValidName || !hasEnoughWaypoints) {
+      return false;
+    }
+    
+    // For edit mode, also require changes
     if (mode === 'edit') {
-      return formValid && (hasFormChanges || hasWaypointChanges);
+      return this.hasChanges();
     }
     
-    // For create mode: form must be valid and have at least 2 waypoints
-    if (mode === 'create') {
-      return formValid && waypointCount >= 2;
-    }
-    
-    return false;
+    // For create mode, basic requirements are enough
+    return true;
   });
 
   constructor() {
@@ -374,12 +376,45 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  // Unified change detection method
+  private hasChanges(): boolean {
+    const current = this.currentFormValues();
+    const originalForm = this.originalFormValues();
+    const currentWaypoints = this.waypoints();
+    const originalWaypoints = this.originalWaypoints();
+    
+    // Check form changes
+    if (originalForm) {
+      const formChanged = (
+        current.name !== originalForm.name ||
+        current.description !== originalForm.description ||
+        current.enabled !== originalForm.enabled
+      );
+      
+      if (formChanged) return true;
+    }
+    
+    // Check waypoint changes
+    // Different count means changed
+    if (currentWaypoints.length !== originalWaypoints.length) {
+      return true;
+    }
+    
+    // Compare each waypoint
+    return !currentWaypoints.every((wp, index) => {
+      const origWp = originalWaypoints[index];
+      return origWp && 
+        wp.lat === origWp.lat && 
+        wp.lng === origWp.lng &&
+        wp.order === origWp.order;
+    });
+  }
+
   ngOnInit(): void {
-    // Watch for form changes to update route display and track changes
-    this.routeForm.valueChanges.subscribe(() => {
+    // Watch for form changes to update route display and current values signal
+    this.routeForm.valueChanges.subscribe((values) => {
+      this.currentFormValues.set(values);
       this.updateRouteDisplay();
-      // Mark form as changed when any value changes
-      this.formChanged.set(true);
     });
   }
 
@@ -471,9 +506,13 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
       
       this.waypoints.set(currentRoute.waypoints || []);
       
-      // Reset change tracking
-      this.formChanged.set(false);
-      this.originalWaypointCount.set(currentRoute.waypoints?.length || 0);
+      // Store both current and original values for change tracking
+      this.currentFormValues.set({ ...formData });
+      this.originalFormValues.set({ ...formData });
+      // Deep copy waypoints to track changes
+      this.originalWaypoints.set(currentRoute.waypoints ? 
+        currentRoute.waypoints.map(wp => ({ ...wp })) : []
+      );
     } else {
       // Reset form to default values for create mode
       const formData = {
@@ -484,9 +523,10 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
       this.routeForm.reset(formData);
       this.waypoints.set([]);
       
-      // Reset change tracking for create mode
-      this.formChanged.set(false);
-      this.originalWaypointCount.set(0);
+      // For create mode, set current values and original to null
+      this.currentFormValues.set({ ...formData });
+      this.originalFormValues.set(null);
+      this.originalWaypoints.set([]);
     }
     
     // Update route display after form reset
@@ -557,7 +597,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onCancel(): void {
-    if (this.mode() !== 'view' && (this.formChanged() || this.waypointsChanged())) {
+    if (this.mode() !== 'view' && this.hasChanges()) {
       this.confirmationService.confirm({
         message: 'You have unsaved changes. Are you sure you want to cancel?',
         header: 'Unsaved Changes',
@@ -595,9 +635,16 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
       // Reset map state in case dialog closes
       this.mapReady.set(false);
       
-      // Reset change tracking after save
-      this.formChanged.set(false);
-      this.originalWaypointCount.set(this.waypoints().length);
+      // Update both current and original values to reflect the saved state
+      const savedFormValues = {
+        name: formValue.name,
+        description: formValue.description,
+        enabled: formValue.enabled
+      };
+      this.currentFormValues.set(savedFormValues);
+      this.originalFormValues.set({ ...savedFormValues });
+      // Deep copy waypoints to update original state
+      this.originalWaypoints.set(this.waypoints().map(wp => ({ ...wp })));
     }
   }
 }
