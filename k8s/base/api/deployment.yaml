@@ -4,6 +4,8 @@ metadata:
   name: ghanawaters-api
   labels:
     app: ghanawaters-api
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   replicas: 1
   selector:
