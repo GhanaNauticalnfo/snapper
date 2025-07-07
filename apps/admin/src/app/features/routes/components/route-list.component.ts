@@ -5,7 +5,7 @@ import { MessageService } from 'primeng/api';
 import { ResourceListComponent, ResourceListConfig, ResourceAction } from '@ghanawaters/shared';
 import { RouteService } from '../services/route.service';
 import { Route } from '../models/route.model';
-import { RouteFormComponent } from './route-form-modern.component';
+import { RouteFormComponent } from './route-form.component';
 
 @Component({
   selector: 'app-route-list',
