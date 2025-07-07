@@ -23,22 +23,62 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
           - |
-            echo "Checking if database migrations are complete..."
+            echo "Init container: Checking if database migrations are complete..."
+            echo "Current directory: $(pwd)"
+            cd /app
+            
+            # First check if datasource.js exists
+            if [ ! -f "dist/apps/api/cli_build/datasource.js" ]; then
+              echo "ERROR: datasource.js not found. This container may not have the CLI build."
+              echo "Proceeding anyway as migrations should be handled by the Job..."
+              exit 0
+            fi
+            
             max_attempts=60
             attempt=0
             
             while [ $attempt -lt $max_attempts ]; do
-              if npm run migration:check 2>&1 | grep -q "No migrations are pending"; then
-                echo "Database is ready - all migrations applied!"
-                exit 0
+              echo "Running migration check (attempt $((attempt + 1))/$max_attempts)..."
+              
+              # Run migration:check and capture both output and exit code
+              OUTPUT=$(npm run migration:check 2>&1)
+              EXIT_CODE=$?
+              
+              # Log first few lines of output for debugging
+              echo "Migration check output (first 5 lines):"
+              echo "$OUTPUT" | head -5
+              
+              if [ $EXIT_CODE -ne 0 ]; then
+                echo "ERROR: migration:check command failed with exit code $EXIT_CODE"
+                # Check if it's a connection error
+                if echo "$OUTPUT" | grep -q "ECONNREFUSED\|Connection refused\|connect ETIMEDOUT"; then
+                  echo "Database connection failed - waiting for database to be ready..."
+                else
+                  echo "Non-connection error detected. Full output:"
+                  echo "$OUTPUT"
+                fi
               else
-                echo "Waiting for migrations to complete... (attempt $((attempt + 1))/$max_attempts)"
-                sleep 5
-                attempt=$((attempt + 1))
+                # Command succeeded, check the output
+                if echo "$OUTPUT" | grep -q "No migrations are pending"; then
+                  echo "✓ Database is ready - all migrations applied!"
+                  exit 0
+                elif echo "$OUTPUT" | grep -q "migrations are pending"; then
+                  PENDING_COUNT=$(echo "$OUTPUT" | grep -c "pending")
+                  echo "Migrations are still pending (found $PENDING_COUNT pending migrations)"
+                else
+                  echo "Unexpected output from migration check"
+                fi
               fi
+              
+              sleep 5
+              attempt=$((attempt + 1))
             done
             
-            echo "WARNING: Timeout waiting for migrations, proceeding anyway..."
+            echo "WARNING: Timeout after $max_attempts attempts. Proceeding anyway..."
+            echo "This might indicate:"
+            echo "1. Migration job hasn't completed yet"
+            echo "2. Database connection issues"
+            echo "3. migration:check command not working properly"
             exit 0
         env:
         - name: NODE_ENV

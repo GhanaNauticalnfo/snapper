@@ -14,4 +14,22 @@ spec:
           - |
             cd /app
             echo "Running TEST migrations for ${NODE_ENV} environment..."
+            echo "Current directory: $(pwd)"
+            echo "Checking for datasource.js..."
+            if [ -f "dist/apps/api/cli_build/datasource.js" ]; then
+              echo "✓ Found datasource.js at dist/apps/api/cli_build/datasource.js"
+            else
+              echo "✗ ERROR: datasource.js not found at expected location!"
+              echo "Directory contents:"
+              ls -la dist/apps/api/cli_build/ 2>/dev/null || echo "cli_build directory does not exist"
+              exit 1
+            fi
+            echo "Running migration:run command..."
             npm run migration:run
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "✓ Migrations completed successfully!"
+            else
+              echo "✗ Migration failed with exit code: $EXIT_CODE"
+              exit $EXIT_CODE
+            fi
