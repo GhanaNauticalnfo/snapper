@@ -4,10 +4,12 @@ import { Repository } from 'typeorm';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { DeviceAuthService } from './device-auth.service';
 import { Device, DeviceState } from './device.entity';
+import { DeviceGateway } from './device.gateway';
 
 describe('DeviceAuthService', () => {
   let service: DeviceAuthService;
   let deviceRepository: jest.Mocked<Repository<Device>>;
+  let deviceGateway: jest.Mocked<DeviceGateway>;
 
   const mockDevice: Partial<Device> = {
     device_id: 'test-device-id',
@@ -36,11 +38,21 @@ describe('DeviceAuthService', () => {
             createQueryBuilder: jest.fn(),
           },
         },
+        {
+          provide: DeviceGateway,
+          useValue: {
+            emitDeviceActivated: jest.fn(),
+            emitDeviceCreated: jest.fn(),
+            emitDeviceRetired: jest.fn(),
+            emitDeviceDeleted: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<DeviceAuthService>(DeviceAuthService);
     deviceRepository = module.get(getRepositoryToken(Device));
+    deviceGateway = module.get(DeviceGateway);
   });
 
   afterEach(() => {
@@ -60,6 +72,15 @@ describe('DeviceAuthService', () => {
       expect(deviceRepository.save).toHaveBeenCalled();
       expect(result.state).toBe(DeviceState.PENDING);
       expect(result.vessel_id).toBe(1);
+    });
+
+    it('should emit device-created WebSocket event when device is created', async () => {
+      deviceRepository.find.mockResolvedValue([]);
+      deviceRepository.save.mockResolvedValue(mockDevice as Device);
+
+      await service.createDevice(1, 3);
+
+      expect(deviceGateway.emitDeviceCreated).toHaveBeenCalledWith(1, mockDevice);
     });
 
     it('should throw error if vessel already has an active device and pending device', async () => {
@@ -138,6 +159,29 @@ describe('DeviceAuthService', () => {
       expect(result.auth_token).toBeDefined();
       expect(result.device_token).toBe('test-device-token');
       expect(result.vessel).toBe('Test Vessel');
+    });
+
+    it('should emit device-activated WebSocket event when device is activated', async () => {
+      const pendingDevice = { 
+        ...mockDevice, 
+        state: DeviceState.PENDING,
+        vessel: { name: 'Test Vessel' }
+      };
+      
+      deviceRepository.findOne.mockResolvedValue(pendingDevice as Device);
+      deviceRepository.save.mockImplementation((device) => Promise.resolve(device as Device));
+
+      await service.activateDevice('test-activation-token');
+
+      expect(deviceGateway.emitDeviceActivated).toHaveBeenCalledWith(
+        1, 
+        expect.objectContaining({
+          device_id: 'test-device-id',
+          state: DeviceState.ACTIVE,
+          activated_at: expect.any(Date),
+          auth_token: expect.any(String)
+        })
+      );
     });
 
     it('should throw error for invalid activation token', async () => {
@@ -273,6 +317,21 @@ describe('DeviceAuthService', () => {
       expect(deviceRepository.delete).toHaveBeenCalledWith({ device_id: 'test-device-id' });
     });
 
+    it('should emit device-deleted WebSocket event when pending device is deleted', async () => {
+      const pendingDevice = { 
+        ...mockDevice, 
+        state: DeviceState.PENDING,
+        vessel_id: 1
+      };
+      
+      deviceRepository.findOne.mockResolvedValue(pendingDevice as Device);
+      deviceRepository.delete.mockResolvedValue({ affected: 1 } as any);
+
+      await service.deleteDevice('test-device-id');
+
+      expect(deviceGateway.emitDeviceDeleted).toHaveBeenCalledWith(1, 'test-device-id');
+    });
+
     it('should delete a retired device successfully', async () => {
       const retiredDevice = { 
         ...mockDevice, 
@@ -311,6 +370,26 @@ describe('DeviceAuthService', () => {
         })
       );
       expect(deviceRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should emit device-retired WebSocket event when active device is retired', async () => {
+      const activeDevice = { 
+        ...mockDevice, 
+        state: DeviceState.ACTIVE,
+        auth_token: 'active-auth-token',
+        vessel_id: 1
+      };
+      
+      deviceRepository.findOne.mockResolvedValue(activeDevice as Device);
+      deviceRepository.save.mockResolvedValue({
+        ...activeDevice,
+        state: DeviceState.RETIRED,
+        auth_token: null
+      } as Device);
+
+      await service.deleteDevice('test-device-id');
+
+      expect(deviceGateway.emitDeviceRetired).toHaveBeenCalledWith(1, 'test-device-id');
     });
 
     it('should throw error when device not found', async () => {

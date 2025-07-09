@@ -1,10 +1,11 @@
-import { Component, Input, Output, EventEmitter, signal, OnInit, OnChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, signal, OnInit, OnChanges, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { VesselDataset } from '../models/vessel-dataset.model';
 import { Device } from '../models/device.model';
 import { HttpClient } from '@angular/common/http';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { environment } from '../../../../environments/environment';
+import { io, Socket } from 'socket.io-client';
 
 // PrimeNG imports
 import { ButtonModule } from 'primeng/button';
@@ -38,7 +39,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
           </div>
         } @else {
           <!-- Active Device Panel -->
-          <p-panel styleClass="active-device-panel mb-3">
+          <p-panel styleClass="active-device-panel mb-3" [class.activation-success]="activationAnimation()">
             <ng-template pTemplate="header">
               <div class="panel-header-content">
                 <div class="panel-title-section">
@@ -519,9 +520,48 @@ import { QRCodeComponent } from 'angularx-qrcode';
       border-bottom: 1px solid var(--surface-border);
       flex-shrink: 0;
     }
+
+    /* Activation success animation */
+    :host ::ng-deep .active-device-panel.activation-success {
+      animation: activationPulse 2s ease-in-out;
+    }
+
+    @keyframes activationPulse {
+      0% {
+        box-shadow: 0 0 0 0 var(--green-500);
+      }
+      25% {
+        box-shadow: 0 0 0 10px rgba(34, 197, 94, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 0 15px rgba(34, 197, 94, 0.2);
+        border-color: var(--green-500);
+      }
+      75% {
+        box-shadow: 0 0 0 20px rgba(34, 197, 94, 0.1);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+      }
+    }
+
+    /* Success state indicator */
+    .active-status.success-glow {
+      animation: statusGlow 2s ease-in-out;
+    }
+
+    @keyframes statusGlow {
+      0%, 100% {
+        color: var(--green-600);
+      }
+      50% {
+        color: var(--green-400);
+        text-shadow: 0 0 10px var(--green-400);
+      }
+    }
   `]
 })
-export class VesselTabDeviceComponent implements OnInit, OnChanges {
+export class VesselTabDeviceComponent implements OnInit, OnChanges, OnDestroy {
   @Input() vessel: VesselDataset | null = null;
   @Output() deviceUpdated = new EventEmitter<void>();
 
@@ -529,6 +569,10 @@ export class VesselTabDeviceComponent implements OnInit, OnChanges {
   loadingDevices = signal(false);
   pendingDevice = signal<Device | null>(null);
   activeDevice = signal<Device | null>(null);
+  
+  // WebSocket for real-time updates
+  private deviceSocket?: Socket;
+  activationAnimation = signal(false);
 
   constructor(
     private http: HttpClient,
@@ -539,13 +583,21 @@ export class VesselTabDeviceComponent implements OnInit, OnChanges {
   ngOnInit() {
     if (this.vessel) {
       this.loadDevices();
+      this.setupDeviceSocket();
     }
   }
 
   ngOnChanges() {
     if (this.vessel) {
       this.loadDevices();
+      // Reconnect WebSocket if vessel changes
+      this.disconnectDeviceSocket();
+      this.setupDeviceSocket();
     }
+  }
+
+  ngOnDestroy() {
+    this.disconnectDeviceSocket();
   }
 
   loadDevices() {
@@ -690,5 +742,102 @@ export class VesselTabDeviceComponent implements OnInit, OnChanges {
         detail: 'Failed to copy to clipboard'
       });
     });
+  }
+
+  private setupDeviceSocket() {
+    if (!this.vessel) return;
+    
+    // Derive WebSocket URL from API URL
+    const wsUrl = environment.apiUrl
+      .replace('/api', '')
+      .replace('https://', 'wss://')
+      .replace('http://', 'ws://');
+    
+    this.deviceSocket = io(`${wsUrl}/devices`, {
+      transports: ['websocket']
+    });
+
+    this.deviceSocket.on('connect', () => {
+      console.log('Connected to device updates');
+      // Subscribe to this vessel's device updates
+      this.deviceSocket?.emit('subscribe-vessel-devices', this.vessel?.id);
+    });
+
+    this.deviceSocket.on('disconnect', () => {
+      console.log('Disconnected from device updates');
+    });
+
+    // Handle device activation
+    this.deviceSocket.on('device-activated', (data: any) => {
+      console.log('Device activated event received:', data);
+      if (data.vesselId === this.vessel?.id && data.device) {
+        // Update UI with animation
+        this.activationAnimation.set(true);
+        this.pendingDevice.set(null);
+        this.activeDevice.set(data.device);
+        
+        // Show success notification
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Device Activated!',
+          detail: `Device ${data.device.device_id} has been successfully activated`,
+          life: 5000
+        });
+        
+        // Emit update event
+        this.deviceUpdated.emit();
+        
+        // Reset animation after delay
+        setTimeout(() => this.activationAnimation.set(false), 3000);
+      }
+    });
+
+    // Handle device creation
+    this.deviceSocket.on('device-created', (data: any) => {
+      console.log('Device created event received:', data);
+      if (data.vesselId === this.vessel?.id && data.device) {
+        this.pendingDevice.set(data.device);
+      }
+    });
+
+    // Handle device retirement
+    this.deviceSocket.on('device-retired', (data: any) => {
+      console.log('Device retired event received:', data);
+      if (data.vesselId === this.vessel?.id) {
+        this.activeDevice.set(null);
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Device Retired',
+          detail: 'The active device has been retired',
+          life: 3000
+        });
+        this.deviceUpdated.emit();
+      }
+    });
+
+    // Handle device deletion
+    this.deviceSocket.on('device-deleted', (data: any) => {
+      console.log('Device deleted event received:', data);
+      if (data.vesselId === this.vessel?.id) {
+        const pending = this.pendingDevice();
+        if (pending && pending.device_id === data.deviceId) {
+          this.pendingDevice.set(null);
+        }
+      }
+    });
+
+    this.deviceSocket.on('error', (error: any) => {
+      console.error('Device WebSocket error:', error);
+    });
+  }
+
+  private disconnectDeviceSocket() {
+    if (this.deviceSocket) {
+      if (this.vessel?.id) {
+        this.deviceSocket.emit('unsubscribe-vessel-devices', this.vessel.id);
+      }
+      this.deviceSocket.disconnect();
+      this.deviceSocket = undefined;
+    }
   }
 }

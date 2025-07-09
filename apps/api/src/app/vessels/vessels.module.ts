@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vessel } from './vessel.entity';
 import { VesselType } from './type/vessel-type.entity';
-import { Device, DeviceAuthService, DeviceController } from './device';
+import { Device, DeviceAuthService, DeviceController, DeviceGateway } from './device';
 import { VesselService } from './vessel.service';
 import { VesselController } from './vessel.controller';
 import { QgisTrackingController } from './tracking/qgis-tracking.controller';
@@ -33,6 +33,7 @@ import { ResourceSettingsModule } from '../resource-settings/resource-settings.m
     VesselTypeService,
     TrackingService,
     TrackingGateway,
+    DeviceGateway,
     MqttTrackingService,
     TelemetryExportService,
   ],

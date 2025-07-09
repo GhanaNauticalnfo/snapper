@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, HttpException, HttpStatus } from '@n
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Device, DeviceState } from './device.entity';
+import { DeviceGateway } from './device.gateway';
 import { randomBytes } from 'crypto';
 
 @Injectable()
@@ -9,6 +10,7 @@ export class DeviceAuthService {
   constructor(
     @InjectRepository(Device)
     private deviceRepository: Repository<Device>,
+    private deviceGateway: DeviceGateway,
   ) {}
 
   async activateDevice(activationToken: string): Promise<{
@@ -73,6 +75,12 @@ export class DeviceAuthService {
     await this.deviceRepository.save(device);
 
     console.log('Device activated successfully');
+    
+    // Emit WebSocket event for real-time update
+    if (device.vessel_id) {
+      this.deviceGateway.emitDeviceActivated(device.vessel_id, device);
+    }
+    
     console.log('=== END DEVICE ACTIVATION DEBUG ===');
 
     return {
@@ -158,6 +166,12 @@ export class DeviceAuthService {
 
     const savedDevice = await this.deviceRepository.save(device);
     console.log('DEBUG: Device saved with ID:', savedDevice.device_id);
+    
+    // Emit WebSocket event for real-time update
+    if (savedDevice.vessel_id) {
+      this.deviceGateway.emitDeviceCreated(savedDevice.vessel_id, savedDevice);
+    }
+    
     console.log('=== END DEVICE CREATION DEBUG ===');
     
     return savedDevice;
@@ -205,9 +219,22 @@ export class DeviceAuthService {
       device.state = DeviceState.RETIRED;
       device.auth_token = null; // Clear auth token when retiring
       await this.deviceRepository.save(device);
+      
+      // Emit WebSocket event for device retirement
+      if (device.vessel_id) {
+        this.deviceGateway.emitDeviceRetired(device.vessel_id, device.device_id);
+      }
     } else {
+      // Store vessel_id before deleting for WebSocket event
+      const vesselId = device.vessel_id;
+      
       // Pending and retired devices can be deleted completely
       await this.deviceRepository.delete({ device_id: deviceId });
+      
+      // Emit WebSocket event for device deletion
+      if (vesselId) {
+        this.deviceGateway.emitDeviceDeleted(vesselId, deviceId);
+      }
     }
   }
 
