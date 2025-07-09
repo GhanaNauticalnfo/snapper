@@ -8,8 +8,8 @@ export class RouteResponseDto {
   @ApiProperty({ description: 'Name of the route' })
   name: string;
 
-  @ApiPropertyOptional({ description: 'Description of the route' })
-  description?: string;
+  @ApiPropertyOptional({ description: 'Notes about the route' })
+  notes?: string;
 
   @ApiProperty({ description: 'Waypoints defining the route', type: [Object] })
   waypoints: Waypoint[];

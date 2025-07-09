@@ -21,7 +21,7 @@ describe('RouteController', () => {
   const mockRoute: Route = {
     id: 1,
     name: 'Test Route',
-    description: 'Test Description',
+    notes: 'Test Notes',
     waypoints: [
       { id: '1', lat: 5.603717, lng: -0.186964, name: 'Accra', order: 0 },
       { id: '2', lat: 4.921971, lng: -1.774713, name: 'Takoradi', order: 1 },
@@ -32,7 +32,7 @@ describe('RouteController', () => {
     toResponseDto: jest.fn().mockReturnValue({
       id: 1,
       name: 'Test Route',
-      description: 'Test Description',
+      notes: 'Test Notes',
       waypoints: [
         { id: '1', lat: 5.603717, lng: -0.186964, name: 'Accra', order: 0 },
         { id: '2', lat: 4.921971, lng: -1.774713, name: 'Takoradi', order: 1 },
@@ -46,7 +46,7 @@ describe('RouteController', () => {
   const mockRouteResponseDto: RouteResponseDto = {
     id: 1,
     name: 'Test Route',
-    description: 'Test Description',
+    notes: 'Test Notes',
     waypoints: [
       { id: '1', lat: 5.603717, lng: -0.186964, name: 'Accra', order: 0 },
       { id: '2', lat: 4.921971, lng: -1.774713, name: 'Takoradi', order: 1 },
@@ -58,7 +58,7 @@ describe('RouteController', () => {
 
   const mockRouteInputDto: RouteInputDto = {
     name: 'New Route',
-    description: 'New Route Description',
+    notes: 'New Route Notes',
     waypoints: [
       { id: '1', lat: 5.603717, lng: -0.186964, name: 'Accra', order: 0 },
       { id: '2', lat: 4.921971, lng: -1.774713, name: 'Takoradi', order: 1 },
@@ -146,7 +146,7 @@ describe('RouteController', () => {
         toResponseDto: jest.fn().mockReturnValue({
           ...mockRouteResponseDto,
           name: mockRouteInputDto.name,
-          description: mockRouteInputDto.description,
+          notes: mockRouteInputDto.notes,
         }),
       };
       mockRouteService.create.mockResolvedValue(newRoute);

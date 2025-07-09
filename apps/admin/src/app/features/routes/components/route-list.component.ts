@@ -43,10 +43,6 @@ import { RouteFormComponent } from './route-form.component';
     </lib-resource-list>
     
     <!-- Column Templates -->
-    <ng-template #waypointsTemplate let-item>
-      {{ item.waypoints.length }} waypoints
-    </ng-template>
-    
     <ng-template #statusTemplate let-item>
       <p-tag 
         [value]="item.enabled ? 'Active' : 'Inactive'" 
@@ -69,7 +65,6 @@ export class RouteListComponent implements OnInit, AfterViewInit {
 
   // View children
   routeFormComponent = viewChild<RouteFormComponent>('routeForm');
-  waypointsTemplate = viewChild.required<TemplateRef<any>>('waypointsTemplate');
   statusTemplate = viewChild.required<TemplateRef<any>>('statusTemplate');
   lastUpdatedTemplate = viewChild.required<TemplateRef<any>>('lastUpdatedTemplate');
   
@@ -92,12 +87,11 @@ export class RouteListComponent implements OnInit, AfterViewInit {
       entityNameSingular: 'route',
       columns: [
         { field: 'name', header: 'Name', sortable: true },
-        { field: 'description', header: 'Description', sortable: false },
-        { field: 'waypoints', header: 'Waypoints', sortable: true },
+        { field: 'notes', header: 'Notes', sortable: false },
         { field: 'enabled', header: 'Status', sortable: true },
         { field: 'last_updated', header: 'Last Updated', sortable: true }
       ],
-      searchFields: ['name', 'description'],
+      searchFields: ['name', 'notes'],
       actions: {
         view: true,
         edit: true,
@@ -113,9 +107,8 @@ export class RouteListComponent implements OnInit, AfterViewInit {
   
   ngAfterViewInit() {
     // Now add the template references
-    this.listConfig.columns[2].template = this.waypointsTemplate();
-    this.listConfig.columns[3].template = this.statusTemplate();
-    this.listConfig.columns[4].template = this.lastUpdatedTemplate();
+    this.listConfig.columns[2].template = this.statusTemplate();
+    this.listConfig.columns[3].template = this.lastUpdatedTemplate();
   }
   
   loadRoutes() {

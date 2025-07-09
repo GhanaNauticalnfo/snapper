@@ -11,7 +11,7 @@ export class Route {
   name: string;
 
   @Column({ nullable: true })
-  description: string;
+  notes: string;
 
   @Column('jsonb', { default: [] })
   waypoints: Waypoint[];
@@ -30,7 +30,7 @@ export class Route {
     const dto: RouteResponseDto = {
       id: this.id,
       name: this.name,
-      description: this.description,
+      notes: this.notes,
       waypoints: this.waypoints,
       enabled: this.enabled,
       created: this.created.toISOString(),

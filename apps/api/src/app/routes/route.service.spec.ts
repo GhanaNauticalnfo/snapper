@@ -15,7 +15,7 @@ describe('RouteService', () => {
   const mockRoute: Partial<Route> = {
     id: 1,
     name: 'Test Route',
-    description: 'Test Description',
+    notes: 'Test Notes',
     waypoints: [
       { lat: 5.5509, lng: -0.1975, order: 1 },
       { lat: 5.5609, lng: -0.1875, order: 2 },
@@ -80,7 +80,7 @@ describe('RouteService', () => {
         toResponseDto: jest.fn().mockReturnValue({
           id: 1,
           name: 'Test Route',
-          description: 'Test Description',
+          notes: 'Test Notes',
           waypoints: mockRoute.waypoints,
           enabled: true,
           created: '2025-01-01T12:00:00.000Z',
@@ -111,7 +111,7 @@ describe('RouteService', () => {
         toResponseDto: jest.fn().mockReturnValue({
           id: 1,
           name: 'Test Route',
-          description: 'Test Description',
+          notes: 'Test Notes',
           waypoints: mockRoute.waypoints,
           enabled: true,
           created: '2025-01-01T12:00:00.000Z',
@@ -237,7 +237,7 @@ describe('RouteService', () => {
       const testRoute: Route = {
         id: 1,
         name: 'Test Route',
-        description: 'Test',
+        notes: 'Test',
         waypoints: [
           { lat: 5.5, lng: -0.2, order: 2 },
           { lat: 5.6, lng: -0.1, order: 1 },

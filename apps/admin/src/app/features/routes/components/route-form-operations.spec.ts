@@ -41,7 +41,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
   const mockRoute: Route = {
     id: 1,
     name: 'Test Route',
-    description: 'Test Description',
+    notes: 'Test Notes',
     waypoints: [
       { lat: 5.6037, lng: -0.186, order: 0 },
       { lat: 5.605, lng: -0.185, order: 1 }
@@ -61,7 +61,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
     // Initialize form
     routeForm = fb.nonNullable.group({
       name: fb.nonNullable.control('', RouteValidators.routeName()),
-      description: fb.nonNullable.control('', RouteValidators.routeDescription()),
+      notes: fb.nonNullable.control('', RouteValidators.routeNotes()),
       enabled: fb.nonNullable.control<boolean>(true)
     });
     
@@ -69,12 +69,12 @@ describe('RouteFormComponent - Operations (Unit)', () => {
     mode = signal<'view' | 'edit' | 'create'>('create');
     route = signal<Route | null>(null);
     waypoints = signal<Waypoint[]>([]);
-    currentFormValues = signal<{ name: string; description: string; enabled: boolean }>({ 
+    currentFormValues = signal<{ name: string; notes: string; enabled: boolean }>({ 
       name: '', 
-      description: '', 
+      notes: '', 
       enabled: true 
     });
-    originalFormValues = signal<{ name: string; description: string; enabled: boolean } | null>(null);
+    originalFormValues = signal<{ name: string; notes: string; enabled: boolean } | null>(null);
     originalWaypoints = signal<Waypoint[]>([]);
     mapReady = signal(false);
     showWaypointEditorDialog = false;
@@ -108,7 +108,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       if (originalForm) {
         const formChanged = (
           current.name !== originalForm.name ||
-          current.description !== originalForm.description ||
+          current.notes !== originalForm.notes ||
           current.enabled !== originalForm.enabled
         );
         if (formChanged) return true;
@@ -154,7 +154,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
         
         const routeData: Route = {
           name: formValue.name,
-          description: formValue.description,
+          notes: formValue.notes,
           waypoints: waypoints(),
           enabled: formValue.enabled
         };
@@ -168,7 +168,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
         
         const savedFormValues = {
           name: formValue.name,
-          description: formValue.description,
+          notes: formValue.notes,
           enabled: formValue.enabled
         };
         currentFormValues.set(savedFormValues);
@@ -212,7 +212,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
     updateRouteDisplay = () => {
       const waypointList = waypoints();
       const routeName = routeForm.get('name')?.value || 'Route';
-      const description = routeForm.get('description')?.value || '';
+      const notes = routeForm.get('notes')?.value || '';
       const enabled = routeForm.get('enabled')?.value as boolean;
       
       const routeWaypoints = waypointList.map((wp: Waypoint) => ({
@@ -226,7 +226,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       mockRouteLayerService.setRouteData({
         id: route()?.id,
         name: routeName,
-        description: description,
+        notes: notes,
         waypoints: routeWaypoints,
         enabled: enabled
       });
@@ -246,7 +246,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       if (currentRoute) {
         const formData = {
           name: currentRoute.name || '',
-          description: currentRoute.description || '',
+          notes: currentRoute.notes || '',
           enabled: Boolean(currentRoute.enabled)
         };
         routeForm.reset(formData);
@@ -261,7 +261,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       } else {
         const formData = {
           name: '',
-          description: '',
+          notes: '',
           enabled: true
         };
         routeForm.reset(formData);
@@ -308,7 +308,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       mode.set('create');
       routeForm.patchValue({
         name: 'New Route',
-        description: 'New Description',
+        notes: 'New Notes',
         enabled: false
       });
       waypoints.set(mockWaypoints);
@@ -317,7 +317,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       
       expect(saveEmitSpy).toHaveBeenCalledWith({
         name: 'New Route',
-        description: 'New Description',
+        notes: 'New Notes',
         waypoints: mockWaypoints,
         enabled: false
       });
@@ -336,7 +336,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       expect(saveEmitSpy).toHaveBeenCalledWith({
         id: 1,
         name: 'Updated Route',
-        description: mockRoute.description,
+        notes: mockRoute.notes,
         waypoints: mockRoute.waypoints,
         enabled: mockRoute.enabled
       });
@@ -482,13 +482,13 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       
       expect(routeForm.value).toEqual({
         name: mockRoute.name,
-        description: mockRoute.description,
+        notes: mockRoute.notes,
         enabled: mockRoute.enabled
       });
       expect(waypoints()).toEqual(mockRoute.waypoints);
       expect(originalFormValues()).toEqual({
         name: mockRoute.name,
-        description: mockRoute.description,
+        notes: mockRoute.notes,
         enabled: mockRoute.enabled
       });
     });
@@ -500,7 +500,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       
       expect(routeForm.value).toEqual({
         name: '',
-        description: '',
+        notes: '',
         enabled: true
       });
       expect(waypoints()).toEqual([]);
@@ -517,7 +517,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       
       resetFormWithRouteData();
       
-      expect(routeForm.value.description).toBe('');
+      expect(routeForm.value.notes).toBe('');
     });
   });
 
@@ -553,7 +553,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
     it('should convert waypoints to route format', () => {
       routeForm.patchValue({
         name: 'Test Route',
-        description: 'Test Desc',
+        notes: 'Test Notes',
         enabled: true
       });
       waypoints.set(mockWaypoints);
@@ -564,7 +564,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       expect(mockRouteLayerService.setRouteData).toHaveBeenCalledWith({
         id: 1,
         name: 'Test Route',
-        description: 'Test Desc',
+        notes: 'Test Notes',
         waypoints: expect.arrayContaining([
           expect.objectContaining({
             lat: mockWaypoints[0].lat,
@@ -579,7 +579,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
     it('should use default values for empty fields', () => {
       routeForm.patchValue({
         name: '',
-        description: '',
+        notes: '',
         enabled: false
       });
       waypoints.set([]);
@@ -589,7 +589,7 @@ describe('RouteFormComponent - Operations (Unit)', () => {
       expect(mockRouteLayerService.setRouteData).toHaveBeenCalledWith({
         id: undefined,
         name: 'Route',
-        description: '',
+        notes: '',
         waypoints: [],
         enabled: false
       });

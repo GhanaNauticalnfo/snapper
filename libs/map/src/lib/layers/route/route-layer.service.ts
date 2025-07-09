@@ -16,7 +16,7 @@ export interface RouteWaypoint {
 export interface RouteData {
   id?: number;
   name: string;
-  description?: string;
+  notes?: string;
   waypoints: RouteWaypoint[];
   enabled: boolean;
 }

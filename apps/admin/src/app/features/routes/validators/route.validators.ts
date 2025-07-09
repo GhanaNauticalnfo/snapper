@@ -9,7 +9,7 @@ export class RouteValidators {
     ];
   }
 
-  static routeDescription(): ValidatorFn[] {
+  static routeNotes(): ValidatorFn[] {
     return [
       Validators.maxLength(500)
     ];

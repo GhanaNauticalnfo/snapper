@@ -20,7 +20,7 @@ describe('RouteFormComponent - canSave Logic (Unit)', () => {
   const mockRoute: Route = {
     id: 1,
     name: 'Test Route',
-    description: 'Test Description',
+    notes: 'Test Notes',
     waypoints: [
       { lat: 5.6037, lng: -0.186, order: 0 },
       { lat: 5.605, lng: -0.185, order: 1 }
@@ -39,19 +39,19 @@ describe('RouteFormComponent - canSave Logic (Unit)', () => {
     // Initialize form
     routeForm = fb.nonNullable.group({
       name: fb.nonNullable.control('', RouteValidators.routeName()),
-      description: fb.nonNullable.control('', RouteValidators.routeDescription()),
+      notes: fb.nonNullable.control('', RouteValidators.routeNotes()),
       enabled: fb.nonNullable.control<boolean>(true)
     });
     
     // Initialize signals
     mode = signal<'view' | 'edit' | 'create'>('create');
     waypoints = signal<Waypoint[]>([]);
-    currentFormValues = signal<{ name: string; description: string; enabled: boolean }>({ 
+    currentFormValues = signal<{ name: string; notes: string; enabled: boolean }>({ 
       name: '', 
-      description: '', 
+      notes: '', 
       enabled: true 
     });
-    originalFormValues = signal<{ name: string; description: string; enabled: boolean } | null>(null);
+    originalFormValues = signal<{ name: string; notes: string; enabled: boolean } | null>(null);
     originalWaypoints = signal<Waypoint[]>([]);
     
     // Subscribe to form changes
@@ -70,7 +70,7 @@ describe('RouteFormComponent - canSave Logic (Unit)', () => {
       if (originalForm) {
         const formChanged = (
           current.name !== originalForm.name ||
-          current.description !== originalForm.description ||
+          current.notes !== originalForm.notes ||
           current.enabled !== originalForm.enabled
         );
         
@@ -211,13 +211,13 @@ describe('RouteFormComponent - canSave Logic (Unit)', () => {
         // Simulate loading a route
         routeForm.reset({
           name: mockRoute.name,
-          description: mockRoute.description,
+          notes: mockRoute.notes,
           enabled: mockRoute.enabled
         });
         waypoints.set(mockRoute.waypoints || []);
         originalFormValues.set({
           name: mockRoute.name || '',
-          description: mockRoute.description || '',
+          notes: mockRoute.notes || '',
           enabled: mockRoute.enabled
         });
         originalWaypoints.set(mockRoute.waypoints || []);
@@ -232,8 +232,8 @@ describe('RouteFormComponent - canSave Logic (Unit)', () => {
         expect(canSave()).toBe(true);
       });
 
-      it('should return true when description changed', () => {
-        routeForm.patchValue({ description: 'Updated Description' });
+      it('should return true when notes changed', () => {
+        routeForm.patchValue({ notes: 'Updated Notes' });
         expect(canSave()).toBe(true);
       });
 
@@ -319,7 +319,7 @@ describe('RouteFormComponent - canSave Logic (Unit)', () => {
         mode.set('view');
         routeForm.reset({
           name: mockRoute.name,
-          description: mockRoute.description,
+          notes: mockRoute.notes,
           enabled: mockRoute.enabled
         });
         waypoints.set(mockRoute.waypoints || []);
@@ -345,7 +345,7 @@ describe('RouteFormComponent - canSave Logic (Unit)', () => {
       mode.set('edit');
       routeForm.reset({
         name: mockRoute.name,
-        description: mockRoute.description,
+        notes: mockRoute.notes,
         enabled: mockRoute.enabled
       });
       waypoints.set(mockRoute.waypoints || []);

@@ -128,7 +128,7 @@ Devices
 
 ### Activation Flow
 
-1. **URL Scheme**: `ghmaritimeapp://auth?token=ACTIVATION_TOKEN`
+1. **URL Scheme**: `ghanawaters://auth?token=ACTIVATION_TOKEN`
 2. **TokenAuthActivity** handles the URL and exchanges token
 3. **Stored Credentials** (encrypted SharedPreferences):
    - `auth_token` - For API authentication
@@ -166,7 +166,7 @@ POST /api/vessels/telemetry/report
 
 2. **Admin shares activation URL**:
    - Direct link: `http://192.168.1.x:4200/activate?token=XXX`
-   - App scheme: `ghmaritimeapp://auth?token=XXX`
+   - App scheme: `ghanawaters://auth?token=XXX`
 
 3. **User activates on mobile**:
    - Clicks activation link

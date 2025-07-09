@@ -21,7 +21,7 @@ describe('RouteFormComponent - Validation (Unit)', () => {
     // Initialize form with validators
     routeForm = fb.nonNullable.group({
       name: fb.nonNullable.control('', RouteValidators.routeName()),
-      description: fb.nonNullable.control('', RouteValidators.routeDescription()),
+      notes: fb.nonNullable.control('', RouteValidators.routeNotes()),
       enabled: fb.nonNullable.control<boolean>(true)
     });
   });
@@ -78,24 +78,24 @@ describe('RouteFormComponent - Validation (Unit)', () => {
     });
   });
 
-  describe('description field validation', () => {
+  describe('notes field validation', () => {
     it('should be optional', () => {
-      const descControl = routeForm.get('description');
+      const descControl = routeForm.get('notes');
       
       expect(descControl?.hasError('required')).toBe(false);
       expect(descControl?.valid).toBe(true);
     });
 
-    it('should accept valid description', () => {
-      const descControl = routeForm.get('description');
+    it('should accept valid notes', () => {
+      const descControl = routeForm.get('notes');
       
-      descControl?.setValue('This is a valid description for the route');
+      descControl?.setValue('This is a valid note for the route');
       
       expect(descControl?.valid).toBe(true);
     });
 
-    it('should reject description longer than 500 characters', () => {
-      const descControl = routeForm.get('description');
+    it('should reject notes longer than 500 characters', () => {
+      const descControl = routeForm.get('notes');
       const longDesc = 'a'.repeat(501);
       
       descControl?.setValue(longDesc);
@@ -107,8 +107,8 @@ describe('RouteFormComponent - Validation (Unit)', () => {
       });
     });
 
-    it('should accept description exactly 500 characters', () => {
-      const descControl = routeForm.get('description');
+    it('should accept notes exactly 500 characters', () => {
+      const descControl = routeForm.get('notes');
       const maxDesc = 'a'.repeat(500);
       
       descControl?.setValue(maxDesc);
@@ -142,7 +142,7 @@ describe('RouteFormComponent - Validation (Unit)', () => {
     it('should be invalid when only name is missing', () => {
       routeForm.patchValue({
         name: '',
-        description: 'Valid description',
+        notes: 'Valid notes',
         enabled: true
       });
       
@@ -152,17 +152,17 @@ describe('RouteFormComponent - Validation (Unit)', () => {
     it('should be valid when all required fields are provided', () => {
       routeForm.patchValue({
         name: 'Valid Name',
-        description: 'Valid description',
+        notes: 'Valid notes',
         enabled: true
       });
       
       expect(routeForm.valid).toBe(true);
     });
 
-    it('should be valid when optional description is empty', () => {
+    it('should be valid when optional notes is empty', () => {
       routeForm.patchValue({
         name: 'Valid Name',
-        description: '',
+        notes: '',
         enabled: true
       });
       
@@ -174,7 +174,7 @@ describe('RouteFormComponent - Validation (Unit)', () => {
     it('should maintain validators after reset', () => {
       routeForm.patchValue({
         name: 'Test',
-        description: 'Test',
+        notes: 'Test',
         enabled: false
       });
       
@@ -187,13 +187,13 @@ describe('RouteFormComponent - Validation (Unit)', () => {
     it('should reset to provided values', () => {
       routeForm.reset({
         name: 'Reset Name',
-        description: 'Reset Desc',
+        notes: 'Reset Notes',
         enabled: false
       });
       
       expect(routeForm.value).toEqual({
         name: 'Reset Name',
-        description: 'Reset Desc',
+        notes: 'Reset Notes',
         enabled: false
       });
       expect(routeForm.valid).toBe(true);

@@ -17,21 +17,49 @@ export class DeviceAuthService {
     device_id: string;
     vessel?: string;
   }> {
+    console.log('=== DEVICE ACTIVATION DEBUG ===');
+    console.log('Activation token:', activationToken);
+    console.log('Current server time:', new Date().toISOString());
+    console.log('Current server time (raw):', new Date());
+    
     const device = await this.deviceRepository.findOne({
       where: { activation_token: activationToken },
       relations: ['vessel'],
     });
 
     if (!device) {
+      console.log('Device not found for activation token');
+      console.log('=== END DEVICE ACTIVATION DEBUG ===');
       throw new HttpException('Invalid activation token', HttpStatus.NOT_FOUND);
     }
 
+    console.log('Device found:', {
+      device_id: device.device_id,
+      state: device.state,
+      expires_at: device.expires_at,
+      expires_at_iso: device.expires_at?.toISOString(),
+      activated_at: device.activated_at,
+      vessel_id: device.vessel_id
+    });
+
     if (device.state === DeviceState.ACTIVE) {
+      console.log('Device already activated');
+      console.log('=== END DEVICE ACTIVATION DEBUG ===');
       throw new HttpException('Token already activated', HttpStatus.GONE);
     }
 
     if (device.expires_at && device.expires_at < new Date()) {
-      throw new HttpException('Activation token expired', HttpStatus.GONE);
+      const now = new Date();
+      console.log('Expiration check failed:');
+      console.log('  - Device expires_at:', device.expires_at);
+      console.log('  - Device expires_at (ISO):', device.expires_at.toISOString());
+      console.log('  - Current time:', now);
+      console.log('  - Current time (ISO):', now.toISOString());
+      console.log('  - Is expired?', device.expires_at < now);
+      console.log('  - Time difference (ms):', now.getTime() - device.expires_at.getTime());
+      console.log('=== END DEVICE ACTIVATION DEBUG ===');
+      const message = `Activation token expired. Device expires at: ${device.expires_at.toISOString()}, Current server time: ${now.toISOString()}`;
+      throw new HttpException(message, HttpStatus.GONE);
     }
 
     // Generate auth token
@@ -43,6 +71,9 @@ export class DeviceAuthService {
     device.state = DeviceState.ACTIVE;
     
     await this.deviceRepository.save(device);
+
+    console.log('Device activated successfully');
+    console.log('=== END DEVICE ACTIVATION DEBUG ===');
 
     return {
       auth_token: authToken,

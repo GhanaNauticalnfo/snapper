@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBadRequestResponse } from '@nestjs/swagger';
 import { RouteService } from './route.service';
 import { RouteResponseDto } from './dto/route-response.dto';
 import { RouteInputDto } from './dto/route-input.dto';
@@ -28,7 +28,15 @@ export class RouteController {
   @Post()
   @ApiOperation({ summary: 'Create a new route' })
   @ApiResponse({ status: 201, description: 'Route created successfully', type: RouteResponseDto })
-  @ApiResponse({ status: 400, description: 'Invalid input' })
+  @ApiBadRequestResponse({ 
+    description: 'Validation failed. Possible errors:\n' +
+      '- Route must have at least 2 waypoints\n' +
+      '- Waypoint orders must be unique within the route\n' +
+      '- Route waypoints cannot all be at the same location\n' +
+      '- Invalid latitude/longitude values\n' +
+      '- Route is too short (waypoints too close together)\n' +
+      '- GeoJSON conversion failed'
+  })
   async create(@Body() routeInput: RouteInputDto): Promise<RouteResponseDto> {
     const route = await this.routeService.create(routeInput);
     return route.toResponseDto();
@@ -38,7 +46,15 @@ export class RouteController {
   @ApiOperation({ summary: 'Update a route' })
   @ApiResponse({ status: 200, description: 'Route updated successfully', type: RouteResponseDto })
   @ApiResponse({ status: 404, description: 'Route not found' })
-  @ApiResponse({ status: 400, description: 'Invalid input' })
+  @ApiBadRequestResponse({ 
+    description: 'Validation failed. Possible errors:\n' +
+      '- Route must have at least 2 waypoints\n' +
+      '- Waypoint orders must be unique within the route\n' +
+      '- Route waypoints cannot all be at the same location\n' +
+      '- Invalid latitude/longitude values\n' +
+      '- Route is too short (waypoints too close together)\n' +
+      '- GeoJSON conversion failed'
+  })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() routeInput: RouteInputDto,
@@ -48,6 +64,7 @@ export class RouteController {
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a route' })
   @ApiResponse({ status: 204, description: 'Route deleted successfully' })
   @ApiResponse({ status: 404, description: 'Route not found' })

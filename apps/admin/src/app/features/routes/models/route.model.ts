@@ -9,7 +9,7 @@ export interface Waypoint {
 export interface Route {
   id?: number;
   name: string;
-  description?: string;
+  notes?: string;
   waypoints: Waypoint[];
   created?: Date;
   last_updated?: Date;

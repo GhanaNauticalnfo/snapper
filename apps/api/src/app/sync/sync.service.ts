@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThan, EntityManager } from 'typeorm';
 import { SyncLog } from './sync-log.entity';
 import { SyncVersion } from './sync-version.entity';
 
@@ -56,22 +56,48 @@ export class SyncService {
     const majorVersion = await this.getCurrentMajorVersion();
     
     await this.syncLogRepository.manager.transaction(async manager => {
-      // Mark previous entries as not latest
-      await manager.update(
-        SyncLog,
-        { entity_id: entityId, entity_type: entityType, is_latest: true },
-        { is_latest: false },
+      await this.logChangeInTransaction(
+        manager,
+        entityType,
+        entityId,
+        action,
+        data,
+        majorVersion
       );
+    });
+  }
 
-      // Insert new entry
-      await manager.save(SyncLog, {
-        entity_type: entityType,
-        entity_id: entityId,
-        action: action,
-        data: action === 'delete' ? null : data,
-        is_latest: true,
-        major_version: majorVersion,
+  async logChangeInTransaction(
+    manager: EntityManager,
+    entityType: string,
+    entityId: string,
+    action: 'create' | 'update' | 'delete',
+    data?: any,
+    majorVersion?: number,
+  ) {
+    // Get major version if not provided
+    if (majorVersion === undefined) {
+      const currentVersion = await manager.findOne(SyncVersion, {
+        where: { is_current: true },
       });
+      majorVersion = currentVersion?.major_version || 1;
+    }
+
+    // Mark previous entries as not latest
+    await manager.update(
+      SyncLog,
+      { entity_id: entityId, entity_type: entityType, is_latest: true },
+      { is_latest: false },
+    );
+
+    // Insert new entry
+    await manager.save(SyncLog, {
+      entity_type: entityType,
+      entity_id: entityId,
+      action: action,
+      data: action === 'delete' ? null : data,
+      is_latest: true,
+      major_version: majorVersion,
     });
   }
 

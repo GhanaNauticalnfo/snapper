@@ -75,14 +75,14 @@ import { environment } from '../../../../environments/environment';
             </div>
 
             <div class="field">
-              <label for="description" class="block mb-2">Description</label>
+              <label for="notes" class="block mb-2">Notes</label>
               <textarea 
                 pTextarea 
-                id="description" 
-                formControlName="description" 
+                id="notes" 
+                formControlName="notes" 
                 rows="3"
                 class="w-full"
-                placeholder="Enter route description">
+                placeholder="Enter route notes">
               </textarea>
             </div>
 
@@ -311,12 +311,12 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
   mapReady = signal(false);
   
   // Change tracking
-  currentFormValues = signal<{ name: string; description: string; enabled: boolean }>({ 
+  currentFormValues = signal<{ name: string; notes: string; enabled: boolean }>({ 
     name: '', 
-    description: '', 
+    notes: '', 
     enabled: true 
   });
-  originalFormValues = signal<{ name: string; description: string; enabled: boolean } | null>(null);
+  originalFormValues = signal<{ name: string; notes: string; enabled: boolean } | null>(null);
   originalWaypoints = signal<Waypoint[]>([]);
   
   // Computed values
@@ -345,7 +345,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
     // Initialize form with validators
     this.routeForm = this.fb.nonNullable.group({
       name: this.fb.nonNullable.control('', RouteValidators.routeName()),
-      description: this.fb.nonNullable.control('', RouteValidators.routeDescription()),
+      notes: this.fb.nonNullable.control('', RouteValidators.routeNotes()),
       enabled: this.fb.nonNullable.control<boolean>(true)
     });
     
@@ -387,7 +387,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
     if (originalForm) {
       const formChanged = (
         current.name !== originalForm.name ||
-        current.description !== originalForm.description ||
+        current.notes !== originalForm.notes ||
         current.enabled !== originalForm.enabled
       );
       
@@ -496,7 +496,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
       // Reset form with route data
       const formData = {
         name: currentRoute.name || '',
-        description: currentRoute.description || '',
+        notes: currentRoute.notes || '',
         enabled: Boolean(currentRoute.enabled)
       };
       this.routeForm.reset(formData);
@@ -517,7 +517,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
       // Reset form to default values for create mode
       const formData = {
         name: '',
-        description: '',
+        notes: '',
         enabled: true
       };
       this.routeForm.reset(formData);
@@ -551,7 +551,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
   private updateRouteDisplay(): void {
     const waypointList = this.waypoints();
     const routeName = this.routeForm.get('name')?.value || 'Route';
-    const description = this.routeForm.get('description')?.value || '';
+    const notes = this.routeForm.get('notes')?.value || '';
     const enabled = this.routeForm.get('enabled')?.value as boolean;
     
     // Convert Waypoint[] to RouteWaypoint[]
@@ -566,7 +566,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
     this.routeLayerService.setRouteData({
       id: this.route()?.id,
       name: routeName,
-      description: description,
+      notes: notes,
       waypoints: routeWaypoints,
       enabled: enabled
     });
@@ -621,7 +621,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
       // Only send fields that the API accepts
       const route: Route = {
         name: formValue.name,
-        description: formValue.description,
+        notes: formValue.notes,
         waypoints: this.waypoints(),
         enabled: formValue.enabled
       };
@@ -638,7 +638,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
       // Update both current and original values to reflect the saved state
       const savedFormValues = {
         name: formValue.name,
-        description: formValue.description,
+        notes: formValue.notes,
         enabled: formValue.enabled
       };
       this.currentFormValues.set(savedFormValues);
