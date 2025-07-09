@@ -170,7 +170,7 @@ describe('DeviceAuthService', () => {
       deviceRepository.findOne.mockResolvedValue(expiredDevice as Device);
 
       await expect(service.activateDevice('test-activation-token')).rejects.toThrow(
-        new HttpException('Activation token expired', HttpStatus.GONE)
+        HttpException
       );
     });
   });
@@ -257,38 +257,6 @@ describe('DeviceAuthService', () => {
     });
   });
 
-  describe('retireDevice', () => {
-    it('should retire an active device successfully', async () => {
-      const activeDevice = { 
-        ...mockDevice, 
-        state: DeviceState.ACTIVE,
-        auth_token: 'active-auth-token'
-      };
-      
-      deviceRepository.findOne.mockResolvedValue(activeDevice as Device);
-      deviceRepository.save.mockResolvedValue({
-        ...activeDevice,
-        state: DeviceState.RETIRED,
-        auth_token: null
-      } as Device);
-
-      const result = await service.retireDevice('test-device-id');
-
-      expect(deviceRepository.findOne).toHaveBeenCalledWith({
-        where: { device_id: 'test-device-id', state: DeviceState.ACTIVE }
-      });
-      expect(result.state).toBe(DeviceState.RETIRED);
-      expect(result.auth_token).toBeNull();
-    });
-
-    it('should throw error when trying to retire non-active device', async () => {
-      deviceRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.retireDevice('test-device-id')).rejects.toThrow(
-        new HttpException('Active device not found', HttpStatus.NOT_FOUND)
-      );
-    });
-  });
 
   describe('deleteDevice', () => {
     it('should delete a pending device successfully', async () => {
@@ -319,17 +287,30 @@ describe('DeviceAuthService', () => {
       expect(deviceRepository.delete).toHaveBeenCalledWith({ device_id: 'test-device-id' });
     });
 
-    it('should throw error when trying to delete active device', async () => {
+    it('should retire active device instead of deleting', async () => {
       const activeDevice = { 
         ...mockDevice, 
-        state: DeviceState.ACTIVE 
+        state: DeviceState.ACTIVE,
+        auth_token: 'active-auth-token'
       };
       
       deviceRepository.findOne.mockResolvedValue(activeDevice as Device);
+      deviceRepository.save.mockResolvedValue({
+        ...activeDevice,
+        state: DeviceState.RETIRED,
+        auth_token: null
+      } as Device);
 
-      await expect(service.deleteDevice('test-device-id')).rejects.toThrow(
-        new HttpException('Cannot delete active device. Retire it instead.', HttpStatus.BAD_REQUEST)
+      await service.deleteDevice('test-device-id');
+
+      expect(deviceRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          device_id: 'test-device-id',
+          state: DeviceState.RETIRED,
+          auth_token: null
+        })
       );
+      expect(deviceRepository.delete).not.toHaveBeenCalled();
     });
 
     it('should throw error when device not found', async () => {

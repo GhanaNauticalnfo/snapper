@@ -5,6 +5,7 @@ import { DeviceController } from './device.controller';
 import { DeviceAuthService } from './device-auth.service';
 import { Device, DeviceState } from './device.entity';
 import { DeviceResponseDto } from './dto/device-response.dto';
+import { BadRequestException } from '@nestjs/common';
 
 describe('DeviceController', () => {
   let controller: DeviceController;
@@ -58,8 +59,8 @@ describe('DeviceController', () => {
           provide: DeviceAuthService,
           useValue: {
             createDevice: jest.fn(),
-            retireDevice: jest.fn(),
             deleteDevice: jest.fn(),
+            activateDevice: jest.fn(),
           },
         },
         {
@@ -103,7 +104,7 @@ describe('DeviceController', () => {
       expect(deviceRepository.createQueryBuilder).toHaveBeenCalledWith('device');
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('device.vessel', 'vessel');
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        'device.expires_at IS NULL OR device.expires_at > :now', 
+        '(device.expires_at IS NULL OR device.expires_at > :now)', 
         { now: expect.any(Date) }
       );
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
@@ -165,7 +166,7 @@ describe('DeviceController', () => {
       await controller.findAll('true');
 
       expect(mockQueryBuilder.andWhere).not.toHaveBeenCalledWith(
-        'device.expires_at IS NULL OR device.expires_at > :now', 
+        '(device.expires_at IS NULL OR device.expires_at > :now)', 
         { now: expect.any(Date) }
       );
     });
@@ -217,53 +218,49 @@ describe('DeviceController', () => {
     });
   });
 
-  describe('retire', () => {
-    it('should retire an active device successfully', async () => {
-      const retiredDevice = createMockDevice({ state: DeviceState.RETIRED });
-      deviceAuthService.retireDevice.mockResolvedValue(retiredDevice);
 
-      const result = await controller.retire('test-device-id');
-
-      expect(deviceAuthService.retireDevice).toHaveBeenCalledWith('test-device-id');
-      expect(result).toEqual(retiredDevice.toResponseDto());
-    });
-  });
-
-  describe('revoke (deprecated)', () => {
-    it('should retire device for backward compatibility', async () => {
-      const retiredDevice = createMockDevice({ state: DeviceState.RETIRED });
-      deviceAuthService.retireDevice.mockResolvedValue(retiredDevice);
-
-      const result = await controller.revoke('test-device-id');
-
-      expect(deviceAuthService.retireDevice).toHaveBeenCalledWith('test-device-id');
-      expect(result).toEqual({ success: true, device: retiredDevice.toResponseDto() });
-    });
-  });
-
-  describe('regenerate', () => {
-    it('should regenerate device token successfully', async () => {
-      const existingDevice = createMockDevice();
-      const newDevice = createMockDevice({ device_id: 'new-device-id' });
+  describe('activate', () => {
+    it('should activate a device and return credentials', async () => {
+      const activationResult = {
+        device_id: 'test-device-id',
+        device_token: 'test-device-token',
+        auth_token: 'new-auth-token',
+        vessel_id: 1,
+      };
       
-      deviceRepository.findOne.mockResolvedValue(existingDevice);
-      deviceAuthService.createDevice.mockResolvedValue(newDevice);
-      deviceAuthService.deleteDevice.mockResolvedValue();
+      deviceAuthService.activateDevice = jest.fn().mockResolvedValue(activationResult);
 
-      const result = await controller.regenerate('test-device-id');
+      const result = await controller.activate({ activation_token: 'test-activation-token' });
 
-      expect(deviceRepository.findOne).toHaveBeenCalledWith({
-        where: { device_id: 'test-device-id' }
-      });
-      expect(deviceAuthService.createDevice).toHaveBeenCalledWith(1, 3);
-      expect(deviceAuthService.deleteDevice).toHaveBeenCalledWith('test-device-id');
-      expect(result).toEqual(newDevice.toResponseDto(true));
+      expect(deviceAuthService.activateDevice).toHaveBeenCalledTimes(1);
+      expect(deviceAuthService.activateDevice).toHaveBeenCalledWith('test-activation-token');
+      expect(result).toEqual(activationResult);
     });
 
-    it('should throw error when device not found', async () => {
-      deviceRepository.findOne.mockResolvedValue(null);
+    it('should throw BadRequestException for invalid token', async () => {
+      deviceAuthService.activateDevice = jest.fn().mockRejectedValue(
+        new BadRequestException('Invalid or expired activation token')
+      );
 
-      await expect(controller.regenerate('non-existent-id')).rejects.toThrow('Device not found');
+      await expect(
+        controller.activate({ activation_token: 'invalid-token' })
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        controller.activate({ activation_token: 'invalid-token' })
+      ).rejects.toThrow('Invalid or expired activation token');
+    });
+
+    it('should throw BadRequestException for already activated device', async () => {
+      deviceAuthService.activateDevice = jest.fn().mockRejectedValue(
+        new BadRequestException('Device is already activated')
+      );
+
+      await expect(
+        controller.activate({ activation_token: 'test-activation-token' })
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        controller.activate({ activation_token: 'test-activation-token' })
+      ).rejects.toThrow('Device is already activated');
     });
   });
 });
