@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, Query, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query, NotFoundException, HttpCode } from '@nestjs/common';
 import { 
   ApiTags, ApiOperation, ApiResponse, ApiParam, 
   ApiQuery, ApiBearerAuth, ApiBody 
@@ -115,6 +115,7 @@ export class DeviceController {
 
 
   @Post('activate')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Activate device', description: 'Activate a device using an activation token' })
   @ApiBody({ type: DeviceActivationDto })
   @ApiResponse({ status: 200, description: 'Device activated successfully' })
