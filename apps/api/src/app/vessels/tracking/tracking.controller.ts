@@ -118,7 +118,7 @@ export class TrackingController {
     @Req() req: any
   ): Promise<VesselTelemetryResponseDto> {
     const device = req.device;
-    return this.trackingService.create(device.vessel_id, trackingData);
+    return this.trackingService.create(device.vessel_id, trackingData, device.device_id);
   }
 
   @Get('telemetry/export/stats')

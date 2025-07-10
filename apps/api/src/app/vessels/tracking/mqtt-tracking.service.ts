@@ -64,11 +64,10 @@ export class MqttTrackingService implements OnModuleInit {
           heading_degrees: data.heading_degrees,
           battery_level: data.battery_level,
           signal_strength: data.signal_strength,
-          device_id: data.device_id,
           status: data.status || (data.speed_knots > 0.5 ? 'moving' : 'stationary')
         };
         
-        await this.trackingService.create(vesselId, trackingData);
+        await this.trackingService.create(vesselId, trackingData, data.device_id);
         console.log(`Recorded position for vessel ${vesselId}`);
       } catch (error) {
         console.error('Error processing MQTT message:', error);

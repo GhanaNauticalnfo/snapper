@@ -62,10 +62,5 @@ export class VesselTelemetryInputDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  device_id?: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsString()
   status?: string;
 }

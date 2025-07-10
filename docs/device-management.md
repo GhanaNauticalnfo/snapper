@@ -69,6 +69,7 @@ The `devices` table contains:
 - `POST /api/vessels/telemetry/report` - Report vessel position (requires device auth)
   - Protected by `DeviceAuthGuard`
   - Requires `Authorization: Bearer <auth_token>` header
+  - Device ID and vessel ID are automatically determined from the authenticated device
 
 ### Services
 
@@ -146,13 +147,17 @@ Authorization: Bearer <auth_token>
 // Endpoint
 POST /api/vessels/telemetry/report
 {
-  "latitude": 5.123,
-  "longitude": -1.234,
-  "timestamp": "2024-01-01T12:00:00Z",
-  "speed": 10.5,
-  "heading": 180
+  "position": {
+    "type": "Point",
+    "coordinates": [-1.234, 5.123]  // [longitude, latitude]
+  },
+  "timestamp": "2024-01-01T12:00:00Z",  // ISO 8601 format
+  "speed_knots": 10.5,  // Speed in knots
+  "heading_degrees": 180  // Heading in degrees (0-360)
 }
 ```
+
+**Note**: The device_id and vessel_id are automatically determined from the Bearer token authentication. No need to include them in the request payload.
 
 ## Workflow Examples
 
