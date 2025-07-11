@@ -188,7 +188,12 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       layout: {
         'icon-image': 'ship-icon',
         'icon-rotate': ['get', 'heading'],
-        'icon-size': 0.75,
+        'icon-size': [
+          'case',
+          ['get', 'isSelected'],
+          1.2,  // Larger size for selected vessel
+          0.75  // Normal size for other vessels
+        ],
         'icon-allow-overlap': true
       }
     });
@@ -287,7 +292,8 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
               speed: positionUpdate.speed || 0,
               type: positionUpdate.vesselType,
               status: 'Active',
-              lastUpdate: positionUpdate.timestamp
+              lastUpdate: positionUpdate.timestamp,
+              isSelected: this.vesselFilter === vessel.id
             }
           });
         }
@@ -489,22 +495,13 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     
     const source = this.map.getSource(this.layerId) as GeoJSONSource;
     if (source) {
-      // Filter vessel positions based on vesselFilter
-      const filteredPositions = this.vesselFilter 
-        ? Array.from(this.vesselPositions.values()).filter(pos => pos.vesselId === this.vesselFilter)
-        : Array.from(this.vesselPositions.values());
+      // Show all vessels, but mark the selected one
+      const allPositions = Array.from(this.vesselPositions.values());
       
-      console.log(`AIS Layer: Displaying ${filteredPositions.length} vessels (filter: ${this.vesselFilter || 'none'})`);
-      console.log('AIS Layer: Total positions available:', this.vesselPositions.size);
-      console.log('AIS Layer: All vessel IDs:', Array.from(this.vesselPositions.keys()));
-      if (this.vesselFilter) {
-        console.log('AIS Layer: Looking for vessel ID:', this.vesselFilter);
-        const matchingVessel = this.vesselPositions.get(this.vesselFilter);
-        console.log('AIS Layer: Found matching vessel:', matchingVessel);
-      }
+      console.log(`AIS Layer: Displaying ${allPositions.length} vessels (highlighted: ${this.vesselFilter || 'none'})`);
       
-      // Convert filtered vessel positions to GeoJSON
-      const features: GeoJSON.Feature[] = filteredPositions.map((pos: PositionUpdate) => ({
+      // Convert all vessel positions to GeoJSON with highlight flag
+      const features: GeoJSON.Feature[] = allPositions.map((pos: PositionUpdate) => ({
         type: 'Feature',
         geometry: {
           type: 'Point',
@@ -517,7 +514,9 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           speed: pos.speed || 0,
           type: pos.vesselType,
           status: pos.status || 'Active',
-          lastUpdate: pos.timestamp
+          lastUpdate: pos.timestamp,
+          // Add a property to indicate if this vessel is selected
+          isSelected: this.vesselFilter === pos.vesselId
         }
       } as GeoJSON.Feature));
       
@@ -525,6 +524,18 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
         type: 'FeatureCollection',
         features
       });
+      
+      // Update the layer paint properties to highlight selected vessel
+      if (this.map.getLayer(this.layerId)) {
+        // For symbol layers, we can't easily change the icon color
+        // So we'll update the icon size to make selected vessels larger
+        this.map.setLayoutProperty(this.layerId, 'icon-size', [
+          'case',
+          ['get', 'isSelected'],
+          1.2,  // Larger size for selected vessel
+          0.75  // Normal size for other vessels
+        ]);
+      }
     }
   }
   

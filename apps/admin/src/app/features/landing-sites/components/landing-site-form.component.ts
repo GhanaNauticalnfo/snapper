@@ -584,18 +584,6 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
       this.save.emit(landingSite);
       // Reset map state in case dialog closes
       this.mapReady.set(false);
-      
-      // Update both current and original values to reflect the saved state
-      const savedFormValues = {
-        name: formValue.name,
-        description: formValue.description,
-        enabled: formValue.enabled
-      };
-      this.currentFormValues.set(savedFormValues);
-      this.originalFormValues.set({ ...savedFormValues });
-      // Deep copy location to update original state
-      const currentLoc = this.currentLocation();
-      this.originalLocation.set({ ...currentLoc, coordinates: [...currentLoc.coordinates] });
     }
   }
 }

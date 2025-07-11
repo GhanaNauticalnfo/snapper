@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ChangeDetectionStrategy, TemplateRef, signal, viewChild, inject, computed } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ChangeDetectionStrategy, TemplateRef, signal, viewChild, inject, computed, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
@@ -68,6 +68,7 @@ export class LandingSiteListComponent implements OnInit, AfterViewInit {
   // Services
   private landingSiteService = inject(LandingSiteService);
   private messageService = inject(MessageService);
+  private cdr = inject(ChangeDetectorRef);
 
   // View children
   landingSiteFormComponent = viewChild<LandingSiteFormComponent>('landingSiteForm');
@@ -203,6 +204,7 @@ export class LandingSiteListComponent implements OnInit, AfterViewInit {
         next: (newSite) => {
           this.landingSites.update(sites => [...sites, newSite]);
           this.showDialog = false;
+          this.cdr.detectChanges();
           this.messageService.add({
             severity: 'success',
             summary: 'Success',
@@ -231,6 +233,7 @@ export class LandingSiteListComponent implements OnInit, AfterViewInit {
             sites.map(s => s.id === updatedSite.id ? updatedSite : s)
           );
           this.showDialog = false;
+          this.cdr.detectChanges();
           this.messageService.add({
             severity: 'success',
             summary: 'Success',
