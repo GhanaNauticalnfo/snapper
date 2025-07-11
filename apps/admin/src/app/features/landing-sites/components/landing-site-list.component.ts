@@ -196,8 +196,7 @@ export class LandingSiteListComponent implements OnInit, AfterViewInit {
       const createDto: CreateLandingSiteDto = {
         name: site.name,
         description: site.description,
-        location: site.location,
-        enabled: site.enabled
+        location: site.location
       };
       
       this.landingSiteService.create(createDto).subscribe({
@@ -223,8 +222,7 @@ export class LandingSiteListComponent implements OnInit, AfterViewInit {
       const updateDto: UpdateLandingSiteDto = {
         name: site.name,
         description: site.description,
-        location: site.location,
-        enabled: site.enabled
+        location: site.location
       };
       
       this.landingSiteService.update(this.selectedLandingSite()!.id, updateDto).subscribe({

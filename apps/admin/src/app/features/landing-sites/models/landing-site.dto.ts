@@ -4,14 +4,12 @@ export interface CreateLandingSiteDto {
   name: string;
   description?: string;
   location: GeoPoint;
-  enabled: boolean;
 }
 
 export interface UpdateLandingSiteDto {
   name?: string;
   description?: string;
   location?: GeoPoint;
-  enabled?: boolean;
 }
 
 export interface LandingSiteResponseDto {
