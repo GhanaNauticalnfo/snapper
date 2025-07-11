@@ -36,7 +36,6 @@ export const DEFAULT_MAP_CONFIG: MapConfig = {
   initialActiveLayers: [],
   layerNames: {
     'ais-ships': 'AIS Ships',
-    'weather': 'Weather',
     'niord': 'Niord',
     'depth': 'Depths',
     'nw-nm-layer': 'NW/NM',

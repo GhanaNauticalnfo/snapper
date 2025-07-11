@@ -5,7 +5,6 @@ import {
   MapComponent, 
   LayerManagerService, 
   AisShipLayerService, 
-  WeatherLayerService, 
   NiordLayerService,
   MapConfig,
   OSM_STYLE,
@@ -106,7 +105,6 @@ import { VesselSearchService } from './services/vessel-search.service';
   providers: [
     DepthLayerService,
     AisShipLayerService,
-    WeatherLayerService,
     NiordLayerService
   ]
 })
@@ -125,11 +123,10 @@ export class LiveComponent implements OnInit, AfterViewInit {
     height: '600px',
     showFullscreenControl: true,
     showControls: false, // Hide the map layers panel
-    availableLayers: ['ais-ships', 'weather', 'niord', 'depth'],
+    availableLayers: ['ais-ships', 'niord', 'depth'],
     initialActiveLayers: ['ais-ships'], // Automatically activate this layer on load
     layerNames: {
       'ais-ships': 'Vessels',
-      'weather': 'Weather',
       'niord': 'NW/NM',
       'depth': 'Depths'
     }
@@ -140,7 +137,6 @@ export class LiveComponent implements OnInit, AfterViewInit {
     
     // Register available layers
     this.layerManager.registerLayer('ais-ships', AisShipLayerService);
-    this.layerManager.registerLayer('weather', WeatherLayerService);
     this.layerManager.registerLayer('niord', NiordLayerService);
     this.layerManager.registerLayer('depth', DepthLayerService);
     
