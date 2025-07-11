@@ -12,8 +12,15 @@ RUN npm ci
 # Copy the rest of the code
 COPY . .
 
-# Build with specified environment
+# Build arguments
 ARG ENVIRONMENT=prod
+ARG BUILD_TAG=development
+
+# Inject BUILD_TAG into environment file
+ENV BUILD_TAG=${BUILD_TAG}
+RUN node apps/admin/scripts/inject-build-tag.js ${ENVIRONMENT}
+
+# Build with specified environment
 RUN npx nx build admin --configuration=${ENVIRONMENT}
 
 # Stage 2: Serve the app with Nginx
