@@ -117,16 +117,6 @@ export class LiveComponent implements OnInit, AfterViewInit {
   private debugLog = inject(DebugLogService);
   private vesselSearchService = inject(VesselSearchService);
   
-  constructor() {
-    // Add some initial debug logs to ensure panel has content
-    setTimeout(() => {
-      this.debugLog.info('Live Component', 'Testing debug panel visibility');
-      this.debugLog.warn('Live Component', 'This is a warning message');
-      this.debugLog.error('Live Component', 'This is an error message');
-      this.debugLog.success('Live Component', 'Debug panel should be visible');
-    }, 1000);
-  }
-  
   // Define a comprehensive map configuration for Lake Volta, Ghana
   mapConfig: Partial<MapConfig> = {
     mapStyle: OSM_STYLE, // Using the OSM style

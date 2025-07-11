@@ -242,7 +242,8 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     try {
       // Fetch real vessel positions from the API
       this.debugLog.info('AIS Layer', 'Fetching latest vessel positions from API');
-      const response = await firstValueFrom(this.http.get<any[]>('/api/vessels?includeLatestPosition=true'));
+      const apiUrl = this.getApiUrl();
+      const response = await firstValueFrom(this.http.get<any[]>(`${apiUrl}/api/vessels?includeLatestPosition=true`));
       
       const source = this.map.getSource(this.layerId) as GeoJSONSource;
       
@@ -577,16 +578,29 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
     
-    // Replace frontend subdomain with api subdomain
-    if (hostname.includes('ghanawaters-dev.')) {
+    // Replace admin/frontend subdomain with api subdomain
+    // Handle patterns like ghanawaters-dev-admin. and ghanawaters-dev.
+    if (hostname.includes('ghanawaters-dev-admin.')) {
+      return protocol + '//' + hostname.replace('ghanawaters-dev-admin.', 'ghanawaters-dev-api.');
+    } else if (hostname.includes('ghanawaters-dev.')) {
       return protocol + '//' + hostname.replace('ghanawaters-dev.', 'ghanawaters-dev-api.');
+    } else if (hostname.includes('ghanawaters-test-admin.')) {
+      return protocol + '//' + hostname.replace('ghanawaters-test-admin.', 'ghanawaters-test-api.');
     } else if (hostname.includes('ghanawaters-test.')) {
       return protocol + '//' + hostname.replace('ghanawaters-test.', 'ghanawaters-test-api.');
+    } else if (hostname.includes('ghanawaters-admin.')) {
+      return protocol + '//' + hostname.replace('ghanawaters-admin.', 'ghanawaters-api.');
     } else if (hostname.includes('ghanawaters.')) {
       return protocol + '//' + hostname.replace('ghanawaters.', 'ghanawaters-api.');
     }
     
     // Fallback to current origin
     return window.location.origin;
+  }
+  
+  private getApiUrl(): string {
+    // For HTTP requests, we use the same logic as WebSocket URL
+    // This ensures consistency between WebSocket and HTTP connections
+    return this.getWebSocketUrl();
   }
 }
