@@ -12,11 +12,11 @@ resources:
   - configs/api-config.yaml
 images:
   - name: ghcr.io/ghananauticalnfo/ghanawaters-api
-    newTag: 0826b7f-87
+    newTag: 4c0256e-88
   - name: ghcr.io/ghananauticalnfo/ghanawaters-admin
-    newTag: 0826b7f-87
+    newTag: 4c0256e-88
   - name: ghcr.io/ghananauticalnfo/ghanawaters-frontend
-    newTag: 0826b7f-87
+    newTag: 4c0256e-88
 patches:
   - path: patches/ingress-hosts.yaml
   - path: patches/replicas.yaml
