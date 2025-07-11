@@ -237,7 +237,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     try {
       // Fetch real vessel positions from the API
       this.debugLog.info('AIS Layer', 'Fetching latest vessel positions from API');
-      const response = await firstValueFrom(this.http.get<any[]>('/api/vessels/telemetry/latest'));
+      const response = await firstValueFrom(this.http.get<any[]>('/api/vessels?includeLatestPosition=true'));
       
       const source = this.map.getSource(this.layerId) as GeoJSONSource;
       
@@ -245,48 +245,31 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       const features: GeoJSON.Feature[] = [];
       
       if (response && Array.isArray(response)) {
-        this.debugLog.success('AIS Layer', `Received ${response.length} vessel positions from API`);
-        for (const vesselTelemetry of response) {
-          // Extract coordinates from the new coordinates field or fallback to position parsing
-          let coordinates: [number, number] | null = null;
-          
-          if (vesselTelemetry.coordinates) {
-            // Use the new coordinates field returned by the API
-            coordinates = [vesselTelemetry.coordinates.longitude, vesselTelemetry.coordinates.latitude];
-          } else if (vesselTelemetry.position) {
-            // Fallback: Handle different possible formats of PostGIS data
-            if (typeof vesselTelemetry.position === 'string') {
-              // Parse WKT format: POINT(longitude latitude)
-              const match = vesselTelemetry.position.match(/POINT\(([^ ]+) ([^ ]+)\)/);
-              if (match) {
-                coordinates = [parseFloat(match[1]), parseFloat(match[2])];
-              }
-            } else if (vesselTelemetry.position.coordinates) {
-              coordinates = vesselTelemetry.position.coordinates;
-            }
-          }
-          
-          // If we couldn't extract coordinates, skip this vessel
-          if (!coordinates) {
-            this.debugLog.warn('AIS Layer', `Skipping vessel ${vesselTelemetry.vessel_id} - no valid coordinates found`);
+        this.debugLog.success('AIS Layer', `Received ${response.length} vessels from API`);
+        for (const vessel of response) {
+          // Check if vessel has latest position data
+          if (!vessel.latest_position_coordinates) {
+            this.debugLog.warn('AIS Layer', `Skipping vessel ${vessel.id} - no position data`);
             continue;
           }
           
-          const vesselId = vesselTelemetry.vessel?.id || vesselTelemetry.vessel_id;
+          // Extract coordinates from the vessel response
+          const coordinates: [number, number] = vessel.latest_position_coordinates.coordinates;
+          
           const positionUpdate: PositionUpdate = {
-            vesselId: vesselId,
-            vesselName: vesselTelemetry.vessel?.name || `Vessel ${vesselTelemetry.vessel_id}`,
-            vesselType: vesselTelemetry.vessel?.vessel_type || 'Unknown',
+            vesselId: vessel.id,
+            vesselName: vessel.name,
+            vesselType: vessel.vessel_type?.name || 'Unknown',
             lat: coordinates[1],
             lng: coordinates[0],
-            heading: vesselTelemetry.heading_degrees ? Number(vesselTelemetry.heading_degrees) : null,
-            speed: vesselTelemetry.speed_knots ? Number(vesselTelemetry.speed_knots) : null,
-            status: vesselTelemetry.status,
-            timestamp: vesselTelemetry.timestamp
+            heading: vessel.latest_position_heading ? Number(vessel.latest_position_heading) : null,
+            speed: vessel.latest_position_speed ? Number(vessel.latest_position_speed) : null,
+            status: 'Active',
+            timestamp: vessel.latest_position_timestamp
           };
           
           // Store in our local map
-          this.vesselPositions.set(vesselId, positionUpdate);
+          this.vesselPositions.set(vessel.id, positionUpdate);
           
           const heading = positionUpdate.heading || 0;
           console.log(`🧭 Vessel ${positionUpdate.vesselName}: heading = ${heading}°`);
@@ -298,12 +281,12 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
               coordinates: coordinates
             },
             properties: {
-              id: vesselId,
+              id: vessel.id,
               name: positionUpdate.vesselName,
               heading: heading,
               speed: positionUpdate.speed || 0,
               type: positionUpdate.vesselType,
-              status: positionUpdate.status || 'Active',
+              status: 'Active',
               lastUpdate: positionUpdate.timestamp
             }
           });
@@ -387,8 +370,12 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   private initializeWebSocket(): void {
     console.log('🔧 Initializing WebSocket connection...');
     
-    // Connect to the WebSocket server through Angular proxy
-    this.socket = io('/tracking', {
+    // Determine the WebSocket URL based on the current window location
+    const wsUrl = this.getWebSocketUrl();
+    console.log('🔧 WebSocket URL:', wsUrl);
+    
+    // Connect to the WebSocket server
+    this.socket = io(wsUrl + '/tracking', {
       path: '/socket.io/',
       transports: ['polling', 'websocket'], // Try polling first, then WebSocket
       autoConnect: true,
@@ -566,5 +553,29 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   
   ngOnDestroy(): void {
     this.destroy();
+  }
+  
+  private getWebSocketUrl(): string {
+    // Check if we're in a local development environment
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      // For local development, connect to the local API server
+      return 'http://localhost:3000';
+    }
+    
+    // For production/deployed environments, derive the WebSocket URL from the hostname
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    
+    // Replace frontend subdomain with api subdomain
+    if (hostname.includes('ghanawaters-dev.')) {
+      return protocol + '//' + hostname.replace('ghanawaters-dev.', 'ghanawaters-dev-api.');
+    } else if (hostname.includes('ghanawaters-test.')) {
+      return protocol + '//' + hostname.replace('ghanawaters-test.', 'ghanawaters-test-api.');
+    } else if (hostname.includes('ghanawaters.')) {
+      return protocol + '//' + hostname.replace('ghanawaters.', 'ghanawaters-api.');
+    }
+    
+    // Fallback to current origin
+    return window.location.origin;
   }
 }

@@ -23,3 +23,7 @@ patches:
   - path: patches/init-container-env.yaml
   - path: patches/migration-command.yaml
   - path: patches/api-configmap.yaml
+  - path: patches/api-websocket-support.yaml
+    target:
+      kind: Ingress
+      name: ghanawaters-api-ingress
