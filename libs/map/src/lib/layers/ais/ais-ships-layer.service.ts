@@ -5,7 +5,6 @@ import { Map as MapLibreMap, GeoJSONSource, Popup } from 'maplibre-gl';
 import { BaseLayerService } from '../base-layer.service';
 import { firstValueFrom } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
-import { DebugLogService } from '../../services/debug-log.service';
 
 interface PositionUpdate {
   vesselId: number;
@@ -33,8 +32,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   private vesselFilter: number | null = null;
   
   constructor(
-    private http: HttpClient,
-    private debugLog: DebugLogService
+    private http: HttpClient
   ) {
     super();
   }
@@ -52,7 +50,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   
   initialize(map: MapLibreMap): void {
     this.map = map;
-    this.debugLog.info('AIS Layer', 'Initializing AIS ships layer');
+    console.log('AIS Layer: Initializing AIS ships layer');
     
     // Initialize WebSocket connection
     this.initializeWebSocket();
@@ -241,7 +239,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     
     try {
       // Fetch real vessel positions from the API
-      this.debugLog.info('AIS Layer', 'Fetching latest vessel positions from API');
+      console.log('AIS Layer: Fetching latest vessel positions from API');
       const apiUrl = this.getApiUrl();
       const response = await firstValueFrom(this.http.get<any[]>(`${apiUrl}/api/vessels?includeLatestPosition=true`));
       
@@ -251,11 +249,11 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       const features: GeoJSON.Feature[] = [];
       
       if (response && Array.isArray(response)) {
-        this.debugLog.success('AIS Layer', `Received ${response.length} vessels from API`);
+        console.log('AIS Layer: Received', response.length, 'vessels from API');
         for (const vessel of response) {
           // Check if vessel has latest position data
           if (!vessel.latest_position_coordinates) {
-            this.debugLog.warn('AIS Layer', `Skipping vessel ${vessel.id} - no position data`);
+            console.warn('AIS Layer: Skipping vessel', vessel.id, '- no position data');
             continue;
           }
           
@@ -306,9 +304,9 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       };
       
       source.setData(geojsonData);
-      this.debugLog.info('AIS Layer', `Updated map with ${features.length} vessels`);
+      console.log('AIS Layer: Updated map with', features.length, 'vessels');
     } catch (error) {
-      this.debugLog.error('AIS Layer', 'Failed to fetch vessel positions', error);
+      console.error('AIS Layer: Failed to fetch vessel positions', error);
       
       // Use empty data as fallback instead of mock data
       const source = this.map.getSource(this.layerId) as GeoJSONSource;
@@ -400,7 +398,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     });
     
     this.socket.on('connect', () => {
-      this.debugLog.success('WebSocket', 'Connected to vessel tracking WebSocket');
+      console.log('WebSocket: Connected to vessel tracking WebSocket');
       console.log('🔌 WebSocket connected to vessel tracking, ID:', this.socket?.id);
       // Subscribe to all vessel updates
       this.socket?.emit('subscribe-all');
@@ -408,11 +406,11 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     
     this.socket.on('connect_error', (error: any) => {
       console.error('🔌 WebSocket connection error:', error);
-      this.debugLog.error('WebSocket', 'Connection failed', error);
+      console.error('WebSocket: Connection failed', error);
     });
     
     this.socket.on('disconnect', (reason: string) => {
-      this.debugLog.warn('WebSocket', 'Disconnected from vessel tracking WebSocket');
+      console.warn('WebSocket: Disconnected from vessel tracking WebSocket');
       console.log('🔌 WebSocket disconnected from vessel tracking, reason:', reason);
     });
     
@@ -443,7 +441,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     
     // Handle batch position updates
     this.socket.on('positions-batch', (updates: any[]) => {
-      this.debugLog.info('WebSocket', `Received batch of ${updates.length} position updates`);
+      console.log('WebSocket: Received batch of', updates.length, 'position updates');
       console.log('📦 WebSocket batch update:', `${updates.length} position updates`);
       updates.forEach(update => {
         // Ensure proper data types - updates now come with flat lat/lng structure
@@ -467,7 +465,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     });
     
     this.socket.on('error', (error: any) => {
-      this.debugLog.error('WebSocket', 'WebSocket connection error', error);
+      console.error('WebSocket: WebSocket connection error', error);
       console.error('❌ WebSocket error:', error);
     });
   }
@@ -484,7 +482,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       `Speed: ${speed.toFixed(1)} knots, ` +
       `Heading: ${heading.toFixed(0)}°`;
     
-    this.debugLog.info('Position Update', logMessage);
+    console.log('Position Update:', logMessage);
     console.log('🚢', logMessage);  // Browser console with ship emoji for easy identification
     
     // Update the map display with filtering

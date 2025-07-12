@@ -33,8 +33,6 @@ SELECT
   v.length_meters,
   tp.speed_knots,
   tp.heading_degrees,
-  tp.battery_level,
-  tp.signal_strength,
   tp.status,
   tp.created,
   tp.position AS geom
@@ -58,8 +56,6 @@ SELECT
   v.vessel_type,
   tp.speed_knots,
   tp.heading_degrees,
-  tp.battery_level,
-  tp.signal_strength,
   tp.status,
   tp.created,
   tp.position AS geom

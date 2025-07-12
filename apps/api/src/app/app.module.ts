@@ -18,6 +18,7 @@ import { SettingsModule } from './settings/settings.module';
 import { TreeStubsModule } from './tree-stubs/tree-stubs.module';
 import { LandingSitesModule } from './landing-sites/landing-sites.module';
 import { ResourceSettingsModule } from './resource-settings/resource-settings.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { ResourceSettingsModule } from './resource-settings/resource-settings.mo
     TreeStubsModule,
     LandingSitesModule,
     ResourceSettingsModule,
+    DatabaseModule,
   ],
   controllers: [AppController, RootController],
   providers: [AppService],

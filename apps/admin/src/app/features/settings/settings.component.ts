@@ -11,6 +11,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageService } from 'primeng/api';
 import { VesselTypeSettingsComponent } from './components/vessel-type-settings.component';
 import { SyncSettingsComponent } from './components/sync-settings.component';
+import { DatabaseSettingsComponent } from './components/database-settings/database-settings.component';
 import { SettingsService } from './services/settings.service';
 import { Subject, takeUntil } from 'rxjs';
 
@@ -28,7 +29,8 @@ import { Subject, takeUntil } from 'rxjs';
     FieldsetModule,
     InputTextModule,
     VesselTypeSettingsComponent,
-    SyncSettingsComponent
+    SyncSettingsComponent,
+    DatabaseSettingsComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [MessageService],
@@ -51,6 +53,10 @@ import { Subject, takeUntil } from 'rxjs';
           <p-tab value="2">
             <i class="pi pi-sync"></i>
             <span class="ml-2">Sync</span>
+          </p-tab>
+          <p-tab value="3">
+            <i class="pi pi-database"></i>
+            <span class="ml-2">Database</span>
           </p-tab>
         </p-tablist>
         <p-tabpanels>
@@ -119,6 +125,10 @@ import { Subject, takeUntil } from 'rxjs';
           
           <p-tabpanel value="2">
             <app-sync-settings [isVisible]="activeTabIndex() === 2"></app-sync-settings>
+          </p-tabpanel>
+          
+          <p-tabpanel value="3">
+            <app-database-settings></app-database-settings>
           </p-tabpanel>
         </p-tabpanels>
       </p-tabs>

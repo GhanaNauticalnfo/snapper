@@ -75,8 +75,6 @@ function sendPositionUpdate() {
     longitude: position.longitude,
     speed: position.speed,
     heading: position.heading,
-    batteryLevel: 75 + Math.floor(Math.random() * 20), // Random battery between 75-95%
-    signalStrength: 80 + Math.floor(Math.random() * 15), // Random signal between 80-95%
     deviceId: `simulator-${config.vesselId}`
   };
   

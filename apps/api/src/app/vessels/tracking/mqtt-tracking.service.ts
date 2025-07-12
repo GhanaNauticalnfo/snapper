@@ -62,8 +62,6 @@ export class MqttTrackingService implements OnModuleInit {
           position: data.position as GeoPoint,
           speed_knots: data.speed_knots,
           heading_degrees: data.heading_degrees,
-          battery_level: data.battery_level,
-          signal_strength: data.signal_strength,
           status: data.status || (data.speed_knots > 0.5 ? 'moving' : 'stationary')
         };
         

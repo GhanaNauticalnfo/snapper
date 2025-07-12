@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder, In } from 'typeorm';
+import { Repository, SelectQueryBuilder, In, DataSource } from 'typeorm';
 import { Response } from 'express';
 import { VesselTelemetry } from './vessel-telemetry.entity';
 import { Vessel } from '../vessel.entity';
 import { VesselType } from '../type/vessel-type.entity';
 import archiver = require('archiver');
-import { Transform } from 'stream';
+import { Transform, Readable } from 'stream';
 
 interface CsvTransformStream extends Transform {
   headerWritten?: boolean;
@@ -36,6 +36,7 @@ export class TelemetryExportService {
     private vesselRepository: Repository<Vessel>,
     @InjectRepository(VesselType)
     private vesselTypeRepository: Repository<VesselType>,
+    private dataSource: DataSource,
   ) {}
 
   /**
@@ -74,8 +75,11 @@ export class TelemetryExportService {
     response.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     response.setHeader('Transfer-Encoding', 'chunked');
 
-    // Create zip archive
-    const archive = archiver('zip', { zlib: { level: 9 } });
+    // Create zip archive with reduced compression level for better memory efficiency
+    const archive = archiver('zip', { 
+      zlib: { level: 6 }, // Reduced from 9 to balance compression vs memory
+      highWaterMark: 16 * 1024 // 16KB buffer
+    });
     
     // Handle archive errors
     archive.on('error', (err) => {
@@ -95,7 +99,7 @@ export class TelemetryExportService {
         const self = this as CsvTransformStream;
         if (!self.headerWritten) {
           // Write CSV header
-          const header = 'vessel_id,vessel_name,vessel_type,timestamp,latitude,longitude,speed_knots,heading_degrees,battery_level,signal_strength,device_id,status\n';
+          const header = 'vessel_id,vessel_name,vessel_type,timestamp,latitude,longitude,speed_knots,heading_degrees,device_id,status\n';
           this.push(header);
           self.headerWritten = true;
         }
@@ -126,8 +130,6 @@ export class TelemetryExportService {
           chunk.longitude,
           chunk.speed_knots || '',
           chunk.heading_degrees || '',
-          chunk.battery_level || '',
-          chunk.signal_strength || '',
           chunk.device_id || '',
           `"${(chunk.status || '').replace(/"/g, '""')}"`
         ].join(',') + '\n';
@@ -161,15 +163,184 @@ export class TelemetryExportService {
   }
 
   /**
-   * Stream telemetry data in chunks to avoid memory issues
+   * Stream telemetry data using PostgreSQL streaming for optimal performance
+   * Falls back to chunked approach if streaming is not available
    */
   private async streamTelemetryData(
     filters: TelemetryExportFilters,
     outputStream: Transform
   ): Promise<void> {
-    const CHUNK_SIZE = 1000; // Process 1000 records at a time
+    // Try to use PostgreSQL streaming first
+    try {
+      await this.streamTelemetryDataWithPgStream(filters, outputStream);
+    } catch (error) {
+      console.warn('PostgreSQL streaming failed, falling back to chunked approach:', error);
+      await this.streamTelemetryDataChunked(filters, outputStream);
+    }
+  }
+
+  /**
+   * Stream telemetry data using PostgreSQL's cursor-based approach
+   */
+  private async streamTelemetryDataWithPgStream(
+    filters: TelemetryExportFilters,
+    outputStream: Transform
+  ): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+
+    try {
+      // Build SQL query with parameters
+      const { sql, parameters } = this.buildStreamingQuery(filters);
+      
+      // Use a cursor-based approach for streaming
+      const cursorName = `telemetry_export_${Date.now()}`;
+      
+      // Start transaction and declare cursor
+      await queryRunner.startTransaction();
+      await queryRunner.query(`DECLARE ${cursorName} CURSOR FOR ${sql}`, parameters);
+      
+      let processedCount = 0;
+      const startMemory = process.memoryUsage();
+      console.log(`Starting telemetry export with PostgreSQL cursor. Initial memory: RSS=${Math.round(startMemory.rss / 1024 / 1024)}MB`);
+
+      const BATCH_SIZE = 1000;
+      let hasMoreData = true;
+
+      while (hasMoreData) {
+        // Fetch batch from cursor
+        const results = await queryRunner.query(`FETCH ${BATCH_SIZE} FROM ${cursorName}`);
+        
+        if (results.length === 0) {
+          hasMoreData = false;
+          break;
+        }
+
+        // Process each row with backpressure handling
+        for (const row of results) {
+          const canContinue = outputStream.write({
+            vessel_id: row.vessel_id,
+            vessel_name: row.vessel_name,
+            vessel_type: row.vessel_type,
+            timestamp: new Date(row.timestamp),
+            latitude: parseFloat(row.latitude),
+            longitude: parseFloat(row.longitude),
+            speed_knots: row.speed_knots,
+            heading_degrees: row.heading_degrees,
+            device_id: row.device_id,
+            status: row.status
+          });
+
+          processedCount++;
+
+          // Handle backpressure
+          if (!canContinue) {
+            console.log(`Stream buffer full at ${processedCount} records, waiting for drain...`);
+            await new Promise<void>((resolve) => {
+              outputStream.once('drain', () => {
+                console.log('Stream drained, continuing...');
+                resolve();
+              });
+            });
+          }
+        }
+
+        // Log progress
+        if (processedCount % 10000 === 0) {
+          const currentMemory = process.memoryUsage();
+          console.log(`Processed ${processedCount} records with cursor. Memory: RSS=${Math.round(currentMemory.rss / 1024 / 1024)}MB`);
+        }
+        
+        // Check if we got less than batch size (indicates end of data)
+        if (results.length < BATCH_SIZE) {
+          hasMoreData = false;
+        }
+      }
+
+      // Close cursor
+      await queryRunner.query(`CLOSE ${cursorName}`);
+      await queryRunner.commitTransaction();
+
+      const endMemory = process.memoryUsage();
+      console.log(`PostgreSQL cursor export completed. Processed ${processedCount} records. Final memory: RSS=${Math.round(endMemory.rss / 1024 / 1024)}MB`);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * Build SQL query for streaming
+   */
+  private buildStreamingQuery(filters: TelemetryExportFilters): { sql: string; parameters: any[] } {
+    let sql = `
+      SELECT 
+        t.vessel_id,
+        v.name as vessel_name,
+        vt.name as vessel_type,
+        t.timestamp,
+        ST_X(t.position::geometry) as longitude,
+        ST_Y(t.position::geometry) as latitude,
+        t.speed_knots,
+        t.heading_degrees,
+        t.device_id,
+        t.status
+      FROM vessel_telemetry t
+      INNER JOIN vessel v ON t.vessel_id = v.id
+      INNER JOIN vessel_type vt ON v.vessel_type_id = vt.id
+      WHERE 1=1
+    `;
+    
+    const parameters: any[] = [];
+    let paramIndex = 1;
+
+    if (filters.startDate) {
+      sql += ` AND t.timestamp >= $${paramIndex}`;
+      parameters.push(filters.startDate);
+      paramIndex++;
+    }
+
+    if (filters.endDate) {
+      sql += ` AND t.timestamp <= $${paramIndex}`;
+      parameters.push(filters.endDate);
+      paramIndex++;
+    }
+
+    if (filters.vesselIds && filters.vesselIds.length > 0) {
+      sql += ` AND t.vessel_id = ANY($${paramIndex})`;
+      parameters.push(filters.vesselIds);
+      paramIndex++;
+    }
+
+    if (filters.vesselTypeIds && filters.vesselTypeIds.length > 0) {
+      sql += ` AND v.vessel_type_id = ANY($${paramIndex})`;
+      parameters.push(filters.vesselTypeIds);
+      paramIndex++;
+    }
+
+    sql += ` ORDER BY t.timestamp ASC, t.vessel_id ASC`;
+
+    return { sql, parameters };
+  }
+
+  /**
+   * Stream telemetry data in chunks (fallback method)
+   * Implements proper backpressure handling to prevent memory overflow
+   */
+  private async streamTelemetryDataChunked(
+    filters: TelemetryExportFilters,
+    outputStream: Transform
+  ): Promise<void> {
+    const CHUNK_SIZE = 500; // Reduced chunk size for better memory management
     let offset = 0;
     let hasMoreData = true;
+    let processedCount = 0;
+
+    // Log memory usage at start
+    const startMemory = process.memoryUsage();
+    console.log(`Starting telemetry export. Initial memory: RSS=${Math.round(startMemory.rss / 1024 / 1024)}MB, Heap=${Math.round(startMemory.heapUsed / 1024 / 1024)}MB`);
 
     while (hasMoreData) {
       const query = this.buildDetailedQuery(filters)
@@ -183,9 +354,9 @@ export class TelemetryExportService {
         break;
       }
 
-      // Process each result through the transform stream
+      // Process each result through the transform stream with backpressure handling
       for (const result of results) {
-        outputStream.write({
+        const canContinue = outputStream.write({
           vessel_id: result.vessel_id,
           vessel_name: result.vessel_name,
           vessel_type: result.vessel_type,
@@ -194,20 +365,46 @@ export class TelemetryExportService {
           longitude: parseFloat(result.longitude),
           speed_knots: result.speed_knots,
           heading_degrees: result.heading_degrees,
-          battery_level: result.battery_level,
-          signal_strength: result.signal_strength,
           device_id: result.device_id,
           status: result.status
         });
+
+        processedCount++;
+
+        // Handle backpressure - if stream buffer is full, wait for drain
+        if (!canContinue) {
+          console.log(`Stream buffer full at ${processedCount} records, waiting for drain...`);
+          await new Promise<void>((resolve) => {
+            outputStream.once('drain', () => {
+              console.log('Stream drained, continuing...');
+              resolve();
+            });
+          });
+        }
       }
 
       offset += CHUNK_SIZE;
+      
+      // Log progress every 10,000 records
+      if (processedCount % 10000 === 0) {
+        const currentMemory = process.memoryUsage();
+        console.log(`Processed ${processedCount} records. Memory: RSS=${Math.round(currentMemory.rss / 1024 / 1024)}MB, Heap=${Math.round(currentMemory.heapUsed / 1024 / 1024)}MB`);
+        
+        // Force garbage collection if heap usage is high (only in production with --expose-gc flag)
+        if (global.gc && currentMemory.heapUsed > 500 * 1024 * 1024) {
+          console.log('Running garbage collection...');
+          global.gc();
+        }
+      }
       
       // If we got fewer results than chunk size, we're done
       if (results.length < CHUNK_SIZE) {
         hasMoreData = false;
       }
     }
+
+    const endMemory = process.memoryUsage();
+    console.log(`Export completed. Processed ${processedCount} records. Final memory: RSS=${Math.round(endMemory.rss / 1024 / 1024)}MB, Heap=${Math.round(endMemory.heapUsed / 1024 / 1024)}MB`);
   }
 
   /**
@@ -252,8 +449,6 @@ export class TelemetryExportService {
         'ST_Y(telemetry.position::geometry) as latitude',
         'telemetry.speed_knots as speed_knots',
         'telemetry.heading_degrees as heading_degrees',
-        'telemetry.battery_level as battery_level',
-        'telemetry.signal_strength as signal_strength',
         'telemetry.device_id as device_id',
         'telemetry.status as status'
       ])

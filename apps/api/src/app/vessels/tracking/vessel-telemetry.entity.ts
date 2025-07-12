@@ -37,12 +37,6 @@ export class VesselTelemetry {
   @Column('numeric', { precision: 5, scale: 1, nullable: true })
   heading_degrees: number;
 
-  @Column('integer', { nullable: true })
-  battery_level: number;
-
-  @Column('integer', { nullable: true })
-  signal_strength: number;
-
   @Column('varchar', { length: 50, nullable: true })
   device_id: string;
 
@@ -58,8 +52,6 @@ export class VesselTelemetry {
       position: this.position,
       speed_knots: this.speed_knots,
       heading_degrees: this.heading_degrees,
-      battery_level: this.battery_level,
-      signal_strength: this.signal_strength,
       device_id: this.device_id,
       status: this.status,
     };

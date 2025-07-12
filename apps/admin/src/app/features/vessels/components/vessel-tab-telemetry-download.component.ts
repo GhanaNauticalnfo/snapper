@@ -74,7 +74,7 @@ interface ExportStats {
             } @else {
               <p class="text-600 mb-4">
                 Export vessel telemetry data as a zipped CSV file. Data includes position, speed, heading, 
-                battery level, signal strength, and status information.
+                and status information.
               </p>
 
               <form [formGroup]="exportForm">

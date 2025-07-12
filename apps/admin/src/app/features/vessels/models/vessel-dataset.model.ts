@@ -10,8 +10,6 @@ export interface VesselTelemetry {
   };
   speed_knots: string;
   heading_degrees: string;
-  battery_level: string | null;
-  signal_strength: string | null;
   device_id: string | null;
   status: string | null;
 }

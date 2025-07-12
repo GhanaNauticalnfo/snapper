@@ -5,7 +5,8 @@
  * when working with settings.
  */
 export const SETTING_KEYS = {
-  ROUTE_COLOR: 'route.color'
+  ROUTE_COLOR: 'route.color',
+  DATABASE_TELEMETRY_RETENTION_DAYS: 'database.telemetry.retention_days'
 } as const;
 
 /**
@@ -17,5 +18,6 @@ export type SettingKey = typeof SETTING_KEYS[keyof typeof SETTING_KEYS];
  * Default values for settings
  */
 export const SETTING_DEFAULTS = {
-  [SETTING_KEYS.ROUTE_COLOR]: '#FF0000'
+  [SETTING_KEYS.ROUTE_COLOR]: '#FF0000',
+  [SETTING_KEYS.DATABASE_TELEMETRY_RETENTION_DAYS]: '365'
 } as const;

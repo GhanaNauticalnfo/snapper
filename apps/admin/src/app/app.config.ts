@@ -9,7 +9,6 @@ import { routes } from './app.routes';
 import { MessageService, ConfirmationService } from 'primeng/api'; // Import MessageService and ConfirmationService
 import { DialogService } from 'primeng/dynamicdialog';
 import Noir from '../themes/app-theme';
-import { DebugLogService } from '@ghanawaters/map';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,7 +21,6 @@ export const appConfig: ApplicationConfig = {
     MessageService, // Provide MessageService globally
     ConfirmationService, // Provide ConfirmationService globally
     DialogService, // Provide DialogService globally for dynamic dialogs
-    DebugLogService, // Provide DebugLogService globally
     providePrimeNG({ theme: Noir, ripple: false })
   ]
 };

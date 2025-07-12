@@ -84,8 +84,6 @@ export class TrackingService {
       point.timestamp = trackingData.timestamp ? new Date(trackingData.timestamp) : new Date();
       point.speed_knots = trackingData.speed_knots;
       point.heading_degrees = trackingData.heading_degrees;
-      point.battery_level = trackingData.battery_level;
-      point.signal_strength = trackingData.signal_strength;
       point.device_id = deviceId;
       point.status = trackingData.status;
       
@@ -180,8 +178,6 @@ export class TrackingService {
       position: position,
       speed_knots: point.speed_knots,
       heading_degrees: point.heading_degrees,
-      battery_level: point.battery_level,
-      signal_strength: point.signal_strength,
       device_id: point.device_id,
       status: point.status
     };

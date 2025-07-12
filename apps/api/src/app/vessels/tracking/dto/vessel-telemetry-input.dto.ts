@@ -45,20 +45,6 @@ export class VesselTelemetryInputDto {
   @Max(360)
   heading_degrees?: number;
 
-  @ApiProperty({ required: false, minimum: 0, maximum: 100 })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  battery_level?: number;
-
-  @ApiProperty({ required: false, minimum: 0, maximum: 100 })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  signal_strength?: number;
-
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

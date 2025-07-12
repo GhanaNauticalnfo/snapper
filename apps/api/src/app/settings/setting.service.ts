@@ -53,4 +53,30 @@ export class SettingService {
     const setting = await this.settingRepository.findOne({ where: { key: SETTING_KEYS.ROUTE_COLOR } });
     return setting?.value || SETTING_DEFAULTS[SETTING_KEYS.ROUTE_COLOR]; // Default fallback
   }
+
+  async getSettingValue(key: string): Promise<string> {
+    if (!ALLOWED_SETTING_KEYS.includes(key as SettingKey)) {
+      throw new BadRequestException(`Invalid setting key: ${key}`);
+    }
+
+    const setting = await this.settingRepository.findOne({ where: { key } });
+    return setting?.value || SETTING_DEFAULTS[key as keyof typeof SETTING_DEFAULTS] || '';
+  }
+
+  async updateSetting(key: string, value: string): Promise<void> {
+    if (!ALLOWED_SETTING_KEYS.includes(key as SettingKey)) {
+      throw new BadRequestException(`Invalid setting key: ${key}`);
+    }
+
+    let setting = await this.settingRepository.findOne({ where: { key } });
+    
+    if (!setting) {
+      // Create new setting if it doesn't exist
+      setting = this.settingRepository.create({ key, value });
+    } else {
+      setting.value = value;
+    }
+    
+    await this.settingRepository.save(setting);
+  }
 }

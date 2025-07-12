@@ -9,7 +9,6 @@ import { AppMenuComponent } from './menu/app.menu.component';
 import { DomHandler } from 'primeng/dom';
 import { PrimeNG } from 'primeng/config';
 import { AppConfigService } from '../service/appconfigservice';
-import { DebugPanelComponent } from '@ghanawaters/map';
 
 @Component({
   selector: 'app-main',
@@ -20,8 +19,7 @@ import { DebugPanelComponent } from '@ghanawaters/map';
     AppFooterComponent,
     AppNewsComponent,
     AppTopBarComponent,
-    AppMenuComponent,
-    DebugPanelComponent
+    AppMenuComponent
   ],
   template: `
         <div class="layout-wrapper" [ngClass]="containerClass()">
@@ -42,7 +40,6 @@ import { DebugPanelComponent } from '@ghanawaters/map';
                 </div>
             </div>
             <app-footer />
-            <lib-debug-panel></lib-debug-panel>
         </div>
   `
 })

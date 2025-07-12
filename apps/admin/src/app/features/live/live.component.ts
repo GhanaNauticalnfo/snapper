@@ -9,8 +9,6 @@ import {
   MapConfig,
   OSM_STYLE,
   DepthLayerService,
-  DebugPanelComponent,
-  DebugLogService
 } from '@ghanawaters/map';
 import { VesselSearchComponent, VesselWithLocation } from './components/vessel-search.component';
 import { VesselSearchService } from './services/vessel-search.service';
@@ -112,7 +110,6 @@ export class LiveComponent implements OnInit, AfterViewInit {
   @ViewChild('mapComponent') mapComponent!: MapComponent;
   
   private layerManager = inject(LayerManagerService);
-  private debugLog = inject(DebugLogService);
   private vesselSearchService = inject(VesselSearchService);
   
   // Define a comprehensive map configuration for Lake Volta, Ghana
@@ -133,14 +130,14 @@ export class LiveComponent implements OnInit, AfterViewInit {
   };
   
   ngOnInit() {
-    this.debugLog.info('Live Component', 'Initializing live vessel tracking page');
+    console.log('Live Component: Initializing live vessel tracking page');
     
     // Register available layers
     this.layerManager.registerLayer('ais-ships', AisShipLayerService);
     this.layerManager.registerLayer('niord', NiordLayerService);
     this.layerManager.registerLayer('depth', DepthLayerService);
     
-    this.debugLog.success('Live Component', 'All layers registered successfully');
+    console.log('Live Component: All layers registered successfully');
   }
   
   ngAfterViewInit() {
@@ -148,13 +145,13 @@ export class LiveComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
       if (this.mapComponent?.map) {
         this.vesselSearchService.setMap(this.mapComponent.map);
-        this.debugLog.info('Live Component', 'Vessel search service initialized with map');
+        console.log('Live Component: Vessel search service initialized with map');
       }
     }, 500);
   }
   
   onVesselSelected(vessel: VesselWithLocation) {
-    this.debugLog.info('Live Component', `Vessel selected: ${vessel.name}`);
+    console.log('Live Component: Vessel selected:', vessel.name);
     this.vesselSearchService.zoomToVessel(vessel);
   }
 }

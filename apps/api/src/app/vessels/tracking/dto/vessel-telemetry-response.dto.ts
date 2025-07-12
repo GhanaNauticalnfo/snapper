@@ -26,12 +26,6 @@ export class VesselTelemetryResponseDto {
   @ApiPropertyOptional({ description: 'Heading in degrees' })
   heading_degrees?: number;
 
-  @ApiPropertyOptional({ description: 'Battery level percentage' })
-  battery_level?: number;
-
-  @ApiPropertyOptional({ description: 'Signal strength' })
-  signal_strength?: number;
-
   @ApiPropertyOptional({ description: 'Device identifier' })
   device_id?: string;
 
