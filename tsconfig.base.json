@@ -17,7 +17,8 @@
     "paths": {
       "@ghanawaters/map": ["libs/map/src/index.ts"],
       "@ghanawaters/shared": ["libs/shared/src/index.ts"],
-      "@ghanawaters/shared-models": ["libs/shared-models/src/index.ts"]
+      "@ghanawaters/shared-models": ["libs/shared-models/src/index.ts"],
+      "keycloak-js": ["node_modules/keycloak-js/lib/keycloak.d.ts"]
     },
     "resolveJsonModule": true
   },

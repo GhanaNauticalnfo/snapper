@@ -63,40 +63,77 @@ export class LandingSiteService {
   }
 
   async create(createLandingSiteDto: CreateLandingSiteDto): Promise<LandingSiteResponseDto> {
-    const landingSite = this.landingSiteRepository.create(createLandingSiteDto);
-    const saved = await this.landingSiteRepository.save(landingSite);
-    
-    // Log to sync
-    await this.syncService.logChange('landing_site', saved.id.toString(), 'create', this.convertToGeoJson(saved));
-    
-    return saved.toResponseDto();
+    // Use transaction to ensure both landing site save and sync log are atomic
+    return await this.landingSiteRepository.manager.transaction(async manager => {
+      // Create and save the landing site
+      const landingSite = manager.create(LandingSite, createLandingSiteDto);
+      const saved = await manager.save(landingSite);
+      
+      // Convert to GeoJSON for sync
+      const geoJson = this.convertToGeoJson(saved);
+      
+      // Log to sync within the same transaction
+      await this.syncService.logChangeInTransaction(
+        manager,
+        'landing_site',
+        saved.id.toString(),
+        'create',
+        geoJson
+      );
+      
+      return saved.toResponseDto();
+    });
   }
 
   async update(id: number, updateLandingSiteDto: UpdateLandingSiteDto): Promise<LandingSiteResponseDto> {
-    const landingSite = await this.landingSiteRepository.findOne({ where: { id } });
-    if (!landingSite) {
-      throw new NotFoundException(`Landing site with ID ${id} not found`);
-    }
-    
-    Object.assign(landingSite, updateLandingSiteDto);
-    const saved = await this.landingSiteRepository.save(landingSite);
-    
-    // Log to sync
-    await this.syncService.logChange('landing_site', saved.id.toString(), 'update', this.convertToGeoJson(saved));
-    
-    return saved.toResponseDto();
+    // Use transaction to ensure both landing site update and sync log are atomic
+    return await this.landingSiteRepository.manager.transaction(async manager => {
+      // Find the landing site within the transaction
+      const landingSite = await manager.findOne(LandingSite, { where: { id } });
+      if (!landingSite) {
+        throw new NotFoundException(`Landing site with ID ${id} not found`);
+      }
+      
+      // Update the landing site
+      Object.assign(landingSite, updateLandingSiteDto);
+      const saved = await manager.save(landingSite);
+      
+      // Convert to GeoJSON for sync
+      const geoJson = this.convertToGeoJson(saved);
+      
+      // Log to sync within the same transaction
+      await this.syncService.logChangeInTransaction(
+        manager,
+        'landing_site',
+        saved.id.toString(),
+        'update',
+        geoJson
+      );
+      
+      return saved.toResponseDto();
+    });
   }
 
   async remove(id: number): Promise<void> {
-    const landingSite = await this.landingSiteRepository.findOne({ where: { id } });
-    if (!landingSite) {
-      throw new NotFoundException(`Landing site with ID ${id} not found`);
-    }
-    
-    await this.landingSiteRepository.remove(landingSite);
-    
-    // Log to sync
-    await this.syncService.logChange('landing_site', id.toString(), 'delete');
+    // Use transaction to ensure both landing site deletion and sync log are atomic
+    await this.landingSiteRepository.manager.transaction(async manager => {
+      // Find the landing site within the transaction
+      const landingSite = await manager.findOne(LandingSite, { where: { id } });
+      if (!landingSite) {
+        throw new NotFoundException(`Landing site with ID ${id} not found`);
+      }
+      
+      // Remove the landing site
+      await manager.remove(landingSite);
+      
+      // Log to sync within the same transaction
+      await this.syncService.logChangeInTransaction(
+        manager,
+        'landing_site',
+        id.toString(),
+        'delete'
+      );
+    });
   }
 
   async findByBounds(minLon: number, minLat: number, maxLon: number, maxLat: number): Promise<LandingSiteResponseDto[]> {

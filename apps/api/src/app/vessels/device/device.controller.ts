@@ -4,6 +4,7 @@ import {
   ApiQuery, ApiBearerAuth, ApiBody 
 } from '@nestjs/swagger';
 import { DeviceAuthService } from './device-auth.service';
+import { Public } from '../../auth/decorators';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Device } from './device.entity';
@@ -115,6 +116,7 @@ export class DeviceController {
 
 
   @Post('activate')
+  @Public() // Device activation must be public for Android app
   @HttpCode(200)
   @ApiOperation({ summary: 'Activate device', description: 'Activate a device using an activation token' })
   @ApiBody({ type: DeviceActivationDto })

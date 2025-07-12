@@ -169,7 +169,7 @@ export class DatabaseSettingsComponent implements OnInit {
 
   loadDatabaseSettings() {
     this.loading = true;
-    this.http.get<DatabaseStatistics>('/api/database/settings').subscribe({
+    this.http.get<DatabaseStatistics>('/api/settings/database').subscribe({
       next: (data) => {
         this.statistics = data;
         this.retentionDays = data.retentionDays;
@@ -193,7 +193,7 @@ export class DatabaseSettingsComponent implements OnInit {
 
   saveChanges() {
     this.loading = true;
-    this.http.put('/api/database/settings', { retentionDays: this.retentionDays }).subscribe({
+    this.http.put('/api/settings/database', { retentionDays: this.retentionDays }).subscribe({
       next: () => {
         this.messageService.add({
           severity: 'success',

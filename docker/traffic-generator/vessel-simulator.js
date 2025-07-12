@@ -68,14 +68,17 @@ function sendPositionUpdate() {
   position.latitude += movement * Math.cos(headingRad);
   position.longitude += movement * Math.sin(headingRad);
   
-  // Create message
+  // Create message in the format expected by MqttTrackingService
   const message = {
     timestamp: new Date().toISOString(),
-    latitude: position.latitude,
-    longitude: position.longitude,
-    speed: position.speed,
-    heading: position.heading,
-    deviceId: `simulator-${config.vesselId}`
+    position: {
+      type: 'Point',
+      coordinates: [position.longitude, position.latitude]
+    },
+    speed_knots: position.speed,
+    heading_degrees: position.heading,
+    status: position.speed > 0.5 ? 'moving' : 'stationary',
+    device_id: `simulator-${config.vesselId}`
   };
   
   // Send to MQTT topic

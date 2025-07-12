@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, DataSource } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -14,6 +14,7 @@ export class DatabaseService {
     @InjectRepository(DatabaseStatistics)
     private databaseStatisticsRepository: Repository<DatabaseStatistics>,
     private dataSource: DataSource,
+    @Inject(forwardRef(() => SettingService))
     private settingService: SettingService,
   ) {}
 

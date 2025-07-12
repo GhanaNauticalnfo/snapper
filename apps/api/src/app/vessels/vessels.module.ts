@@ -16,6 +16,7 @@ import { TrackingGateway } from './tracking/tracking.gateway';
 import { MqttTrackingService } from './tracking/mqtt-tracking.service';
 import { TelemetryExportService } from './tracking/telemetry-export.service';
 import { ResourceSettingsModule } from '../resource-settings/resource-settings.module';
+import { MqttAuthController } from './mqtt/mqtt-auth.controller';
 
 @Module({
   imports: [
@@ -42,7 +43,8 @@ import { ResourceSettingsModule } from '../resource-settings/resource-settings.m
     VesselController,
     TrackingController,
     QgisTrackingController,
-    DeviceController
+    DeviceController,
+    MqttAuthController
   ],
   exports: [
     VesselService,

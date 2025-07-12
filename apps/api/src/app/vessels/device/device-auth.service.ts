@@ -18,6 +18,7 @@ export class DeviceAuthService {
     device_token: string;
     device_id: string;
     vessel?: string;
+    vessel_id?: number;
   }> {
     console.log('=== DEVICE ACTIVATION DEBUG ===');
     console.log('Activation token:', activationToken);
@@ -88,6 +89,7 @@ export class DeviceAuthService {
       device_token: device.device_token,
       device_id: device.device_id,
       vessel: device.vessel?.name,
+      vessel_id: device.vessel_id,
     };
   }
 

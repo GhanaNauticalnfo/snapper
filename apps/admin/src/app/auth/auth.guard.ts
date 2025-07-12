@@ -1,44 +1,38 @@
-// apps/admin/src/app/auth/auth.guard.ts
-import { ActivatedRouteSnapshot, CanActivateFn, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { inject } from '@angular/core';
-import { AuthGuardData, createAuthGuard } from 'keycloak-angular';
+import { Router, ActivatedRouteSnapshot, RouterStateSnapshot, CanActivateFn, UrlTree } from '@angular/router';
+import { createAuthGuard, AuthGuardData } from 'keycloak-angular';
 
 const isAccessAllowed = async (
   route: ActivatedRouteSnapshot,
-  state: RouterStateSnapshot,
+  __: RouterStateSnapshot,
   authData: AuthGuardData
 ): Promise<boolean | UrlTree> => {
-  const { authenticated, keycloak, grantedRoles } = authData;
+  const { authenticated, grantedRoles } = authData;
 
-  // If not authenticated, redirect to Keycloak login
+  // If not authenticated, keycloak-angular will handle login redirect
   if (!authenticated) {
-    await keycloak.login({
-      redirectUri: window.location.origin + state.url
-    });
     return false;
   }
 
-  // Get the roles required from the route data
+  // Get the roles required from the route
   const requiredRoles = route.data['roles'] as string[];
-  
-  // Allow the user to proceed if no additional roles are required 
+
+  // Allow access if no roles are required
   if (!requiredRoles || requiredRoles.length === 0) {
     return true;
   }
 
-  // Check if the user has the required roles
-  const hasRequiredRoles = requiredRoles.every(role => 
-    grantedRoles.realmRoles.includes(role) || 
-    Object.values(grantedRoles.resourceRoles).some(roles => roles.includes(role))
+  // Check realm roles (we only use realm roles in Ghana Waters)
+  const hasRequiredRole = requiredRoles.some(role => 
+    grantedRoles.realmRoles?.includes(role)
   );
 
-  if (hasRequiredRoles) {
-    return true;
+  if (!hasRequiredRole) {
+    const router = inject(Router);
+    return router.parseUrl('/forbidden');
   }
 
-  // If user doesn't have the required roles, redirect to a forbidden page
-  const router = inject(Router);
-  return router.parseUrl('/forbidden');
+  return true;
 };
 
-export const authGuard: CanActivateFn = createAuthGuard(isAccessAllowed);
+export const authGuard = createAuthGuard<CanActivateFn>(isAccessAllowed);

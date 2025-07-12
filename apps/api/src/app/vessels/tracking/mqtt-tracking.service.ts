@@ -15,24 +15,33 @@ export class MqttTrackingService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    // Only connect if MQTT is enabled
+    if (process.env.MQTT_ENABLED === 'false') {
+      console.log('MQTT is disabled, skipping tracking service connection');
+      return;
+    }
+
     // Connect to MQTT broker
-    this.client = connect('mqtt://localhost:1883', {
-      username: process.env.ARTEMIS_USER || 'artemis',
-      password: process.env.ARTEMIS_PASSWORD || 'artemis_password',
-      clientId: `nestjs-tracking-${Date.now()}`
+    const brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
+    const apiPassword = process.env.MQTT_API_PASSWORD || 'mqtt_api_password';
+    
+    this.client = connect(brokerUrl, {
+      username: 'api',
+      password: apiPassword,
+      clientId: `api-tracking-${Date.now()}`
     });
 
     this.client.on('connect', () => {
       console.log('Connected to MQTT broker');
       
-      // Subscribe to vessel tracking topics
-      this.client.subscribe('vessels/+/track');
+      // Subscribe to vessel position topics (updated topic pattern)
+      this.client.subscribe('vessels/+/position');
     });
 
     this.client.on('message', async (topic, payload) => {
       try {
-        // Extract vessel ID from topic (e.g., 'vessels/123/track' → 123)
-        const match = topic.match(/vessels\/(\d+)\/track/);
+        // Extract vessel ID from topic (e.g., 'vessels/123/position' → 123)
+        const match = topic.match(/vessels\/(\d+)\/position/);
         const vesselId = match ? parseInt(match[1], 10) : null;
         
         if (!vesselId) {

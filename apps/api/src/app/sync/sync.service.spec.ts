@@ -4,11 +4,13 @@ import { Repository, EntityManager, MoreThan } from 'typeorm';
 import { SyncService } from './sync.service';
 import { SyncLog } from './sync-log.entity';
 import { SyncVersion } from './sync-version.entity';
+import { MqttSyncService } from './mqtt-sync.service';
 
 describe('SyncService', () => {
   let service: SyncService;
   let repository: Repository<SyncLog>;
   let versionRepository: Repository<SyncVersion>;
+  let mqttSyncService: jest.Mocked<MqttSyncService>;
   let mockEntityManager: Partial<EntityManager>;
 
   const mockSyncLog = {
@@ -48,6 +50,10 @@ describe('SyncService', () => {
       findOne: jest.fn().mockResolvedValue(mockSyncVersion),
     };
 
+    const mockMqttSyncService = {
+      publishSyncNotification: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SyncService,
@@ -59,12 +65,17 @@ describe('SyncService', () => {
           provide: getRepositoryToken(SyncVersion),
           useValue: mockVersionRepository,
         },
+        {
+          provide: MqttSyncService,
+          useValue: mockMqttSyncService,
+        },
       ],
     }).compile();
 
     service = module.get<SyncService>(SyncService);
     repository = module.get<Repository<SyncLog>>(getRepositoryToken(SyncLog));
     versionRepository = module.get<Repository<SyncVersion>>(getRepositoryToken(SyncVersion));
+    mqttSyncService = module.get(MqttSyncService);
   });
 
   it('should be defined', () => {
@@ -129,7 +140,7 @@ describe('SyncService', () => {
   });
 
   describe('logChange', () => {
-    it('should log a create action with data', async () => {
+    it('should log a create action with data and publish MQTT notification', async () => {
       const entityType = 'route';
       const entityId = '123';
       const action = 'create' as const;
@@ -151,6 +162,9 @@ describe('SyncService', () => {
         is_latest: true,
         major_version: 1,
       });
+      
+      // Should publish MQTT notification after transaction
+      expect(mqttSyncService.publishSyncNotification).toHaveBeenCalledWith(1, 1);
     });
 
     it('should log an update action with data', async () => {
@@ -195,6 +209,20 @@ describe('SyncService', () => {
       await expect(
         service.logChange('route', '123', 'create', {})
       ).rejects.toThrow('Transaction failed');
+      
+      // MQTT should not be called on transaction failure
+      expect(mqttSyncService.publishSyncNotification).not.toHaveBeenCalled();
+    });
+
+    it('should handle MQTT publish errors gracefully', async () => {
+      mqttSyncService.publishSyncNotification.mockRejectedValue(new Error('MQTT failed'));
+      
+      // Should not throw even if MQTT fails
+      await expect(
+        service.logChange('route', '123', 'create', {})
+      ).resolves.not.toThrow();
+      
+      expect(mqttSyncService.publishSyncNotification).toHaveBeenCalled();
     });
   });
 
@@ -271,6 +299,65 @@ describe('SyncService', () => {
       });
       
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe('logChangeInTransaction', () => {
+    it('should publish MQTT notification within transaction', async () => {
+      const manager = mockEntityManager as EntityManager;
+      const entityType = 'route';
+      const entityId = '999';
+      const action = 'create' as const;
+      const data = { name: 'Transaction Test' };
+
+      const result = await service.logChangeInTransaction(
+        manager,
+        entityType,
+        entityId,
+        action,
+        data
+      );
+
+      expect(manager.update).toHaveBeenCalled();
+      expect(manager.save).toHaveBeenCalled();
+      expect(mqttSyncService.publishSyncNotification).toHaveBeenCalledWith(1, 1);
+      expect(result).toEqual(mockSyncLog);
+    });
+
+    it('should use provided major version', async () => {
+      const manager = mockEntityManager as EntityManager;
+      const providedMajorVersion = 5;
+
+      await service.logChangeInTransaction(
+        manager,
+        'route',
+        '123',
+        'update',
+        {},
+        providedMajorVersion
+      );
+
+      expect(manager.save).toHaveBeenCalledWith(SyncLog, expect.objectContaining({
+        major_version: providedMajorVersion,
+      }));
+      expect(mqttSyncService.publishSyncNotification).toHaveBeenCalledWith(5, 1);
+    });
+
+    it('should handle MQTT errors within transaction gracefully', async () => {
+      const manager = mockEntityManager as EntityManager;
+      mqttSyncService.publishSyncNotification.mockRejectedValue(new Error('MQTT failed'));
+
+      const result = await service.logChangeInTransaction(
+        manager,
+        'route',
+        '123',
+        'create',
+        {}
+      );
+
+      // Should still return the sync log even if MQTT fails
+      expect(result).toEqual(mockSyncLog);
+      expect(mqttSyncService.publishSyncNotification).toHaveBeenCalled();
     });
   });
 });

@@ -63,7 +63,7 @@ The `devices` table contains:
 #### Device Activation
 - `POST /api/devices/activate` - Exchange activation token for auth credentials
   - Input: `{ "activation_token": "xxx" }`
-  - Output: `{ "auth_token": "xxx", "device_token": "xxx", "device_id": "xxx", "vessel": "name" }`
+  - Output: `{ "auth_token": "xxx", "device_token": "xxx", "device_id": "xxx", "vessel": "name", "vessel_id": 123 }`
 
 #### Position Reporting
 - `POST /api/vessels/telemetry/report` - Report vessel position (requires device auth)

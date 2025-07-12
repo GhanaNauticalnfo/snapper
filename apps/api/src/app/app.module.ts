@@ -19,6 +19,7 @@ import { TreeStubsModule } from './tree-stubs/tree-stubs.module';
 import { LandingSitesModule } from './landing-sites/landing-sites.module';
 import { ResourceSettingsModule } from './resource-settings/resource-settings.module';
 import { DatabaseModule } from './database/database.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -44,6 +45,8 @@ import { DatabaseModule } from './database/database.module';
       //   };
       // },
     }),
+    // Register auth module early so guards are available
+    AuthModule,
     // Register feature modules AFTER TypeOrmModule.forRootAsync
     VesselsModule,
     KmlDatasetModule,

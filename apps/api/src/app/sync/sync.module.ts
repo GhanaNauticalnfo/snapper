@@ -4,11 +4,12 @@ import { SyncLog } from './sync-log.entity';
 import { SyncVersion } from './sync-version.entity';
 import { SyncService } from './sync.service';
 import { SyncController } from './sync.controller';
+import { MqttSyncService } from './mqtt-sync.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([SyncLog, SyncVersion])],
   controllers: [SyncController],
-  providers: [SyncService],
+  providers: [SyncService, MqttSyncService],
   exports: [SyncService],
 })
 export class SyncModule {}

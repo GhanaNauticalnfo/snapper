@@ -1,7 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
-import { DatabaseController } from './database.controller';
 import { DatabaseService } from './database.service';
 import { DatabaseStatistics } from './database-statistics.entity';
 import { SettingsModule } from '../settings/settings.module';
@@ -10,9 +9,8 @@ import { SettingsModule } from '../settings/settings.module';
   imports: [
     TypeOrmModule.forFeature([DatabaseStatistics]),
     ScheduleModule.forRoot(),
-    SettingsModule
+    forwardRef(() => SettingsModule)
   ],
-  controllers: [DatabaseController],
   providers: [DatabaseService],
   exports: [DatabaseService]
 })

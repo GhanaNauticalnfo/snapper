@@ -1,0 +1,219 @@
+{
+  "id": "ghanawaters",
+  "realm": "ghanawaters",
+  "displayName": "Ghana Waters",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 30,
+  "clients": [
+    {
+      "id": "ghanawaters-admin",
+      "clientId": "ghanawaters-admin",
+      "name": "Ghana Waters Admin Dashboard",
+      "description": "Admin dashboard for Ghana Waters management",
+      "rootUrl": "http://localhost:4201",
+      "baseUrl": "/",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "publicClient": true,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4201/*##http://localhost:4203/*"
+      },
+      "redirectUris": [
+        "http://localhost:4201/*",
+        "http://localhost:4203/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4201",
+        "http://localhost:4203"
+      ],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "fullScopeAllowed": true
+    },
+    {
+      "id": "ghanawaters-frontend",
+      "clientId": "ghanawaters-frontend",
+      "name": "Ghana Waters Public Frontend",
+      "description": "Public map interface for Ghana Waters",
+      "rootUrl": "http://localhost:4200",
+      "baseUrl": "/",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "publicClient": true,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4200/*##http://localhost:4202/*"
+      },
+      "redirectUris": [
+        "http://localhost:4200/*",
+        "http://localhost:4202/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200",
+        "http://localhost:4202"
+      ],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "fullScopeAllowed": true
+    },
+    {
+      "id": "ghanawaters-api",
+      "clientId": "ghanawaters-api",
+      "name": "Ghana Waters API",
+      "description": "Backend API for Ghana Waters",
+      "rootUrl": "",
+      "baseUrl": "",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "notBefore": 0,
+      "consentRequired": false,
+      "fullScopeAllowed": true
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "id": "admin-role",
+        "name": "admin",
+        "description": "Full system access - can manage all aspects of Ghana Waters",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "ghanawaters"
+      },
+      {
+        "id": "operator-role",
+        "name": "operator",
+        "description": "Vessel and tracking management - can manage vessels, devices, and tracking data",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "ghanawaters"
+      },
+      {
+        "id": "viewer-role",
+        "name": "viewer",
+        "description": "Read-only access - can view all data but cannot make changes",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "ghanawaters"
+      }
+    ]
+  },
+  "users": [
+    {
+      "id": "admin-user",
+      "username": "admin",
+      "enabled": true,
+      "totp": false,
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "User",
+      "email": "admin@ghanawaters.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin"]
+    },
+    {
+      "id": "operator-user",
+      "username": "operator",
+      "enabled": true,
+      "totp": false,
+      "emailVerified": true,
+      "firstName": "Operator",
+      "lastName": "User",
+      "email": "operator@ghanawaters.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "operator123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["operator"]
+    },
+    {
+      "id": "viewer-user",
+      "username": "viewer",
+      "enabled": true,
+      "totp": false,
+      "emailVerified": true,
+      "firstName": "Viewer",
+      "lastName": "User",
+      "email": "viewer@ghanawaters.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "viewer123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["viewer"]
+    }
+  ],
+  "browserSecurityHeaders": {
+    "contentSecurityPolicyReportOnly": "",
+    "xContentTypeOptions": "nosniff",
+    "xRobotsTag": "none",
+    "xFrameOptions": "SAMEORIGIN",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
+    "xXSSProtection": "1; mode=block",
+    "strictTransportSecurity": "max-age=31536000; includeSubDomains"
+  },
+  "smtpServer": {},
+  "eventsEnabled": false,
+  "eventsListeners": ["jboss-logging"],
+  "adminEventsEnabled": false,
+  "adminEventsDetailsEnabled": false,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["en"],
+  "defaultLocale": "en"
+}

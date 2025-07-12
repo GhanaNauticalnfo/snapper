@@ -37,61 +37,75 @@ services:
       - ghanawaters-network
       
  
-  artemis:
-    image: apache/activemq-artemis:latest
-    container_name: ghanawaters-artemis
-    environment:
-      ARTEMIS_USERNAME: ${ARTEMIS_USER:-artemis}
-      ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD:-artemis_password}
-      RESTORE_CONFIGURATION: true
-      ENABLE_JMX_EXPORTER: true
+  nanomq:
+    image: emqx/nanomq:0.21-full
+    container_name: ghanawaters-nanomq
     ports:
-      - "8161:8161"  # Web console
-      - "1883:1883"  # MQTT
-      - "61616:61616"  # Core protocol (for admin connections)
+      - "1883:1883"  # MQTT (for local dev)
+      - "8883:8883"  # MQTTS (for production-like testing)
     volumes:
-      - artemis-data:/var/lib/artemis/data
-      - artemis-config:/var/lib/artemis/etc
- #     - ./artemis-keycloak-config:/var/lib/artemis/keycloak-config
+      - ./nanomq/nanomq.conf:/etc/nanomq.conf
+      - nanomq-data:/data/db/
     restart: unless-stopped
     networks:
       - ghanawaters-network
-#    depends_on:
-#      - keycloak
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8161"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "nc", "-z", "localhost", "1883"]
+      interval: 10s
+      timeout: 5s
       retries: 3
 
-  keycloak:
-    profiles: ["keycloak"]  # KEYCLOAK IS DISABLED FOR NOW
-    image: quay.io/keycloak/keycloak:latest
-    container_name: ghanawaters-keycloak
+  # Keycloak Authentication - Local Development
+  keycloak-db:
+    image: postgres:17-alpine
+    container_name: keycloak-postgres
     environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://ghanawaters-postgres:5432/${DATABASE_NAME:-ghanawaters_db}
-      KC_DB_USERNAME: ${DATABASE_USER:-ghanawaters_user}
-      KC_DB_PASSWORD: ${DATABASE_PASSWORD:-ghanawaters_password}
-      KC_DB_SCHEMA: keycloak
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin_password}
-      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
-    command: 
-      - start-dev
-    ports:
-      - "8080:8080"
-    restart: unless-stopped
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak_password
+    volumes:
+      - keycloak-db-data:/var/lib/postgresql/data
     networks:
       - ghanawaters-network
-    depends_on:
-      ghanawaters-postgres:
-        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/health/ready"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.0
+    container_name: keycloak
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak_password
+      KC_HEALTH_ENABLED: true
+      KC_HTTP_ENABLED: true
+      KC_HOSTNAME_STRICT: false
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_RELATIVE_PATH: /
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    command: start-dev --import-realm
+    networks:
+      - ghanawaters-network
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:8080/realms/ghanawaters | grep -q ghanawaters"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    restart: unless-stopped
 
 networks:
   ghanawaters-network:
@@ -100,7 +114,7 @@ networks:
 volumes:
   ghanawaters-postgres-data:
     driver: local
-  artemis-data:
+  nanomq-data:
     driver: local
-  artemis-config:
+  keycloak-db-data:
     driver: local

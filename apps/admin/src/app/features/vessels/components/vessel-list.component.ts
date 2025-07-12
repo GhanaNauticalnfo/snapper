@@ -8,6 +8,7 @@ import { VesselResponseDto, CreateVesselDto, UpdateVesselDto, Vessel } from '../
 import { VesselResourceFormComponent } from './vessel-resource-form.component';
 import { DialogModule } from 'primeng/dialog';
 import { TabsModule } from 'primeng/tabs';
+import Keycloak from 'keycloak-js';
 
 // Tab components for vessel details dialog
 import { VesselTabInfoComponent } from './vessel-tab-info.component';
@@ -262,6 +263,7 @@ export class VesselListComponent implements OnInit, AfterViewInit {
   private vesselService = inject(VesselService);
   private vesselDatasetService = inject(VesselDatasetService);
   private messageService = inject(MessageService);
+  private keycloak = inject(Keycloak);
 
   // View children
   vesselFormComponent = viewChild<VesselResourceFormComponent>('vesselForm');
@@ -304,8 +306,8 @@ export class VesselListComponent implements OnInit, AfterViewInit {
       searchFields: ['name'],
       actions: {
         view: true,
-        edit: true,
-        delete: true
+        edit: this.hasAnyRole(['admin', 'operator']),
+        delete: this.hasRole('admin')
       },
       deleteConfirmMessage: (item) => `Are you sure you want to delete the vessel "${item.name}" (ID: ${item.id})?<br><br>This will permanently delete:<br><br><ul style="margin: 0; padding-left: 20px;"><li>The vessel record and all its information</li><li>All associated devices and their authentication tokens</li><li>All tracking data and position history</li></ul><br><strong>⚠️ This action cannot be undone and all data will be lost forever.</strong>`,
       deleteConfirmHeader: 'Delete Vessel - Permanent Action',
@@ -591,5 +593,14 @@ export class VesselListComponent implements OnInit, AfterViewInit {
       default:
         return 'type-unspecified';
     }
+  }
+  
+  private hasRole(role: string): boolean {
+    const roles = this.keycloak.realmAccess?.roles || [];
+    return roles.includes(role);
+  }
+  
+  private hasAnyRole(roles: string[]): boolean {
+    return roles.some(role => this.hasRole(role));
   }
 }

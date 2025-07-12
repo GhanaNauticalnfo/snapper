@@ -14,6 +14,7 @@ export interface MenuItem {
     routerLink?: string;
     href?: string;
     badge?: string; // Added badge property directly to the interface
+    roles?: string[]; // Added roles for role-based visibility
 }
 
 @Component({

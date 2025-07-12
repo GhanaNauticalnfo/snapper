@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, EntityManager } from 'typeorm';
 import { SyncLog } from './sync-log.entity';
 import { SyncVersion } from './sync-version.entity';
+import { MqttSyncService } from './mqtt-sync.service';
 
 @Injectable()
 export class SyncService {
@@ -11,6 +12,7 @@ export class SyncService {
     private syncLogRepository: Repository<SyncLog>,
     @InjectRepository(SyncVersion)
     private syncVersionRepository: Repository<SyncVersion>,
+    private mqttSyncService: MqttSyncService,
   ) {}
 
   async getCurrentMajorVersion(): Promise<number> {
@@ -54,9 +56,10 @@ export class SyncService {
     data?: any,
   ) {
     const majorVersion = await this.getCurrentMajorVersion();
+    let minorVersion: number;
     
     await this.syncLogRepository.manager.transaction(async manager => {
-      await this.logChangeInTransaction(
+      const result = await this.logChangeInTransaction(
         manager,
         entityType,
         entityId,
@@ -64,7 +67,16 @@ export class SyncService {
         data,
         majorVersion
       );
+      minorVersion = result.id;
     });
+
+    // Fire and forget MQTT notification - don't await
+    // This happens outside the transaction so it doesn't affect sync reliability
+    if (minorVersion) {
+      this.mqttSyncService.publishSyncNotification(majorVersion, minorVersion).catch(err => {
+        // Errors are already logged in MqttSyncService, just catch to prevent unhandled rejection
+      });
+    }
   }
 
   async logChangeInTransaction(
@@ -74,7 +86,7 @@ export class SyncService {
     action: 'create' | 'update' | 'delete',
     data?: any,
     majorVersion?: number,
-  ) {
+  ): Promise<SyncLog> {
     // Get major version if not provided
     if (majorVersion === undefined) {
       const currentVersion = await manager.findOne(SyncVersion, {
@@ -91,7 +103,7 @@ export class SyncService {
     );
 
     // Insert new entry
-    await manager.save(SyncLog, {
+    const syncLog = await manager.save(SyncLog, {
       entity_type: entityType,
       entity_id: entityId,
       action: action,
@@ -99,6 +111,16 @@ export class SyncService {
       is_latest: true,
       major_version: majorVersion,
     });
+
+    // Fire and forget MQTT notification - don't await
+    // This happens within the transaction but errors don't affect it
+    if (syncLog.id) {
+      this.mqttSyncService.publishSyncNotification(majorVersion, syncLog.id).catch(err => {
+        // Errors are already logged in MqttSyncService, just catch to prevent unhandled rejection
+      });
+    }
+
+    return syncLog;
   }
 
   async resetSync() {
