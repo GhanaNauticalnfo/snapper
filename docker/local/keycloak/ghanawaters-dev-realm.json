@@ -1,9 +1,9 @@
 {
-  "id": "ghanawaters",
-  "realm": "ghanawaters",
-  "displayName": "Ghana Waters",
+  "id": "ghanawaters-dev",
+  "realm": "ghanawaters-dev",
+  "displayName": "Ghana Waters Development",
   "enabled": true,
-  "sslRequired": "none",
+  "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
@@ -19,11 +19,10 @@
   "failureFactor": 30,
   "clients": [
     {
-      "id": "ghanawaters-admin",
       "clientId": "ghanawaters-admin",
       "name": "Ghana Waters Admin Dashboard",
       "description": "Admin dashboard for Ghana Waters management",
-      "rootUrl": "http://localhost:4201",
+      "rootUrl": "https://ghanawaters-dev-admin.ghananautical.info",
       "baseUrl": "/",
       "surrogateAuthRequired": false,
       "enabled": true,
@@ -39,15 +38,13 @@
       "authorizationServicesEnabled": false,
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:4201/*##http://localhost:4203/*"
+        "post.logout.redirect.uris": "https://ghanawaters-dev-admin.ghananautical.info/*"
       },
       "redirectUris": [
-        "http://localhost:4201/*",
-        "http://localhost:4203/*"
+        "https://ghanawaters-dev-admin.ghananautical.info/*"
       ],
       "webOrigins": [
-        "http://localhost:4201",
-        "http://localhost:4203"
+        "https://ghanawaters-dev-admin.ghananautical.info"
       ],
       "notBefore": 0,
       "bearerOnly": false,
@@ -55,11 +52,10 @@
       "fullScopeAllowed": true
     },
     {
-      "id": "ghanawaters-frontend",
       "clientId": "ghanawaters-frontend",
       "name": "Ghana Waters Public Frontend",
       "description": "Public map interface for Ghana Waters",
-      "rootUrl": "http://localhost:4200",
+      "rootUrl": "https://ghanawaters-dev.ghananautical.info",
       "baseUrl": "/",
       "surrogateAuthRequired": false,
       "enabled": true,
@@ -75,15 +71,13 @@
       "authorizationServicesEnabled": false,
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:4200/*##http://localhost:4202/*"
+        "post.logout.redirect.uris": "https://ghanawaters-dev.ghananautical.info/*"
       },
       "redirectUris": [
-        "http://localhost:4200/*",
-        "http://localhost:4202/*"
+        "https://ghanawaters-dev.ghananautical.info/*"
       ],
       "webOrigins": [
-        "http://localhost:4200",
-        "http://localhost:4202"
+        "https://ghanawaters-dev.ghananautical.info"
       ],
       "notBefore": 0,
       "bearerOnly": false,
@@ -91,7 +85,6 @@
       "fullScopeAllowed": true
     },
     {
-      "id": "ghanawaters-api",
       "clientId": "ghanawaters-api",
       "name": "Ghana Waters API",
       "description": "Backend API for Ghana Waters",
@@ -118,36 +111,31 @@
   "roles": {
     "realm": [
       {
-        "id": "admin-role",
         "name": "admin",
         "description": "Full system access - can manage all aspects of Ghana Waters",
         "composite": true,
         "composites": {
           "realm": ["viewer"]
         },
-        "clientRole": false,
-        "containerId": "ghanawaters"
+        "clientRole": false
       },
-{
-        "id": "viewer-role",
+      {
         "name": "viewer",
         "description": "Read-only access - can view all data but cannot make changes",
         "composite": false,
-        "clientRole": false,
-        "containerId": "ghanawaters"
+        "clientRole": false
       }
     ]
   },
   "users": [
     {
-      "id": "admin-user",
       "username": "admin",
       "enabled": true,
       "totp": false,
       "emailVerified": true,
       "firstName": "Admin",
       "lastName": "User",
-      "email": "admin@ghanawaters.local",
+      "email": "admin@ghanawaters-dev.local",
       "credentials": [
         {
           "type": "password",
@@ -157,15 +145,14 @@
       ],
       "realmRoles": ["admin"]
     },
-{
-      "id": "viewer-user",
+    {
       "username": "viewer",
       "enabled": true,
       "totp": false,
       "emailVerified": true,
       "firstName": "Viewer",
       "lastName": "User",
-      "email": "viewer@ghanawaters.local",
+      "email": "viewer@ghanawaters-dev.local",
       "credentials": [
         {
           "type": "password",

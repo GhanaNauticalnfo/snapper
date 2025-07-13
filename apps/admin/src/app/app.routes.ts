@@ -46,35 +46,35 @@ export const routes: Route[] = [
   {
     path: 'features',
     canActivate: [authGuard],
-    data: { roles: ['admin', 'operator'] },
+    data: { roles: ['admin'] },
     children: [
       {
         path: 'kml',
         component: KmlComponent,
-        data: { roles: ['admin', 'operator'] }
+        data: { roles: ['admin'] }
       },
       {
         path: 'volta-depth',
         loadComponent: () => import('./features/volta-depth/volta-depth.component')
           .then(m => m.VoltaDepthComponent),
-        data: { roles: ['admin', 'operator'] }
+        data: { roles: ['admin'] }
       },
       {
         path: 'routes', 
         component: RoutesComponent,
-        data: { roles: ['admin', 'operator'] }
+        data: { roles: ['admin'] }
       },
       {
         path: 'tree-stubs',
         loadComponent: () => import('./features/tree-stubs/tree-stubs.component')
           .then(m => m.TreeStubsComponent),
-        data: { roles: ['admin', 'operator'] }
+        data: { roles: ['admin'] }
       },
       {
         path: 'tree-stubs/:id',
         loadComponent: () => import('./features/tree-stubs/components/stub-editor.component')
           .then(m => m.StubEditorComponent),
-        data: { roles: ['admin', 'operator'] }
+        data: { roles: ['admin'] }
       },
       {
         path: '',
@@ -87,7 +87,7 @@ export const routes: Route[] = [
     path: 'vessels', 
     component: VesselComponent,
     canActivate: [authGuard],
-    data: { roles: ['admin', 'operator', 'viewer'] }
+    data: { roles: ['admin', 'viewer'] }
   },
   {
     path: 'landing-sites',
@@ -122,7 +122,7 @@ export const routes: Route[] = [
     path: 'live', 
     component: LiveComponent,
     canActivate: [authGuard],
-    data: { roles: ['admin', 'operator', 'viewer'] }
+    data: { roles: ['admin', 'viewer'] }
   },
   {
     path: 'settings',
