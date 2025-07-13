@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: keycloak-ingress
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/proxy-buffer-size: "8k"
 spec:
   ingressClassName: nginx
