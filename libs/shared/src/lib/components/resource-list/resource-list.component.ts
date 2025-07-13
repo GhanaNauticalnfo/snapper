@@ -233,7 +233,7 @@ export class ResourceListComponent<T extends { id?: number | string }> {
     const dataList = this.dataSignal();
     const currentConfig = this.config();
     
-    console.log('Filtering data:', { query, dataLength: dataList.length, data: dataList });
+ //   console.log('Filtering data:', { query, dataLength: dataList.length, data: dataList });
     
     if (!query || !currentConfig.searchFields) return dataList;
     

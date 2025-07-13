@@ -117,21 +117,29 @@ export class AppTopBarComponent implements OnDestroy {
         effect(() => {
             const keycloakEvent = this.keycloakSignal();
             
+            // Use untracked to avoid tracking these signal writes
             if (keycloakEvent.type === KeycloakEventType.Ready) {
                 const isAuthenticated = typeEventArgs<ReadyArgs>(keycloakEvent.args);
-                this.authenticated.set(isAuthenticated);
                 
-                if (isAuthenticated) {
-                    this.loadUserProfile();
-                }
+                // Schedule the signal updates to run after the effect
+                queueMicrotask(() => {
+                    this.authenticated.set(isAuthenticated);
+                    
+                    if (isAuthenticated) {
+                        this.loadUserProfile();
+                    }
+                });
             }
             
             if (keycloakEvent.type === KeycloakEventType.AuthLogout) {
-                this.authenticated.set(false);
-                this.userProfile.set(null);
-                this.userRoles.set([]);
+                // Schedule the signal updates to run after the effect
+                queueMicrotask(() => {
+                    this.authenticated.set(false);
+                    this.userProfile.set(null);
+                    this.userRoles.set([]);
+                });
             }
-        }, { allowSignalWrites: true });
+        });
     }
     
     async initializeAuth() {

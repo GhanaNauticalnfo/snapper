@@ -28,7 +28,7 @@ import { User } from '@ghanawaters/shared-models';
 export class AppComponent {
   constructor(private router: Router) {
     this.router.events.subscribe(event => {
-      console.log('Router Event:', event);
+      //console.log('Router Event:', event);
       
       if (event instanceof NavigationEnd) {
         console.log('Current URL:', event.url);
