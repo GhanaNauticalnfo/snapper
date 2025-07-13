@@ -41,6 +41,8 @@ export const routes: Route[] = [
     loadComponent: () => import('./features/home/home.component')
       .then(m => m.HomeComponent)
   },
+
+  
   {
     path: 'features',
     canActivate: [authGuard],
@@ -80,17 +82,6 @@ export const routes: Route[] = [
         pathMatch: 'full'
       }
     ]
-  },
-  // Backward compatibility redirects
-  {
-    path: 'kml',
-    redirectTo: '/features/kml',
-    pathMatch: 'full'
-  },
-  {
-    path: 'volta-depth',
-    redirectTo: '/features/volta-depth',
-    pathMatch: 'full'
   },
   {
     path: 'vessels', 

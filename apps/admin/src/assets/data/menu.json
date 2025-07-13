@@ -49,15 +49,13 @@
         {
             "name": "Exports",
             "icon": "pi pi-chart-line",
-            "routerLink": "/exports",
-            "roles": ["admin", "operator"]
+            "routerLink": "/exports"
         },
 
         {
             "name": "Settings",
             "icon": "pi pi-cog",
-            "routerLink": "/settings",
-            "roles": ["admin"]
+            "routerLink": "/settings"
         }
     ]
 }

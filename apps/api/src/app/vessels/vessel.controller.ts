@@ -12,6 +12,7 @@ import {
   import { CreateVesselDto } from './dto/create-vessel.dto';
   import { UpdateVesselDto } from './dto/update-vessel.dto';
   import { VesselResponseDto } from './dto/vessel-response.dto';
+import { Public } from '../auth/decorators';
   
   @ApiTags('vessels')
   @Controller('vessels')
@@ -21,6 +22,7 @@ import {
     ) {}
   
     @Get()
+    @Public() // Public access for frontend map
     @ApiOperation({ summary: 'Get all vessels', description: 'Retrieve a list of all vessels' })
     @ApiResponse({ status: 200, description: 'List of vessels retrieved successfully', type: [VesselResponseDto] })
     async findAll(@Query('includeLatestPosition') includeLatestPosition?: string): Promise<VesselResponseDto[]> {
@@ -31,6 +33,7 @@ import {
     }
   
     @Get(':id')
+    @Public() // Public access for frontend map
     @ApiOperation({ summary: 'Get vessel by ID', description: 'Retrieve a specific vessel by its ID' })
     @ApiParam({ name: 'id', description: 'Vessel ID', type: Number })
     @ApiResponse({ status: 200, description: 'Vessel retrieved successfully', type: VesselResponseDto })
