@@ -5,3 +5,5 @@ metadata:
   namespace: ghanawaters-dev
 data:
   ALLOWED_ORIGINS: "https://ghanawaters-dev-admin.ghananautical.info,https://ghanawaters-dev.ghananautical.info,http://localhost:4200,http://localhost:4201,http://localhost:4202,http://localhost:4203"
+  KEYCLOAK_URL: "https://keycloak.ghananautical.info"
+  KEYCLOAK_REALM: "ghanawaters-dev"
