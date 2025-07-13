@@ -49,11 +49,9 @@ spec:
               name: keycloak-postgres-secret
               key: POSTGRES_PASSWORD
         - name: KC_HOSTNAME
-          value: keycloak.ghananautical.info
+          value: https://keycloak.ghananautical.info
         - name: KC_HOSTNAME_STRICT
           value: "false"
-        - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
-          value: "true"
         - name: KC_HTTP_ENABLED
           value: "true"
         - name: KC_PROXY
