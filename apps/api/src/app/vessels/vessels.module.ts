@@ -17,6 +17,7 @@ import { MqttTrackingService } from './tracking/mqtt-tracking.service';
 import { TelemetryExportService } from './tracking/telemetry-export.service';
 import { ResourceSettingsModule } from '../resource-settings/resource-settings.module';
 import { MqttAuthController } from './mqtt/mqtt-auth.controller';
+import { SyncModule } from '../sync/sync.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { MqttAuthController } from './mqtt/mqtt-auth.controller';
       VesselTelemetry,
     ]),
     ResourceSettingsModule,
+    SyncModule,
   ],
   providers: [
     VesselService,

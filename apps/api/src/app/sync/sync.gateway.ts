@@ -48,14 +48,23 @@ export class SyncGateway
         minor_version: minorVersion,
       };
 
-      // Emit to all connected clients
-      this.server.emit('sync-update', {
+      const payload = {
         ...notification,
         timestamp: new Date(),
+      };
+
+      console.log('🔄 [SYNC] Emitting sync update to /sync namespace:', {
+        majorVersion,
+        minorVersion,
+        timestamp: payload.timestamp.toISOString(),
       });
+
+      // Emit to all connected clients
+      this.server.emit('sync-update', payload);
 
       this.logger.debug(`Emitted sync update: v${majorVersion}.${minorVersion}`);
     } catch (error) {
+      console.error('🔄 [SYNC] Error emitting sync update:', error);
       // Log error but don't throw - sync should continue even if WebSocket fails
       this.logger.error('Error emitting sync update:', error);
     }

@@ -653,10 +653,20 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     
     // Listen for sync updates
     this.syncSocket.on('sync-update', (data: any) => {
-      console.log('🔄 Received sync update:', data);
+      const receivedAt = new Date().toISOString();
+      console.log('🔄 [SYNC] Received sync update on /sync namespace:', {
+        receivedAt,
+        serverTimestamp: data.timestamp,
+        majorVersion: data.major_version,
+        minorVersion: data.minor_version,
+        latency: data.timestamp ? new Date().getTime() - new Date(data.timestamp).getTime() + 'ms' : 'unknown',
+        fullPayload: data
+      });
+      
+      console.log('🔄 [SYNC] Triggering vessel data refresh due to sync update');
       // Immediately refresh vessel types and positions
       this.update().catch(error => {
-        console.error('Failed to update after sync notification:', error);
+        console.error('🔄 [SYNC] Failed to update after sync notification:', error);
       });
     });
   }

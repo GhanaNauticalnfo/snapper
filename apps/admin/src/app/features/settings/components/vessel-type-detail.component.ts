@@ -158,7 +158,6 @@ import { BoatIconComponent } from '@ghanawaters/shared';
                         #vesselColorPicker
                         formControlName="color"
                         appendTo="body"
-                        [disabled]="vesselType()?.id === 1"
                       ></p-colorPicker>
                       
                       @if (hasColorChanged()) {
@@ -433,6 +432,8 @@ export class VesselTypeDetailComponent implements OnInit, OnDestroy {
         vessel_count: 0
       });
       this.vesselTypeForm.patchValue({ name: '', color: '#3B82F6' });
+      // Enable color control for new vessel types
+      this.vesselTypeForm.get('color')?.enable();
     } else if (id) {
       this.loadVesselType(parseInt(id));
     } else {
@@ -455,6 +456,14 @@ export class VesselTypeDetailComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.vesselType.set(data);
         this.vesselTypeForm.patchValue({ name: data.name, color: data.color });
+        
+        // Disable color control for the default vessel type
+        if (data.id === 1) {
+          this.vesselTypeForm.get('color')?.disable();
+        } else {
+          this.vesselTypeForm.get('color')?.enable();
+        }
+        
         this.loading.set(false);
       },
       error: (err) => {

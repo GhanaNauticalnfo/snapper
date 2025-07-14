@@ -6,6 +6,7 @@ import { Vessel } from '../vessel.entity';
 import { VesselTypeInputDto } from './dto/vessel-type-input.dto';
 import { VesselTypeResponseDto } from './dto/vessel-type-response.dto';
 import { ResourceSettingsService } from '../../resource-settings/resource-settings.service';
+import { SyncService } from '../../sync/sync.service';
 
 @Injectable()
 export class VesselTypeService {
@@ -15,6 +16,7 @@ export class VesselTypeService {
     @InjectRepository(Vessel)
     private vesselRepository: Repository<Vessel>,
     private resourceSettingsService: ResourceSettingsService,
+    private syncService: SyncService,
   ) {}
 
   async findAll(): Promise<VesselTypeResponseDto[]> {
@@ -65,6 +67,15 @@ export class VesselTypeService {
     
     const saved = await this.vesselTypeRepository.save(vesselType);
     
+    // Log sync change with full vessel type list
+    const allTypes = await this.getAllVesselTypesForSync();
+    await this.syncService.logChange(
+      'vessel_types',
+      'all',
+      'update',
+      allTypes
+    );
+    
     // Load with empty vessels array for consistent response
     saved.vessels = [];
     return saved.toResponseDto();
@@ -76,33 +87,56 @@ export class VesselTypeService {
       throw new BadRequestException('Cannot rename the Unspecified vessel type');
     }
 
-    const vesselType = await this.vesselTypeRepository.findOne({
-      where: { id },
-      relations: ['vessels']
-    });
-    
-    if (!vesselType) {
-      throw new BadRequestException(`Vessel type with ID ${id} not found`);
-    }
-    
-    // Check if new name already exists (excluding current record)
-    if (dto.name !== vesselType.name) {
-      const existingType = await this.vesselTypeRepository.findOne({
-        where: { name: dto.name }
+    // Use transaction to ensure both vessel type update and sync log are atomic
+    return await this.vesselTypeRepository.manager.transaction(async manager => {
+      const vesselType = await manager.findOne(VesselType, {
+        where: { id },
+        relations: ['vessels']
       });
       
-      if (existingType) {
-        throw new ConflictException(`Vessel type with name '${dto.name}' already exists`);
+      if (!vesselType) {
+        throw new BadRequestException(`Vessel type with ID ${id} not found`);
       }
-    }
+      
+      // Check if new name already exists (excluding current record)
+      if (dto.name !== vesselType.name) {
+        const existingType = await manager.findOne(VesselType, {
+          where: { name: dto.name }
+        });
+        
+        if (existingType) {
+          throw new ConflictException(`Vessel type with name '${dto.name}' already exists`);
+        }
+      }
 
-    vesselType.name = dto.name;
-    if (dto.color !== undefined) {
-      vesselType.color = dto.color;
-    }
-    await this.vesselTypeRepository.save(vesselType);
-    
-    return vesselType.toResponseDto();
+      vesselType.name = dto.name;
+      if (dto.color !== undefined) {
+        vesselType.color = dto.color;
+      }
+      const saved = await manager.save(vesselType);
+      
+      // Get all vessel types for sync (within transaction to ensure consistency)
+      const allTypes = await manager.find(VesselType, {
+        order: { id: 'ASC' }
+      });
+      
+      const syncData = allTypes.map(type => ({
+        id: type.id,
+        name: type.name,
+        color: type.color
+      }));
+      
+      // Log sync change within the transaction
+      await this.syncService.logChangeInTransaction(
+        manager,
+        'vessel_types',
+        'all',
+        'update',
+        syncData
+      );
+      
+      return saved.toResponseDto();
+    });
   }
 
   async remove(id: number): Promise<void> {
@@ -134,8 +168,38 @@ export class VesselTypeService {
       
       // Delete the vessel type
       await manager.delete(VesselType, { id });
+      
+      // Get all remaining vessel types for sync
+      const allTypes = await manager.find(VesselType, {
+        order: { id: 'ASC' }
+      });
+      
+      const syncData = allTypes.map(type => ({
+        id: type.id,
+        name: type.name,
+        color: type.color
+      }));
+      
+      // Log sync change within the transaction
+      await this.syncService.logChangeInTransaction(
+        manager,
+        'vessel_types',
+        'all',
+        'update',
+        syncData
+      );
     });
   }
 
-
+  private async getAllVesselTypesForSync(): Promise<any[]> {
+    const vesselTypes = await this.vesselTypeRepository.find({
+      order: { id: 'ASC' }
+    });
+    
+    return vesselTypes.map(type => ({
+      id: type.id,
+      name: type.name,
+      color: type.color
+    }));
+  }
 }
