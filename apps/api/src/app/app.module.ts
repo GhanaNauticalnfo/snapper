@@ -25,7 +25,10 @@ import { AuthModule } from './auth/auth.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, // Good practice: Makes ConfigService available everywhere
-      envFilePath: `.env.${process.env.NODE_ENV || 'local'}`,
+      envFilePath: process.env.NODE_ENV === 'local' || !process.env.NODE_ENV 
+        ? '.env.local' 
+        : undefined, // Only load .env.local for local development
+      ignoreEnvFile: process.env.NODE_ENV !== 'local' && !!process.env.NODE_ENV, // Ignore file for non-local environments
     }),
     TypeOrmModule.forRootAsync({
       // Make ConfigModule available for injection into the factory
