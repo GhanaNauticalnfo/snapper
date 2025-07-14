@@ -8,6 +8,7 @@ resources:
   - ../../base/frontend
   - ../../base/database
   - ../../base/jobs
+  - ../../base/nanomq
   # configmap with env-specific values
   - configs/api-config.yaml
 images:
@@ -29,3 +30,11 @@ patches:
     target:
       kind: Ingress
       name: ghanawaters-api-ingress
+  - path: patches/nanomq-ingress-host.yaml
+    target:
+      kind: Ingress
+      name: ghanawaters-nanomq-ingress
+  - path: patches/nanomq-config.yaml
+    target:
+      kind: ConfigMap
+      name: ghanawaters-nanomq-config

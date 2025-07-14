@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ghanawaters-nanomq-config
+data:
+  nanomq.conf: |
+    # NanoMQ Configuration for Ghana Waters Test Environment
+
+    # Basic broker settings
+    broker {
+      property_size = 32
+      max_packet_size = 10MB
+      client_max_packet_size = 5MB
+      msq_len = 2048
+      rate_limit = "1000,10s"
+      conn_rate_limit = "500/s"
+      max_conn_rate = 500
+      keepalive_multiplier = 1.25
+    }
+
+    # Plain TCP listener for internal cluster communication
+    listeners.tcp {
+      bind = "0.0.0.0:1883"
+      acceptors = 4
+      max_connections = 1024000
+    }
+
+    # TLS listener for secure connections
+    listeners.ssl {
+      bind = "0.0.0.0:8883"
+      acceptors = 4
+      max_connections = 1024000
+      ssl_options {
+        verify = verify_none  # Staging environment
+        fail_if_no_peer_cert = false
+      }
+    }
+
+    # HTTP webhook authentication using internal Kubernetes service
+    auth {
+      type = http
+      auth_req {
+        url = "http://ghanawaters-api-service/api/mqtt/auth"
+        method = POST
+        headers {
+          content-type = "application/x-www-form-urlencoded"
+        }
+        params = {
+          clientid = "%c"
+          username = "%u"
+          password = "%P"
+        }
+        timeout = 5s
+      }
+    }
+
+    # Static ACL rules
+    authorization {
+      deny_action = disconnect
+      no_match = deny
+      sources = [
+        {
+          type = simple
+          rules = [
+            # API user can publish to /sync and subscribe to all vessel positions
+            { permit = allow, username = "api", action = publish, topics = ["/sync"] }
+            { permit = allow, username = "api", action = subscribe, topics = ["vessels/+/position"] }
+            
+            # Vessels can subscribe to /sync and publish to their own position topic
+            # %u in topic means it must match the username
+            { permit = allow, username = "#", action = subscribe, topics = ["/sync"] }
+            { permit = allow, username = "#", action = publish, topics = ["vessels/%u/position"] }
+          ]
+        }
+      ]
+    }
+
+    # SQLite persistence for session data
+    sqlite {
+      enable = true
+      disk_cache_size = 102400
+      mounted_file_path = "/data/db/"
+      flush_mem_threshold = 100
+      resend_interval = 5000
+    }
+
+    # Logging configuration for test environment
+    log {
+      to = console
+      level = debug
+      dir = "/var/log"
+      file = "nanomq.log"
+      rotation {
+        size = "10MB"
+        count = 5
+      }
+    }
+
+    # Disable anonymous access - all clients must authenticate
+    allow_anonymous = false

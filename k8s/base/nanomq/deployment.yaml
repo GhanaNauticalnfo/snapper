@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ghanawaters-nanomq
+  labels:
+    app: ghanawaters-nanomq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ghanawaters-nanomq
+  template:
+    metadata:
+      labels:
+        app: ghanawaters-nanomq
+    spec:
+      containers:
+      - name: nanomq
+        image: emqx/nanomq:0.21-full
+        ports:
+        - containerPort: 1883
+          name: mqtt
+        - containerPort: 8883
+          name: mqtts
+        volumeMounts:
+        - name: config
+          mountPath: /etc/nanomq.conf
+          subPath: nanomq.conf
+        - name: data
+          mountPath: /data/db
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - |
+              nanomq_cli conn -h 127.0.0.1 -p 1883 -V 5 -i liveness -u api -P mqtt_api_password -C 1 || exit 1
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - |
+              nanomq_cli conn -h 127.0.0.1 -p 1883 -V 5 -i readiness -u api -P mqtt_api_password -C 1 || exit 1
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        env:
+        - name: NANOMQ_LOG_LEVEL
+          value: "info"
+      volumes:
+      - name: config
+        configMap:
+          name: ghanawaters-nanomq-config
+      - name: data
+        persistentVolumeClaim:
+          claimName: ghanawaters-nanomq-pvc

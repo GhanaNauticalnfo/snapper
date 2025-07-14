@@ -7,6 +7,7 @@ resources:
   - ../../base/frontend
   - ../../base/database
   - ../../base/jobs
+  - ../../base/nanomq
   - configs/api-config.yaml
 images:
   - name: ghcr.io/ghananauticalnfo/ghanawaters-api
@@ -27,3 +28,11 @@ patches:
     target:
       kind: Ingress
       name: ghanawaters-api-ingress
+  - path: patches/nanomq-ingress-host.yaml
+    target:
+      kind: Ingress
+      name: ghanawaters-nanomq-ingress
+  - path: patches/nanomq-config.yaml
+    target:
+      kind: ConfigMap
+      name: ghanawaters-nanomq-config

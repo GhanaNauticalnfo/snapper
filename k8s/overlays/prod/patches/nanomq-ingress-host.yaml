@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ghanawaters-nanomq-ingress
+  annotations:
+    # Note: For production, we start with staging certificate and can switch to prod later
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+spec:
+  tls:
+  - hosts:
+    - ghanawaters-mq.ghananautical.info
+    secretName: prod-ghanawaters-nanomq-tls
+  rules:
+  - host: ghanawaters-mq.ghananautical.info
+    http:
+      paths:
+      - path: /mqtt
+        pathType: Prefix
+        backend:
+          service:
+            name: ghanawaters-nanomq-service
+            port:
+              number: 1883
