@@ -14,7 +14,6 @@ import Keycloak from 'keycloak-js';
 import { VesselTabInfoComponent } from './vessel-tab-info.component';
 import { VesselTabDeviceComponent } from './vessel-tab-device.component';
 import { VesselTabTrackingComponent } from './vessel-tab-tracking.component';
-import { VesselTabTelemetryDownloadComponent } from './vessel-tab-telemetry-download.component';
 import { VesselDatasetService } from '../services/vessel-dataset.service';
 import { VesselDataset } from '../models/vessel-dataset.model';
 
@@ -32,8 +31,7 @@ import { VesselDataset } from '../models/vessel-dataset.model';
     VesselIdPipe,
     VesselTabInfoComponent,
     VesselTabDeviceComponent,
-    VesselTabTrackingComponent,
-    VesselTabTelemetryDownloadComponent
+    VesselTabTrackingComponent
   ],
   providers: [MessageService],
   host: {
@@ -112,10 +110,6 @@ import { VesselDataset } from '../models/vessel-dataset.model';
               <i class="pi pi-map-marker"></i>
               <span class="ml-2">Track</span>
             </p-tab>
-            <p-tab value="3">
-              <i class="pi pi-chart-line"></i>
-              <span class="ml-2">Telemetry</span>
-            </p-tab>
           </p-tablist>
           <p-tabpanels>
             <p-tabpanel value="0">
@@ -138,13 +132,6 @@ import { VesselDataset } from '../models/vessel-dataset.model';
                 [allVessels]="allVesselDatasets()"
                 [isVisible]="activeTabIndex === 2 && detailsDialogVisible">
               </app-vessel-tab-tracking>
-            </p-tabpanel>
-            
-            <p-tabpanel value="3">
-              <app-vessel-tab-telemetry-download 
-                [vessel]="selectedVesselDataset()"
-                [allVessels]="allVesselDatasets()">
-              </app-vessel-tab-telemetry-download>
             </p-tabpanel>
           </p-tabpanels>
         </p-tabs>

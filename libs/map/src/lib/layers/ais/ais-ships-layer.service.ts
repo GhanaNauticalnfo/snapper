@@ -324,8 +324,8 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   
   private createVesselPopupContent(properties: any): string {
     const lastUpdate = properties.lastUpdate ? new Date(properties.lastUpdate).toLocaleString() : 'Unknown';
-    const speed = properties.speed ? `${properties.speed} knots` : 'Unknown';
-    const heading = properties.heading ? `${properties.heading}°` : 'Unknown';
+    const speed = properties.speed ? `${Number(properties.speed).toFixed(1)} knots` : 'Unknown';
+    const heading = properties.heading ? `${Math.round(Number(properties.heading))}°` : 'Unknown';
     const status = properties.status || 'Unknown';
     
     return `
