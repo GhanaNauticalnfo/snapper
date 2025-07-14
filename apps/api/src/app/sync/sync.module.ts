@@ -9,7 +9,7 @@ import { MqttSyncService } from './mqtt-sync.service';
 @Module({
   imports: [TypeOrmModule.forFeature([SyncLog, SyncVersion])],
   controllers: [SyncController],
-  providers: [SyncService, MqttSyncService],
+  providers: [SyncService], // MqttSyncService disabled - using WebSocket/HTTPS only
   exports: [SyncService],
 })
 export class SyncModule {}

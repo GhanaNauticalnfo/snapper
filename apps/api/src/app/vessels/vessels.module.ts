@@ -35,7 +35,7 @@ import { MqttAuthController } from './mqtt/mqtt-auth.controller';
     TrackingService,
     TrackingGateway,
     DeviceGateway,
-    MqttTrackingService,
+    // MqttTrackingService, // Disabled - using WebSocket/HTTPS only
     TelemetryExportService,
   ],
   controllers: [
@@ -44,7 +44,7 @@ import { MqttAuthController } from './mqtt/mqtt-auth.controller';
     TrackingController,
     QgisTrackingController,
     DeviceController,
-    MqttAuthController
+    // MqttAuthController // Disabled - using WebSocket/HTTPS only
   ],
   exports: [
     VesselService,

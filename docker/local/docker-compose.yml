@@ -37,25 +37,25 @@ services:
       - ghanawaters-network
       
  
-  nanomq:
-    image: emqx/nanomq:0.21-full
-    container_name: ghanawaters-nanomq
-    ports:
-      - "1883:1883"  # MQTT (for local dev)
-      - "8883:8883"  # MQTTS (for production-like testing)
-    volumes:
-      - ./nanomq/nanomq.conf:/etc/nanomq.conf
-      - nanomq-data:/data/db/
-      - ../..:/workspace  # Mount workspace for logging
-    restart: unless-stopped
-    networks:
-      - ghanawaters-network
-    healthcheck:
-      test: ["CMD-SHELL", "nanomq_cli conn -h 127.0.0.1 -p 1883 -V 5 -i liveness -u api -P mqtt_api_password -C 1 || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+  # nanomq:
+  #   image: emqx/nanomq:0.21-full
+  #   container_name: ghanawaters-nanomq
+  #   ports:
+  #     - "1883:1883"  # MQTT (for local dev)
+  #     - "8883:8883"  # MQTTS (for production-like testing)
+  #   volumes:
+  #     - ./nanomq/nanomq.conf:/etc/nanomq.conf
+  #     - nanomq-data:/data/db/
+  #     - ../..:/workspace  # Mount workspace for logging
+  #   restart: unless-stopped
+  #   networks:
+  #     - ghanawaters-network
+  #   # healthcheck:
+  #   #   test: ["CMD-SHELL", "nanomq_cli conn -h 127.0.0.1 -p 1883 -V 5 -i liveness -u api -P mqtt_api_password -C 1 || exit 1"]
+  #   #   interval: 30s
+  #   #   timeout: 5s
+  #   #   retries: 3
+  #   #   start_period: 10s
 
   # Keycloak Authentication - Local Development
   keycloak-db:
@@ -96,17 +96,18 @@ services:
       KC_HTTP_RELATIVE_PATH: /
     ports:
       - "8080:8080"
+      - "9000:9000"
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     command: start-dev --import-realm
     networks:
       - ghanawaters-network
     healthcheck:
-      test: ["CMD", "sh", "-c", "curl -f http://localhost:8080/realms/ghanawaters | grep -q ghanawaters"]
+      test: ["CMD", "bash", "-c", "wget -q -O - http://localhost:9000/health/ready | grep -q '\"status\":\"UP\"'"]
       interval: 10s
       timeout: 5s
-      retries: 30
       start_period: 60s
+      retries: 30
     restart: unless-stopped
 
 networks:

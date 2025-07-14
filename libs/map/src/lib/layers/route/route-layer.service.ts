@@ -1,9 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Map as MaplibreMap, LngLatBounds, Marker } from 'maplibre-gl';
 import { BaseLayerService } from '../base-layer.service';
-import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { SETTING_KEYS, SETTING_DEFAULTS } from '@ghanawaters/shared-models';
 
 export interface RouteWaypoint {
   id: string;
@@ -29,9 +26,7 @@ export class RouteLayerService extends BaseLayerService {
   private map: MaplibreMap | null = null;
   private routeData: RouteData | null = null;
   private markers: Marker[] = [];
-  private routeColor = new BehaviorSubject<string>(SETTING_DEFAULTS[SETTING_KEYS.ROUTE_COLOR]);
-  private http = inject(HttpClient);
-  private apiUrl: string | null = null;
+  private readonly routeColor = '#000000'; // Always black
 
   constructor() {
     super();
@@ -54,8 +49,7 @@ export class RouteLayerService extends BaseLayerService {
    * Configure the service with API URL
    */
   configureApiUrl(apiUrl: string): void {
-    this.apiUrl = apiUrl;
-    this.loadRouteColor();
+    // No longer needed for route color
   }
 
   async update(): Promise<void> {
@@ -104,47 +98,6 @@ export class RouteLayerService extends BaseLayerService {
     }
   }
 
-  /**
-   * Load route color from settings API
-   */
-  private loadRouteColor(): void {
-    if (!this.apiUrl) {
-      return; // Skip if API URL not configured
-    }
-    
-    this.http.get<{value: string}>(`${this.apiUrl}/settings/${SETTING_KEYS.ROUTE_COLOR}`).subscribe({
-      next: (setting) => {
-        this.routeColor.next(setting.value);
-        this.updateDisplay();
-      },
-      error: () => {
-        // Use default color on error
-        this.routeColor.next(SETTING_DEFAULTS[SETTING_KEYS.ROUTE_COLOR]);
-      }
-    });
-  }
-
-  /**
-   * Get current route color as Observable
-   */
-  getRouteColor(): Observable<string> {
-    return this.routeColor.asObservable();
-  }
-
-  /**
-   * Set the route color and update display
-   */
-  setRouteColor(color: string): void {
-    this.routeColor.next(color);
-    this.updateDisplay();
-  }
-
-  /**
-   * Refresh route color from settings API
-   */
-  refreshRouteColor(): void {
-    this.loadRouteColor();
-  }
 
   /**
    * Fit the map to show the entire route
@@ -203,7 +156,7 @@ export class RouteLayerService extends BaseLayerService {
       el.style.width = '30px';
       el.style.height = '30px';
       el.style.borderRadius = '50%';
-      el.style.backgroundColor = this.routeColor.value;
+      el.style.backgroundColor = this.routeColor;
       el.style.border = '3px solid white';
       el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       el.style.display = 'flex';
@@ -255,7 +208,7 @@ export class RouteLayerService extends BaseLayerService {
         'line-cap': 'round'
       },
       paint: {
-        'line-color': this.routeColor.value,
+        'line-color': this.routeColor,
         'line-width': 4,
         'line-opacity': 0.8
       }

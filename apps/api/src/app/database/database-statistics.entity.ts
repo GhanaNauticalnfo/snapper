@@ -13,7 +13,7 @@ export class DatabaseStatistics {
 
   toResponseDto() {
     return {
-      date: this.date.toISOString().split('T')[0],
+      date: typeof this.date === 'string' ? this.date : this.date.toISOString().split('T')[0],
       vesselTelemetrySizeGb: parseFloat(this.vesselTelemetrySizeGb.toString()),
       vesselTelemetryCount: parseInt(this.vesselTelemetryCount, 10)
     };

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, EntityManager } from 'typeorm';
 import { SyncLog } from './sync-log.entity';
@@ -12,7 +12,7 @@ export class SyncService {
     private syncLogRepository: Repository<SyncLog>,
     @InjectRepository(SyncVersion)
     private syncVersionRepository: Repository<SyncVersion>,
-    private mqttSyncService: MqttSyncService,
+    @Optional() private mqttSyncService: MqttSyncService,
   ) {}
 
   async getCurrentMajorVersion(): Promise<number> {
@@ -72,7 +72,7 @@ export class SyncService {
 
     // Fire and forget MQTT notification - don't await
     // This happens outside the transaction so it doesn't affect sync reliability
-    if (minorVersion) {
+    if (minorVersion && this.mqttSyncService) {
       this.mqttSyncService.publishSyncNotification(majorVersion, minorVersion).catch(err => {
         // Errors are already logged in MqttSyncService, just catch to prevent unhandled rejection
       });
@@ -114,7 +114,7 @@ export class SyncService {
 
     // Fire and forget MQTT notification - don't await
     // This happens within the transaction but errors don't affect it
-    if (syncLog.id) {
+    if (syncLog.id && this.mqttSyncService) {
       this.mqttSyncService.publishSyncNotification(majorVersion, syncLog.id).catch(err => {
         // Errors are already logged in MqttSyncService, just catch to prevent unhandled rejection
       });

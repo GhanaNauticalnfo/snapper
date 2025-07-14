@@ -21,19 +21,6 @@ export class SettingController {
     return this.settingService.findAll();
   }
 
-  @Get(':key')
-  findOne(@Param('key') key: string): Promise<SettingResponseDto> {
-    return this.settingService.findOne(key);
-  }
-
-  @Put(':key')
-  update(
-    @Param('key') key: string,
-    @Body() updateSettingDto: UpdateSettingDto,
-  ): Promise<SettingResponseDto> {
-    return this.settingService.update(key, updateSettingDto);
-  }
-
   @Get('database')
   @ApiOperation({ summary: 'Get database settings and statistics' })
   @ApiResponse({ status: 200, description: 'Database settings retrieved successfully' })
@@ -60,5 +47,18 @@ export class SettingController {
     );
     
     return { success: true };
+  }
+
+  @Get(':key')
+  findOne(@Param('key') key: string): Promise<SettingResponseDto> {
+    return this.settingService.findOne(key);
+  }
+
+  @Put(':key')
+  update(
+    @Param('key') key: string,
+    @Body() updateSettingDto: UpdateSettingDto,
+  ): Promise<SettingResponseDto> {
+    return this.settingService.update(key, updateSettingDto);
   }
 }
