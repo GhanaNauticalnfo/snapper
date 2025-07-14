@@ -33,13 +33,22 @@ export class MqttTrackingService implements OnModuleInit {
 
     this.client.on('connect', () => {
       console.log('Connected to MQTT broker');
+      console.log('MQTT Debug: Connection established with broker at', brokerUrl);
       
       // Subscribe to vessel position topics (updated topic pattern)
-      this.client.subscribe('vessels/+/position');
+      this.client.subscribe('vessels/+/position', (err) => {
+        if (err) {
+          console.error('MQTT Debug: Subscription error:', err);
+        } else {
+          console.log('MQTT Debug: Successfully subscribed to vessels/+/position');
+        }
+      });
     });
 
     this.client.on('message', async (topic, payload) => {
       try {
+        console.log(`MQTT Debug: Received message on topic '${topic}' with payload:`, payload.toString());
+        
         // Extract vessel ID from topic (e.g., 'vessels/123/position' → 123)
         const match = topic.match(/vessels\/(\d+)\/position/);
         const vesselId = match ? parseInt(match[1], 10) : null;
@@ -83,6 +92,24 @@ export class MqttTrackingService implements OnModuleInit {
 
     this.client.on('error', (error) => {
       console.error('MQTT Error:', error);
+      console.error('MQTT Debug: Full error details:', JSON.stringify(error, null, 2));
+    });
+
+    // Add more debug event handlers
+    this.client.on('reconnect', () => {
+      console.log('MQTT Debug: Attempting to reconnect...');
+    });
+
+    this.client.on('close', () => {
+      console.log('MQTT Debug: Connection closed');
+    });
+
+    this.client.on('disconnect', () => {
+      console.log('MQTT Debug: Client disconnected');
+    });
+
+    this.client.on('offline', () => {
+      console.log('MQTT Debug: Client is offline');
     });
   }
 }

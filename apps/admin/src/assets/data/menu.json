@@ -21,27 +21,6 @@
             "routerLink": "/landing-sites"
         },
         {
-            "name": "Features",
-            "icon": "pi pi-folder",
-            "children": [
-                {
-                    "name": "Tree Stubs",
-                    "icon": "pi pi-sitemap",
-                    "routerLink": "/features/tree-stubs"
-                },
-                {
-                    "name": "KML DataSets",
-                    "icon": "pi pi-map",
-                    "routerLink": "/features/kml"
-                },
-                {
-                    "name": "Volta Depths",
-                    "icon": "pi pi-chart-line",
-                    "routerLink": "/features/volta-depth"
-                }
-            ]
-        },
-        {
             "name": "Live",
             "icon": "pi pi-compass",
             "routerLink": "/live"

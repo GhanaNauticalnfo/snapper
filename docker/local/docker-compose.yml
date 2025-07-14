@@ -46,14 +46,16 @@ services:
     volumes:
       - ./nanomq/nanomq.conf:/etc/nanomq.conf
       - nanomq-data:/data/db/
+      - ../..:/workspace  # Mount workspace for logging
     restart: unless-stopped
     networks:
       - ghanawaters-network
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "1883"]
-      interval: 10s
+      test: ["CMD-SHELL", "nanomq_cli conn -h 127.0.0.1 -p 1883 -V 5 -i liveness -u api -P mqtt_api_password -C 1 || exit 1"]
+      interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 10s
 
   # Keycloak Authentication - Local Development
   keycloak-db:
