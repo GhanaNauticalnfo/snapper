@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, EntityManager } from 'typeorm';
 import { SyncLog } from './sync-log.entity';
 import { SyncVersion } from './sync-version.entity';
-import { MqttSyncService } from './mqtt-sync.service';
+import { SyncGateway } from './sync.gateway';
 
 @Injectable()
 export class SyncService {
@@ -12,7 +12,7 @@ export class SyncService {
     private syncLogRepository: Repository<SyncLog>,
     @InjectRepository(SyncVersion)
     private syncVersionRepository: Repository<SyncVersion>,
-    @Optional() private mqttSyncService: MqttSyncService,
+    @Optional() private syncGateway: SyncGateway,
   ) {}
 
   async getCurrentMajorVersion(): Promise<number> {
@@ -70,12 +70,14 @@ export class SyncService {
       minorVersion = result.id;
     });
 
-    // Fire and forget MQTT notification - don't await
+    // Fire and forget WebSocket notification - don't await
     // This happens outside the transaction so it doesn't affect sync reliability
-    if (minorVersion && this.mqttSyncService) {
-      this.mqttSyncService.publishSyncNotification(majorVersion, minorVersion).catch(err => {
-        // Errors are already logged in MqttSyncService, just catch to prevent unhandled rejection
-      });
+    if (minorVersion && this.syncGateway) {
+      try {
+        this.syncGateway.emitSyncUpdate(majorVersion, minorVersion);
+      } catch (err) {
+        // Errors are already logged in SyncGateway, just catch to prevent any issues
+      }
     }
   }
 
@@ -112,12 +114,14 @@ export class SyncService {
       major_version: majorVersion,
     });
 
-    // Fire and forget MQTT notification - don't await
+    // Fire and forget WebSocket notification - don't await
     // This happens within the transaction but errors don't affect it
-    if (syncLog.id && this.mqttSyncService) {
-      this.mqttSyncService.publishSyncNotification(majorVersion, syncLog.id).catch(err => {
-        // Errors are already logged in MqttSyncService, just catch to prevent unhandled rejection
-      });
+    if (syncLog.id && this.syncGateway) {
+      try {
+        this.syncGateway.emitSyncUpdate(majorVersion, syncLog.id);
+      } catch (err) {
+        // Errors are already logged in SyncGateway, just catch to prevent any issues
+      }
     }
 
     return syncLog;

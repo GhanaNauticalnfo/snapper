@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/s
 import { VesselTypeService } from './vessel-type.service';
 import { VesselTypeInputDto } from './dto/vessel-type-input.dto';
 import { VesselTypeResponseDto } from './dto/vessel-type-response.dto';
+import { Public } from '../../auth/decorators';
 
 @ApiTags('vessel-types')
 @Controller('vessels/types')
@@ -10,6 +11,7 @@ export class VesselTypeController {
   constructor(private readonly vesselTypeService: VesselTypeService) {}
 
   @Get()
+  @Public() // Public access for frontend map
   @ApiOperation({ summary: 'Get all vessel types' })
   @ApiResponse({ status: 200, description: 'List of vessel types', type: [VesselTypeResponseDto] })
   async findAll(): Promise<VesselTypeResponseDto[]> {
