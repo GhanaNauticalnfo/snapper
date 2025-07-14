@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/decorators';
 import { SyncService } from './sync.service';
 
 @ApiTags('sync')
@@ -8,6 +9,7 @@ export class SyncController {
   constructor(private syncService: SyncService) {}
 
   @Get('sync')
+  @Public()
   async syncData(@Query('since') since?: string) {
     const sinceDate = since ? new Date(since) : new Date(0);
     return this.syncService.getChangesSince(sinceDate);
