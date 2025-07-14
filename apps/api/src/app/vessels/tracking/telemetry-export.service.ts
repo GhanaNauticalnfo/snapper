@@ -204,7 +204,7 @@ export class TelemetryExportService {
       const startMemory = process.memoryUsage();
       console.log(`Starting telemetry export with PostgreSQL cursor. Initial memory: RSS=${Math.round(startMemory.rss / 1024 / 1024)}MB`);
 
-      const BATCH_SIZE = 1000;
+      const BATCH_SIZE = 100000;
       let hasMoreData = true;
 
       while (hasMoreData) {
@@ -333,7 +333,7 @@ export class TelemetryExportService {
     filters: TelemetryExportFilters,
     outputStream: Transform
   ): Promise<void> {
-    const CHUNK_SIZE = 500; // Reduced chunk size for better memory management
+    const CHUNK_SIZE = 50000;
     let offset = 0;
     let hasMoreData = true;
     let processedCount = 0;
