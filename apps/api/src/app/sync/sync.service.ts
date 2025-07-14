@@ -28,7 +28,6 @@ export class SyncService {
     const changes = await this.syncLogRepository.find({
       where: {
         created_at: MoreThan(since),
-        is_latest: true,
         major_version: majorVersion,
       },
       order: {
