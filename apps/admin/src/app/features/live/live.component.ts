@@ -2,35 +2,31 @@
 import { Component, OnInit, inject, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { 
-  MapComponent, 
+  MapWithSearchComponent,
   LayerManagerService, 
   AisShipLayerService, 
   NiordLayerService,
   MapConfig,
   OSM_STYLE,
   DepthLayerService,
+  VesselWithLocation
 } from '@ghanawaters/map';
-import { VesselSearchComponent, VesselWithLocation } from './components/vessel-search.component';
-import { VesselSearchService } from './services/vessel-search.service';
 
 @Component({
   selector: 'app-live',
   standalone: true,
-  imports: [CommonModule, MapComponent, VesselSearchComponent],
+  imports: [CommonModule, MapWithSearchComponent],
   template: `
     <div class="live-container">
       <div class="page-header">
         <h2>Live</h2>
       </div>
       <div class="map-container">
-        <lib-map #mapComponent [config]="mapConfig">
-          <div class="map-overlay">
-            <app-vessel-search 
-              (vesselSelected)="onVesselSelected($event)"
-              class="vessel-search-overlay">
-            </app-vessel-search>
-          </div>
-        </lib-map>
+        <lib-map-with-search 
+          #mapComponent 
+          [config]="mapConfig"
+          (vesselSelected)="onVesselSelected($event)">
+        </lib-map-with-search>
       </div>
     </div>
   `,
@@ -54,24 +50,6 @@ import { VesselSearchService } from './services/vessel-search.service';
       position: relative;
     }
     
-    .map-overlay {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1;
-      pointer-events: none;
-    }
-    
-    .vessel-search-overlay {
-      pointer-events: auto;
-      background: white;
-      border-radius: 4px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      padding: 0;
-      overflow: hidden;
-    }
-    
     .map-container .map-container {
       height: 100%;
       min-height: 500px;
@@ -86,18 +64,6 @@ import { VesselSearchService } from './services/vessel-search.service';
         text-align: center;
         font-size: 20px;
       }
-      
-      .map-overlay {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        transform: none;
-      }
-      
-      .vessel-search-overlay {
-        width: 100%;
-        box-sizing: border-box;
-      }
     }
   `],
   providers: [
@@ -107,10 +73,9 @@ import { VesselSearchService } from './services/vessel-search.service';
   ]
 })
 export class LiveComponent implements OnInit, AfterViewInit {
-  @ViewChild('mapComponent') mapComponent!: MapComponent;
+  @ViewChild('mapComponent') mapComponent!: MapWithSearchComponent;
   
   private layerManager = inject(LayerManagerService);
-  private vesselSearchService = inject(VesselSearchService);
   
   // Define a comprehensive map configuration for Lake Volta, Ghana
   mapConfig: Partial<MapConfig> = {
@@ -141,17 +106,11 @@ export class LiveComponent implements OnInit, AfterViewInit {
   }
   
   ngAfterViewInit() {
-    // Set up the vessel search service with the map when it's ready
-    setTimeout(() => {
-      if (this.mapComponent?.map) {
-        this.vesselSearchService.setMap(this.mapComponent.map);
-        console.log('Live Component: Vessel search service initialized with map');
-      }
-    }, 500);
+    // Map initialization is now handled by the MapWithSearch component
   }
   
   onVesselSelected(vessel: VesselWithLocation) {
     console.log('Live Component: Vessel selected:', vessel.name);
-    this.vesselSearchService.zoomToVessel(vessel);
+    // Zooming is now handled by the MapWithSearch component
   }
 }

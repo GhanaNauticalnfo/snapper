@@ -1,27 +1,22 @@
 import { Component, ViewChild, inject, AfterViewInit } from '@angular/core';
-import { MapComponent as SharedMapComponent, MapConfig, OSM_STYLE, LayerManagerService, AisShipLayerService } from '@ghanawaters/map';
-import { VesselSearchComponent, VesselWithLocation } from '../vessel-search/vessel-search.component';
+import { MapWithSearchComponent, MapConfig, OSM_STYLE, LayerManagerService, AisShipLayerService, VesselWithLocation } from '@ghanawaters/map';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [SharedMapComponent, VesselSearchComponent],
+  imports: [MapWithSearchComponent],
   providers: [AisShipLayerService],
   template: `
     <div class="container">
       <div class="header">
         <h1>Ghana Maritime Authority - Vessel Tracking</h1>
-        <app-vessel-search 
-          (vesselSelected)="onVesselSelected($event)"
-          class="search-component">
-        </app-vessel-search>
       </div>
       <div class="map-wrapper">
-        <lib-map 
+        <lib-map-with-search 
           #mapComponent
           [config]="mapConfig"
-          [vesselFilter]="selectedVesselId">
-        </lib-map>
+          (vesselSelected)="onVesselSelected($event)">
+        </lib-map-with-search>
       </div>
     </div>
   `,
@@ -36,18 +31,11 @@ import { VesselSearchComponent, VesselWithLocation } from '../vessel-search/vess
       background: #1e3c72;
       color: white;
       padding: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
+      text-align: center;
     }
     h1 {
       margin: 0;
       font-size: 1.5rem;
-      flex: 1;
-    }
-    .search-component {
-      flex-shrink: 0;
     }
     .map-wrapper {
       flex: 1;
@@ -55,22 +43,15 @@ import { VesselSearchComponent, VesselWithLocation } from '../vessel-search/vess
     }
     
     @media (max-width: 768px) {
-      .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.5rem;
-      }
       h1 {
-        text-align: center;
-        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
       }
     }
   `]
 })
 export class HomeComponent implements AfterViewInit {
-  @ViewChild('mapComponent') mapComponent!: SharedMapComponent;
+  @ViewChild('mapComponent') mapComponent!: MapWithSearchComponent;
   private layerManager = inject(LayerManagerService);
-  selectedVesselId: number | null = null;
 
   mapConfig: Partial<MapConfig> = {
     mapStyle: OSM_STYLE,
@@ -91,22 +72,6 @@ export class HomeComponent implements AfterViewInit {
 
   onVesselSelected(vessel: VesselWithLocation) {
     console.log('Vessel selected:', vessel);
-    
-    // Set the vessel filter to highlight the selected vessel
-    this.selectedVesselId = vessel.id;
-    
-    // Zoom to vessel location if coordinates are available
-    if (vessel.latitude && vessel.longitude && this.mapComponent) {
-      // Access the map instance through the map component
-      const map = this.mapComponent['map'];
-      if (map) {
-        map.flyTo({
-          center: [vessel.longitude, vessel.latitude],
-          zoom: 14,
-          speed: 1.5,
-          curve: 1.2
-        });
-      }
-    }
+    // Zooming and filtering is now handled by the MapWithSearch component
   }
 }

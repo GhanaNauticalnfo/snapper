@@ -3,7 +3,7 @@ import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Map as MapLibreMap, GeoJSONSource, Popup } from 'maplibre-gl';
 import { BaseLayerService } from '../base-layer.service';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, BehaviorSubject, Observable } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 
 interface PositionUpdate {
@@ -35,6 +35,10 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   
   // Vessel filtering configuration
   private vesselFilter: number | null = null;
+  
+  // Expose vessel positions as Observable
+  private vesselPositions$ = new BehaviorSubject<PositionUpdate[]>([]);
+  public readonly vesselPositionsObservable$ = this.vesselPositions$.asObservable();
   
   constructor(
     private http: HttpClient
@@ -325,6 +329,9 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           // Store in our local map
           this.vesselPositions.set(vessel.id, positionUpdate);
           
+          // Update the observable
+          this.vesselPositions$.next(Array.from(this.vesselPositions.values()));
+          
           const heading = positionUpdate.heading || 0;
           console.log(`🧭 Vessel ${positionUpdate.vesselName}: heading = ${heading}°, color = ${vesselTypeColor}`);
           
@@ -584,6 +591,9 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     // Store the position update
     this.vesselPositions.set(update.vesselId, update);
     
+    // Update the observable
+    this.vesselPositions$.next(Array.from(this.vesselPositions.values()));
+    
     // Log to both debug service and browser console for debugging
     const speed = update.speed ? Number(update.speed) : 0;
     const heading = update.heading ? Number(update.heading) : 0;
@@ -677,10 +687,12 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     }
     
     this.vesselPositions.clear();
+    this.vesselPositions$.next([]);
   }
   
   ngOnDestroy(): void {
     this.destroy();
+    this.vesselPositions$.complete();
   }
   
   private getWebSocketUrl(): string {
