@@ -1,33 +1,11 @@
-export interface VesselResponseDto {
-  id: number;
-  name: string;
-  vessel_type: {
-    id: number;
-    name: string;
-  };
-  vessel_type_id: number;
-  created_at: string;
-  updated_at: string;
-  latest_position_timestamp?: string;
-  latest_position_speed?: string;
-  latest_position_heading?: string;
-  latest_position_coordinates?: {
-    type: 'Point';
-    coordinates: [number, number]; // [longitude, latitude]
-  };
-}
+import { VesselResponse, VesselInput } from '@ghanawaters/shared-models';
 
-export interface CreateVesselDto {
-  name: string;
-  vessel_type_id: number;
-}
+// Re-export from shared models for consistency
+export type VesselResponseDto = VesselResponse;
+export type CreateVesselDto = VesselInput;
+export type UpdateVesselDto = Partial<VesselInput>;
 
-export interface UpdateVesselDto {
-  name?: string;
-  vessel_type_id?: number;
-}
-
-// Simplified vessel model for form usage
+// Simplified vessel model for form usage (admin-specific)
 export interface Vessel {
   id?: number;
   name: string;

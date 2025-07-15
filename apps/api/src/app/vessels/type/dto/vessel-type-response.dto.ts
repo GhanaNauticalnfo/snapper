@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { VesselTypeResponse } from '@ghanawaters/shared-models';
 
-export class VesselTypeResponseDto {
+export class VesselTypeResponseDto implements VesselTypeResponse {
   @ApiProperty({ description: 'Unique identifier for the vessel type', example: 1 })
   id: number;
 

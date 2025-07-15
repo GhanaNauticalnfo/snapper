@@ -485,9 +485,9 @@ export class VesselListComponent implements OnInit, AfterViewInit {
     return {
       id: dto.id,
       name: dto.name,
-      vessel_type_id: dto.vessel_type_id,
-      created_at: dto.created_at ? new Date(dto.created_at) : undefined,
-      updated_at: dto.updated_at ? new Date(dto.updated_at) : undefined
+      vessel_type_id: dto.vessel_type.id,
+      created_at: dto.created instanceof Date ? dto.created : new Date(dto.created),
+      updated_at: dto.last_updated instanceof Date ? dto.last_updated : new Date(dto.last_updated)
     };
   }
   

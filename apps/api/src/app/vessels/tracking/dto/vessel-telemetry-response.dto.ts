@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { GeoPoint } from '@ghanawaters/shared-models';
+import { GeoPoint, VesselTelemetryResponse } from '@ghanawaters/shared-models';
 
-export class VesselTelemetryResponseDto {
+export class VesselTelemetryResponseDto implements VesselTelemetryResponse {
   @ApiProperty({ description: 'Unique identifier for the vessel telemetry record' })
   id: number;
 
@@ -21,14 +21,14 @@ export class VesselTelemetryResponseDto {
   position: GeoPoint;
 
   @ApiPropertyOptional({ description: 'Speed in knots' })
-  speed_knots?: number;
+  speed_knots: number | null;
 
   @ApiPropertyOptional({ description: 'Heading in degrees' })
-  heading_degrees?: number;
+  heading_degrees: number | null;
 
   @ApiPropertyOptional({ description: 'Device identifier' })
-  device_id?: string;
+  device_id: string | null;
 
   @ApiPropertyOptional({ description: 'Status' })
-  status?: string;
+  status: string | null;
 }
