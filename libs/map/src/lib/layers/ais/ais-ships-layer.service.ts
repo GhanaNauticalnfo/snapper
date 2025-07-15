@@ -11,6 +11,7 @@ interface PositionUpdate {
   vesselName: string;
   vesselType: string;
   vesselTypeId?: number;
+  vesselTypeColor?: string;
   lat: number;
   lng: number;
   heading: number | null;
@@ -19,11 +20,6 @@ interface PositionUpdate {
   timestamp: Date;
 }
 
-interface VesselType {
-  id: number;
-  name: string;
-  color: string;
-}
 
 @Injectable({
   providedIn: 'root'
@@ -35,7 +31,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   private socket: Socket | null = null;
   private syncSocket: Socket | null = null;
   private vesselPositions = new Map<number, PositionUpdate>();
-  private vesselTypes = new Map<number, VesselType>();
+  private iconCache = new Set<string>();
   
   // Vessel filtering configuration
   private vesselFilter: number | null = null;
@@ -65,124 +61,34 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     this.initializeWebSocket();
     this.initializeSyncWebSocket();
     
-    // Fetch vessel types first
-    this.fetchVesselTypes().then(() => {
-      // Create ship icons for each vessel type
-      this.createShipIcons();
-    }).catch(error => {
-      console.error('Failed to fetch vessel types, using default icon:', error);
-      // Fallback to single default icon
-      this.createDefaultShipIcon();
-    });
-  }
-  
-  private async fetchVesselTypes(): Promise<void> {
-    try {
-      const apiUrl = this.getApiUrl();
-      const vesselTypes = await firstValueFrom(this.http.get<VesselType[]>(`${apiUrl}/api/vessels/types`));
-      
-      // Store vessel types in the map
-      this.vesselTypes.clear();
-      vesselTypes.forEach(type => {
-        this.vesselTypes.set(type.id, type);
-      });
-      
-      console.log('AIS Layer: Loaded', this.vesselTypes.size, 'vessel types');
-    } catch (error) {
-      console.error('AIS Layer: Failed to fetch vessel types', error);
-      // During initialization, throw the error
-      // During periodic updates, just log and continue with existing types
-      if (this.vesselTypes.size === 0) {
-        throw error; // Only throw if we have no vessel types at all
-      }
-    }
-  }
-
-  private async createShipIcons(): Promise<void> {
-    if (!this.map) return;
-    
-    // Create a ship icon for each vessel type
-    const iconPromises: Promise<void>[] = [];
-    
-    for (const [typeId, vesselType] of this.vesselTypes) {
-      const iconName = `ship-icon-${typeId}`;
-      
-      // Remove existing icon if it exists
-      if (this.map.hasImage(iconName)) {
-        this.map.removeImage(iconName);
-      }
-      
-      const promise = this.createShipIcon(vesselType.color)
-        .then(response => {
-          if (this.map) {
-            this.map.addImage(iconName, response.data);
-            console.log(`AIS Layer: Created icon '${iconName}' for vessel type '${vesselType.name}' with color ${vesselType.color}`);
-          }
-        })
-        .catch(error => {
-          console.error(`Failed to create icon for vessel type ${vesselType.name}:`, error);
-        });
-      
-      iconPromises.push(promise);
-    }
-    
-    // Wait for all icons to be created
-    await Promise.all(iconPromises);
-    
-    console.log('AIS Layer: Created ship icons for all vessel types');
+    // Initialize layers immediately
     this.initializeLayers();
   }
-
-  private async updateShipIcons(): Promise<void> {
-    if (!this.map) return;
-    
-    // Only update icons, don't reinitialize layers
-    const iconPromises: Promise<void>[] = [];
-    
-    for (const [typeId, vesselType] of this.vesselTypes) {
-      const iconName = `ship-icon-${typeId}`;
-      
-      // Remove existing icon if it exists
-      if (this.map.hasImage(iconName)) {
-        this.map.removeImage(iconName);
-      }
-      
-      const promise = this.createShipIcon(vesselType.color)
-        .then(response => {
-          if (this.map) {
-            this.map.addImage(iconName, response.data);
-            console.log(`AIS Layer: Updated icon '${iconName}' for vessel type '${vesselType.name}' with color ${vesselType.color}`);
-          }
-        })
-        .catch(error => {
-          console.error(`Failed to update icon for vessel type ${vesselType.name}:`, error);
-        });
-      
-      iconPromises.push(promise);
+  
+  private async ensureIconExists(color: string): Promise<string> {
+    if (!this.map || !color) {
+      return 'ship-icon-#808080'; // Default gray
     }
     
-    // Wait for all icons to be updated
-    await Promise.all(iconPromises);
+    const iconName = `ship-icon-${color}`;
     
-    console.log('AIS Layer: Updated ship icons for all vessel types');
-  }
-
-  private createDefaultShipIcon(): void {
-    if (!this.map) return;
+    // Check if icon already exists
+    if (this.iconCache.has(color)) {
+      return iconName;
+    }
     
-    // Create a single gray icon as fallback when vessel types can't be loaded
-    this.createShipIcon('#808080') // Gray fallback
-      .then(response => {
-        if (this.map) {
-          this.map.addImage('ship-icon-fallback', response.data);
-          console.error('AIS Layer: Using fallback icon - vessel types could not be loaded');
-          this.initializeLayers();
-        }
-      })
-      .catch(error => {
-        console.error('Failed to create fallback ship icon:', error);
-        this.initializeWithFallbackIcon();
-      });
+    try {
+      // Create the icon if it doesn't exist
+      const response = await this.createShipIcon(color);
+      this.map.addImage(iconName, response.data);
+      this.iconCache.add(color);
+      console.log(`AIS Layer: Created icon '${iconName}' with color ${color}`);
+      return iconName;
+    } catch (error) {
+      console.error(`Failed to create icon for color ${color}:`, error);
+      // Return default icon name as fallback
+      return 'ship-icon-#808080';
+    }
   }
 
   private createShipIcon(color: string): Promise<{data: HTMLImageElement | ImageBitmap | ImageData | {width: number, height: number, data: Uint8Array | Uint8ClampedArray}}> {
@@ -279,8 +185,11 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     this.beginUpdates();
   }
   
-  private initializeLayers(): void {
+  private async initializeLayers(): Promise<void> {
     if (!this.map) return;
+    
+    // Create default gray icon
+    await this.ensureIconExists('#808080');
     
     // Check if source already exists
     if (!this.map.getSource(this.layerId)) {
@@ -299,7 +208,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       type: 'symbol',
       source: this.layerId,
       layout: {
-        'icon-image': ['concat', 'ship-icon-', ['to-string', ['get', 'vesselTypeId']]],
+        'icon-image': ['concat', 'ship-icon-', ['get', 'vesselTypeColor']],
         'icon-rotate': ['get', 'heading'],
         'icon-size': [
           'case',
@@ -349,22 +258,14 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     });
     
     // Add error handler for missing icons
-    this.map.on('styleimagemissing', (e) => {
+    this.map.on('styleimagemissing', async (e) => {
       const missingImage = e.id;
       if (missingImage.startsWith('ship-icon-')) {
-        const vesselTypeId = missingImage.replace('ship-icon-', '');
-        console.error(`AIS Layer: Missing icon for vessel type ID ${vesselTypeId}. Available vessel types:`, 
-          Array.from(this.vesselTypes.entries()).map(([id, type]) => `${id}: ${type.name}`));
+        const color = missingImage.replace('ship-icon-', '');
+        console.log(`AIS Layer: Creating missing icon for color ${color}`);
         
-        // Log which icons are available
-        const availableIcons: string[] = [];
-        this.vesselTypes.forEach((type, id) => {
-          const iconName = `ship-icon-${id}`;
-          if (this.map!.hasImage(iconName)) {
-            availableIcons.push(iconName);
-          }
-        });
-        console.error('AIS Layer: Available icons:', availableIcons);
+        // Create the missing icon
+        await this.ensureIconExists(color);
       }
     });
     
@@ -376,12 +277,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     if (!this.map) return;
     
     try {
-      // First, refresh vessel types to pick up any changes
-      console.log('AIS Layer: Refreshing vessel types and positions');
-      await this.fetchVesselTypes();
-      await this.updateShipIcons();  // Use updateShipIcons instead of createShipIcons
-      
-      // Then fetch real vessel positions from the API
+      // Fetch real vessel positions from the API
       console.log('AIS Layer: Fetching latest vessel positions from API');
       const apiUrl = this.getApiUrl();
       const response = await firstValueFrom(this.http.get<any[]>(`${apiUrl}/api/vessels?includeLatestPosition=true`));
@@ -402,12 +298,17 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           
           // Extract coordinates from the vessel response
           const coordinates: [number, number] = vessel.latest_position_coordinates.coordinates;
+          const vesselTypeColor = vessel.vessel_type?.color || '#808080';
+          
+          // Ensure icon exists for this color
+          await this.ensureIconExists(vesselTypeColor);
           
           const positionUpdate: PositionUpdate = {
             vesselId: vessel.id,
             vesselName: vessel.name,
             vesselType: vessel.vessel_type?.name || 'Unknown',
             vesselTypeId: vessel.vessel_type?.id,
+            vesselTypeColor: vesselTypeColor,
             lat: coordinates[1],
             lng: coordinates[0],
             heading: vessel.latest_position_heading ? Number(vessel.latest_position_heading) : null,
@@ -418,14 +319,14 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           
           // Debug logging for vessel type mapping
           if (vessel.name === 'asas' || vessel.name === 'sdsd') {
-            console.log(`AIS Layer: Vessel '${vessel.name}' - Type: ${vessel.vessel_type?.name} (ID: ${vessel.vessel_type?.id}), Icon: ship-icon-${vessel.vessel_type?.id}`);
+            console.log(`AIS Layer: Vessel '${vessel.name}' - Type: ${vessel.vessel_type?.name} (ID: ${vessel.vessel_type?.id}), Color: ${vesselTypeColor}`);
           }
           
           // Store in our local map
           this.vesselPositions.set(vessel.id, positionUpdate);
           
           const heading = positionUpdate.heading || 0;
-          console.log(`🧭 Vessel ${positionUpdate.vesselName}: heading = ${heading}°`);
+          console.log(`🧭 Vessel ${positionUpdate.vesselName}: heading = ${heading}°, color = ${vesselTypeColor}`);
           
           features.push({
             type: 'Feature',
@@ -440,6 +341,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
               speed: positionUpdate.speed || 0,
               type: positionUpdate.vesselType,
               vesselTypeId: positionUpdate.vesselTypeId,
+              vesselTypeColor: vesselTypeColor,
               status: 'Active',
               lastUpdate: positionUpdate.timestamp,
               isSelected: this.vesselFilter === vessel.id
@@ -580,6 +482,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
         vesselName: update.vesselName,
         vesselType: update.vesselType,
         vesselTypeId: update.vesselTypeId,
+        vesselTypeColor: update.vesselTypeColor || '#808080',
         lat: Number(update.lat),
         lng: Number(update.lng),
         heading: update.heading ? Number(update.heading) : null,
@@ -601,6 +504,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           vesselName: update.vesselName,
           vesselType: update.vesselType,
           vesselTypeId: update.vesselTypeId,
+          vesselTypeColor: update.vesselTypeColor || '#808080',
           lat: Number(update.lat),
           lng: Number(update.lng),
           heading: update.heading ? Number(update.heading) : null,
@@ -671,7 +575,12 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     });
   }
   
-  private handlePositionUpdate(update: PositionUpdate): void {
+  private async handlePositionUpdate(update: PositionUpdate): Promise<void> {
+    // Ensure icon exists for this vessel's color
+    if (update.vesselTypeColor) {
+      await this.ensureIconExists(update.vesselTypeColor);
+    }
+    
     // Store the position update
     this.vesselPositions.set(update.vesselId, update);
     
@@ -681,7 +590,8 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     const logMessage = `WebSocket Update: Vessel ${update.vesselName} (ID: ${update.vesselId}) - ` +
       `Lat: ${update.lat.toFixed(6)}, Lng: ${update.lng.toFixed(6)}, ` +
       `Speed: ${speed.toFixed(1)} knots, ` +
-      `Heading: ${heading.toFixed(0)}°`;
+      `Heading: ${heading.toFixed(0)}°, ` +
+      `Color: ${update.vesselTypeColor}`;
     
     console.log('Position Update:', logMessage);
     console.log('🚢', logMessage);  // Browser console with ship emoji for easy identification
@@ -714,6 +624,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           speed: pos.speed || 0,
           type: pos.vesselType,
           vesselTypeId: pos.vesselTypeId,
+          vesselTypeColor: pos.vesselTypeColor || '#808080',
           status: pos.status || 'Active',
           lastUpdate: pos.timestamp,
           // Add a property to indicate if this vessel is selected

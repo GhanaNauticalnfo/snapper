@@ -18,6 +18,8 @@ interface PositionUpdate {
   vesselId: number;
   vesselName: string;
   vesselType: string;
+  vesselTypeId?: number;
+  vesselTypeColor: string;
   lat: number;
   lng: number;
   heading: number | null;
@@ -94,6 +96,8 @@ export class TrackingGateway
       vesselId: vessel.id,
       vesselName: vessel.name,
       vesselType: vessel.vessel_type?.name || 'Unknown',
+      vesselTypeId: vessel.vessel_type?.id,
+      vesselTypeColor: vessel.vessel_type?.color || '#3B82F6',
       lat: lat,
       lng: lng,
       heading: trackingPoint.heading_degrees,
@@ -143,6 +147,8 @@ export class TrackingGateway
         vesselId: vessel.id,
         vesselName: vessel.name,
         vesselType: vessel.vessel_type?.name || 'Unknown',
+        vesselTypeId: vessel.vessel_type?.id,
+        vesselTypeColor: vessel.vessel_type?.color || '#3B82F6',
         lat: lat,
         lng: lng,
         heading: trackingPoint.heading_degrees,
