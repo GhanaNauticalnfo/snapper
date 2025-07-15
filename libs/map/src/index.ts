@@ -15,7 +15,6 @@ export * from './lib/layers/base-layer.service';
 
 // Component exports
 export * from './lib/components/map/map.component';
-export * from './lib/components/map-with-search/map-with-search.component';
 
 // Layer exports
 export * from './lib/layers/ais/ais-ships-layer.service';

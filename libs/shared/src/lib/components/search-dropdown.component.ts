@@ -102,6 +102,7 @@ export interface SearchDropdownConfig {
       border-radius: 8px;
       font-size: 14px;
       background: white;
+      color: #333;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       transition: all 0.2s ease;
       font-family: inherit;

@@ -2,7 +2,7 @@
 import { Component, OnInit, inject, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { 
-  MapWithSearchComponent,
+  MapComponent,
   LayerManagerService, 
   AisShipLayerService, 
   NiordLayerService,
@@ -15,18 +15,19 @@ import {
 @Component({
   selector: 'app-live',
   standalone: true,
-  imports: [CommonModule, MapWithSearchComponent],
+  imports: [CommonModule, MapComponent],
   template: `
     <div class="live-container">
       <div class="page-header">
         <h2>Live</h2>
       </div>
       <div class="map-container">
-        <lib-map-with-search 
+        <lib-map 
           #mapComponent 
           [config]="mapConfig"
+          [showVesselSearch]="true"
           (vesselSelected)="onVesselSelected($event)">
-        </lib-map-with-search>
+        </lib-map>
       </div>
     </div>
   `,
@@ -73,7 +74,7 @@ import {
   ]
 })
 export class LiveComponent implements OnInit, AfterViewInit {
-  @ViewChild('mapComponent') mapComponent!: MapWithSearchComponent;
+  @ViewChild('mapComponent') mapComponent!: MapComponent;
   
   private layerManager = inject(LayerManagerService);
   

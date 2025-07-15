@@ -1,15 +1,32 @@
 // libs/map/src/lib/components/map/map.component.ts
-import { Component, OnInit, AfterViewInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, ViewChild, inject, signal, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, OnChanges, SimpleChanges, ElementRef, ViewChild, inject, signal, Input, Output, EventEmitter, TemplateRef, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MapService } from '../../core/map.service';
 import { LayerManagerService } from '../../core/layer-manager.service';
 import { Map, LngLatLike, NavigationControl, Popup } from 'maplibre-gl';
 import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
+import { SearchDropdownComponent, SearchDropdownConfig } from '@ghanawaters/shared';
+import { AisShipLayerService } from '../../layers/ais/ais-ships-layer.service';
+import { Subject, takeUntil, map } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+export interface VesselWithLocation {
+  id: number;
+  name: string;
+  vessel_type: string;
+  vessel_type_id?: number;
+  latitude?: number;
+  longitude?: number;
+  lastSeen?: Date;
+  speed?: number;
+  heading?: number;
+  home_port?: string;
+}
 
 @Component({
   selector: 'lib-map',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SearchDropdownComponent],
   template: `
     <div class="map-container" [class.fullscreen]="isFullscreen()" [class.clickable]="clickable" [style.height]="_config.height">
       <div #mapElement class="map-canvas"></div>
@@ -53,6 +70,41 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
           <button class="zoom-btn" (click)="zoomOut()">−</button>
         </div>
       </div>
+      
+      <!-- Vessel Search Overlay -->
+      <div class="map-overlay" *ngIf="showVesselSearch">
+        <lib-search-dropdown
+          [items]="vesselList()"
+          [config]="searchConfig"
+          [isLoading]="vesselSearchLoading()"
+          [itemTemplate]="vesselItemTemplate"
+          (itemSelected)="onVesselSelected($event)"
+          class="vessel-search-overlay">
+        </lib-search-dropdown>
+      </div>
+      
+      <!-- Vessel Item Template -->
+      <ng-template #vesselItemTemplate let-vessel let-selected="selected">
+        <div class="vessel-header">
+          <span class="vessel-name">{{ vessel.name }}</span>
+          <span class="live-indicator" *ngIf="isVesselLive(vessel)">LIVE</span>
+        </div>
+        <div class="vessel-details">
+          <span class="type">{{ vessel.vessel_type }}</span>
+          <span class="separator" *ngIf="vessel.home_port">•</span>
+          <span class="port" *ngIf="vessel.home_port">{{ vessel.home_port }}</span>
+        </div>
+        <div class="location-info" *ngIf="vessel.latitude && vessel.longitude">
+          <span class="coordinates">{{ formatVesselLocation(vessel.latitude, vessel.longitude) }}</span>
+          <span class="timestamp" *ngIf="vessel.lastSeen">{{ formatTimestamp(vessel.lastSeen) }}</span>
+        </div>
+        <div class="movement-info" *ngIf="vessel.speed !== null && vessel.speed !== undefined">
+          <span class="speed">{{ vessel.speed.toFixed(1) }} kts</span>
+          <span class="separator" *ngIf="vessel.heading !== null && vessel.heading !== undefined">•</span>
+          <span class="heading" *ngIf="vessel.heading !== null && vessel.heading !== undefined">{{ vessel.heading.toFixed(0) }}°</span>
+        </div>
+      </ng-template>
+      
       <ng-content></ng-content>
     </div>
   `,
@@ -217,10 +269,111 @@ import { MapConfig, DEFAULT_MAP_CONFIG } from '../../models/map-config.model';
       border-top: 1px solid rgba(0, 0, 0, 0.1);
       border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
+    
+    /* Vessel Search Styles */
+    .map-overlay {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .vessel-search-overlay {
+      pointer-events: auto;
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 0;
+      overflow: hidden;
+      width: 320px;
+    }
+
+    .vessel-header {
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vessel-name {
+      font-weight: 600;
+      color: #1e3c72;
+      font-size: 14px;
+    }
+
+    .live-indicator {
+      background: #10b981;
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    .vessel-details {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .separator {
+      color: #d1d5db;
+    }
+
+    .location-info {
+      font-size: 11px;
+      color: #059669;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .movement-info {
+      font-size: 11px;
+      color: #6366f1;
+      display: flex;
+      gap: 8px;
+    }
+
+    .coordinates {
+      font-family: monospace;
+    }
+
+    .timestamp {
+      color: #9ca3af;
+      font-size: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .map-overlay {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        transform: none;
+      }
+
+      .vessel-search-overlay {
+        width: 100%;
+        box-sizing: border-box;
+      }
+    }
   `]
 })
 export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   @ViewChild('mapElement') mapElement!: ElementRef;
+  @ViewChild('vesselItemTemplate') vesselItemTemplate!: TemplateRef<any>;
   
   // Allow for full configuration object input
   @Input() set config(config: Partial<MapConfig>) {
@@ -274,6 +427,10 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
   // Click functionality
   @Input() clickable = false;
   
+  // Vessel search functionality
+  @Input() showVesselSearch = false;
+  @Output() vesselSelected = new EventEmitter<VesselWithLocation>();
+  
   // Events
   @Output() mapClick = new EventEmitter<{longitude: number, latitude: number}>();
   @Output() mapLoad = new EventEmitter<Map>();
@@ -281,6 +438,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
   // Default configuration
   _config: MapConfig = { ...DEFAULT_MAP_CONFIG };
   private _vesselFilter: number | null = null;
+  private destroy$ = new Subject<void>();
   
   private mapService = inject(MapService);
   public layerManager = inject(LayerManagerService);
@@ -291,6 +449,37 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
   // Coordinate display state
   currentCoordinates = signal<{lng: number, lat: number}>({lng: 0, lat: 0});
   currentZoom = signal<number>(9);
+  
+  // Vessel search state
+  private vesselPositions = signal<VesselWithLocation[]>([]);
+  vesselSearchLoading = signal(false);
+  selectedVesselId: number | null = null;
+  
+  // Highlight tracking
+  private highlightedVesselId: number | null = null;
+  private highlightIntervals: any[] = [];
+  private aisLayerService: AisShipLayerService | null = null;
+  
+  // Computed signal for vessel list
+  vesselList = computed(() => {
+    const positions = this.vesselPositions();
+    // Sort by last seen timestamp (most recent first)
+    return positions.sort((a, b) => {
+      if (!a.lastSeen) return 1;
+      if (!b.lastSeen) return -1;
+      return new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime();
+    });
+  });
+  
+  // Search configuration
+  searchConfig: SearchDropdownConfig = {
+    placeholder: 'Search vessels by name...',
+    searchFields: ['name'],
+    maxResults: 10,
+    showKeyboardHints: true,
+    noResultsText: 'No vessels found matching',
+    loadingText: 'Loading vessels...'
+  };
   
   // Map instance for public access
   private _map: Map | null = null;
@@ -390,6 +579,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
         
         // Emit map load event
         this.mapLoad.emit(this._map!);
+        
+        // Initialize vessel search if enabled
+        if (this.showVesselSearch) {
+          this.initializeVesselSearch();
+        }
       });
 
       // Add click event listener for coordinate selection
@@ -579,8 +773,247 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
     }
   }
   
+  // Vessel search methods
+  private initializeVesselSearch(): void {
+    // Register the AIS layer if needed
+    if (!this.layerManager.getLayer('ais-ships')) {
+      this.layerManager.registerLayer('ais-ships', AisShipLayerService);
+    }
+    
+    // Get the AIS layer service instance
+    const aisLayer = this.layerManager.getLayer('ais-ships');
+    if (aisLayer && aisLayer instanceof AisShipLayerService) {
+      this.aisLayerService = aisLayer;
+      
+      // Subscribe to vessel position updates
+      this.subscribeToVesselUpdates();
+    }
+  }
+  
+  private subscribeToVesselUpdates(): void {
+    if (!this.aisLayerService) return;
+    
+    // Subscribe to vessel position updates from the AIS layer
+    this.aisLayerService.vesselPositionsObservable$
+      .pipe(
+        takeUntil(this.destroy$),
+        map(positions => positions.map(pos => ({
+          id: pos.vesselId,
+          name: pos.vesselName,
+          vessel_type: pos.vesselType,
+          vessel_type_id: pos.vesselTypeId,
+          latitude: pos.lat,
+          longitude: pos.lng,
+          lastSeen: pos.timestamp ? new Date(pos.timestamp) : undefined,
+          speed: pos.speed ?? undefined,
+          heading: pos.heading ?? undefined,
+          home_port: undefined // Will be added when we fetch vessel details
+        })))
+      )
+      .subscribe(vessels => {
+        this.vesselPositions.set(vessels);
+        
+        // Update highlight position if the highlighted vessel moved
+        if (this.highlightedVesselId !== null) {
+          const highlightedVessel = vessels.find(v => v.id === this.highlightedVesselId);
+          if (highlightedVessel && highlightedVessel.latitude && highlightedVessel.longitude) {
+            this.updateHighlightPosition(highlightedVessel.longitude, highlightedVessel.latitude);
+          }
+        }
+      });
+  }
+  
+  onVesselSelected(vessel: VesselWithLocation): void {
+    this.selectedVesselId = vessel.id;
+    this.vesselSelected.emit(vessel);
+    
+    // Update vessel filter
+    this._vesselFilter = vessel.id;
+    this.applyVesselFilter();
+    
+    // Zoom to vessel location
+    if (vessel.latitude && vessel.longitude && this._map) {
+      this._map.flyTo({
+        center: [vessel.longitude, vessel.latitude],
+        zoom: 14,
+        speed: 1.5,
+        curve: 1.2
+      });
+      
+      // Create highlight effect
+      this.createHighlightEffect(vessel.id, vessel.longitude, vessel.latitude);
+    }
+  }
+  
+  isVesselLive(vessel: VesselWithLocation): boolean {
+    if (!vessel.lastSeen) return false;
+    const now = new Date();
+    const lastSeen = new Date(vessel.lastSeen);
+    const diffMinutes = (now.getTime() - lastSeen.getTime()) / 60000;
+    return diffMinutes < 5; // Consider "live" if updated in last 5 minutes
+  }
+  
+  formatVesselLocation(lat: number, lng: number): string {
+    return `${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
+  }
+  
+  formatTimestamp(date: Date): string {
+    const now = new Date();
+    const lastSeen = new Date(date);
+    const diff = now.getTime() - lastSeen.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  }
+  
+  private createHighlightEffect(vesselId: number, lng: number, lat: number): void {
+    if (!this._map) return;
+    
+    // Clear any existing highlight
+    this.clearHighlight();
+    
+    // Store the highlighted vessel ID
+    this.highlightedVesselId = vesselId;
+    
+    // Add a temporary pulsing circle to highlight the vessel
+    const highlightId = 'vessel-highlight';
+    
+    // Add highlight source and layer
+    this._map.addSource(highlightId, {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [lng, lat]
+        },
+        properties: {}
+      }
+    });
+    
+    this._map.addLayer({
+      id: highlightId,
+      type: 'circle',
+      source: highlightId,
+      paint: {
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          8, 20,
+          16, 50
+        ],
+        'circle-color': '#3b82f6',
+        'circle-opacity': 0.6,
+        'circle-stroke-width': 3,
+        'circle-stroke-color': '#1d4ed8',
+        'circle-stroke-opacity': 0.8
+      }
+    });
+    
+    // Animate the highlight with a pulsing effect
+    let opacity = 0.6;
+    let increasing = false;
+    let pulseCount = 0;
+    
+    const pulseInterval = setInterval(() => {
+      if (increasing) {
+        opacity += 0.05;
+        if (opacity >= 0.8) {
+          increasing = false;
+          pulseCount++;
+        }
+      } else {
+        opacity -= 0.05;
+        if (opacity <= 0.2) {
+          increasing = true;
+        }
+      }
+      
+      if (this._map && this._map.getLayer(highlightId)) {
+        this._map.setPaintProperty(highlightId, 'circle-opacity', opacity);
+      }
+      
+      // Stop after 3 pulses (about 3 seconds)
+      if (pulseCount >= 3 && !increasing) {
+        clearInterval(pulseInterval);
+        
+        // Fade out and remove
+        const fadeInterval = setInterval(() => {
+          opacity -= 0.1;
+          if (this._map && this._map.getLayer(highlightId)) {
+            this._map.setPaintProperty(highlightId, 'circle-opacity', opacity);
+            this._map.setPaintProperty(highlightId, 'circle-stroke-opacity', opacity);
+          }
+          
+          if (opacity <= 0) {
+            clearInterval(fadeInterval);
+            this.removeHighlightLayer();
+          }
+        }, 50);
+        
+        this.highlightIntervals.push(fadeInterval);
+      }
+    }, 100);
+    
+    this.highlightIntervals.push(pulseInterval);
+  }
+  
+  private clearHighlight(): void {
+    // Clear all intervals
+    this.highlightIntervals.forEach(interval => clearInterval(interval));
+    this.highlightIntervals = [];
+    
+    // Remove the highlight layer
+    this.removeHighlightLayer();
+    
+    // Clear the tracked vessel ID
+    this.highlightedVesselId = null;
+  }
+  
+  private removeHighlightLayer(): void {
+    if (!this._map) return;
+    
+    const highlightId = 'vessel-highlight';
+    
+    if (this._map.getLayer(highlightId)) {
+      this._map.removeLayer(highlightId);
+    }
+    if (this._map.getSource(highlightId)) {
+      this._map.removeSource(highlightId);
+    }
+  }
+  
+  private updateHighlightPosition(lng: number, lat: number): void {
+    if (!this._map) return;
+    
+    const highlightId = 'vessel-highlight';
+    const source = this._map.getSource(highlightId);
+    
+    if (source && source.type === 'geojson') {
+      (source as any).setData({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [lng, lat]
+        },
+        properties: {}
+      });
+    }
+  }
+  
   // Don't forget to clean up when the component is destroyed
   ngOnDestroy(): void {
+    // Clean up vessel search
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.clearHighlight();
+    
     // Remove fullscreen change listeners
     document.removeEventListener('fullscreenchange', this.handleFullscreenChange);
     document.removeEventListener('webkitfullscreenchange', this.handleFullscreenChange);

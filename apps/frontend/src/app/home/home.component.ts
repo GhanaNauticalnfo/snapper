@@ -1,10 +1,10 @@
 import { Component, ViewChild, inject, AfterViewInit } from '@angular/core';
-import { MapWithSearchComponent, MapConfig, OSM_STYLE, LayerManagerService, AisShipLayerService, VesselWithLocation } from '@ghanawaters/map';
+import { MapComponent, MapConfig, OSM_STYLE, LayerManagerService, AisShipLayerService, VesselWithLocation } from '@ghanawaters/map';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [MapWithSearchComponent],
+  imports: [MapComponent],
   providers: [AisShipLayerService],
   template: `
     <div class="container">
@@ -12,11 +12,12 @@ import { MapWithSearchComponent, MapConfig, OSM_STYLE, LayerManagerService, AisS
         <h1>Ghana Maritime Authority - Vessel Tracking</h1>
       </div>
       <div class="map-wrapper">
-        <lib-map-with-search 
+        <lib-map 
           #mapComponent
           [config]="mapConfig"
+          [showVesselSearch]="true"
           (vesselSelected)="onVesselSelected($event)">
-        </lib-map-with-search>
+        </lib-map>
       </div>
     </div>
   `,
@@ -50,7 +51,7 @@ import { MapWithSearchComponent, MapConfig, OSM_STYLE, LayerManagerService, AisS
   `]
 })
 export class HomeComponent implements AfterViewInit {
-  @ViewChild('mapComponent') mapComponent!: MapWithSearchComponent;
+  @ViewChild('mapComponent') mapComponent!: MapComponent;
   private layerManager = inject(LayerManagerService);
 
   mapConfig: Partial<MapConfig> = {
