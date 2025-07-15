@@ -72,7 +72,7 @@ export interface VesselWithLocation {
       </div>
       
       <!-- Vessel Search Overlay -->
-      <div class="map-overlay" *ngIf="showVesselSearch">
+      <div class="map-overlay" *ngIf="vesselMode">
         <lib-search-dropdown
           [items]="vesselList()"
           [config]="searchConfig"
@@ -428,7 +428,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
   @Input() clickable = false;
   
   // Vessel search functionality
-  @Input() showVesselSearch = false;
+  @Input() vesselMode = false;
   @Output() vesselSelected = new EventEmitter<VesselWithLocation>();
   
   // Events
@@ -581,7 +581,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
         this.mapLoad.emit(this._map!);
         
         // Initialize vessel search if enabled
-        if (this.showVesselSearch) {
+        if (this.vesselMode) {
           this.initializeVesselSearch();
         }
       });

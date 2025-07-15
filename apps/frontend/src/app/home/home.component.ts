@@ -15,7 +15,7 @@ import { MapComponent, MapConfig, OSM_STYLE, LayerManagerService, AisShipLayerSe
         <lib-map 
           #mapComponent
           [config]="mapConfig"
-          [showVesselSearch]="true"
+          [vesselMode]="true"
           (vesselSelected)="onVesselSelected($event)">
         </lib-map>
       </div>

@@ -1,14 +1,13 @@
 import { Component, input, output, OnInit, OnDestroy, AfterViewInit, viewChild, signal, effect, computed, ChangeDetectionStrategy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
+import { debounceTime } from 'rxjs/operators';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { DividerModule } from 'primeng/divider';
-import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ConfirmationService } from 'primeng/api';
@@ -32,9 +31,7 @@ import { environment } from '../../../../environments/environment';
     TextareaModule,
     InputSwitchModule,
     DividerModule,
-    CardModule,
     TableModule,
-    InputNumberModule,
     MapComponent,
     WaypointEditorDialogComponent,
     ConfirmDialogModule
@@ -412,10 +409,13 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     // Watch for form changes to update route display and current values signal
-    this.routeForm.valueChanges.subscribe((values) => {
-      this.currentFormValues.set(values);
-      this.updateRouteDisplay();
-    });
+    // Debounce to avoid excessive updates while typing
+    this.routeForm.valueChanges
+      .pipe(debounceTime(300))
+      .subscribe((values) => {
+        this.currentFormValues.set(values);
+        this.updateRouteDisplay();
+      });
   }
 
   ngAfterViewInit(): void {
@@ -497,7 +497,7 @@ export class RouteFormComponent implements OnInit, OnDestroy, AfterViewInit {
       const formData = {
         name: currentRoute.name || '',
         notes: currentRoute.notes || '',
-        enabled: Boolean(currentRoute.enabled)
+        enabled: currentRoute.enabled
       };
       this.routeForm.reset(formData);
       

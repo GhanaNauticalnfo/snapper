@@ -25,7 +25,7 @@ import {
         <lib-map 
           #mapComponent 
           [config]="mapConfig"
-          [showVesselSearch]="true"
+          [vesselMode]="true"
           (vesselSelected)="onVesselSelected($event)">
         </lib-map>
       </div>

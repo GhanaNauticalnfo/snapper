@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import { Route } from '../models/route.model';
 import { environment } from '../../../../environments/environment';
 
@@ -14,13 +13,12 @@ export class RouteService {
   constructor(private http: HttpClient) {}
 
   getAll(): Observable<Route[]> {
-    return this.http.get<Route[]>(this.apiUrl).pipe(
-      catchError(error => {
-        return throwError(() => error);
-      })
-    );
+    return this.http.get<Route[]>(this.apiUrl);
   }
 
+  getById(id: number): Observable<Route> {
+    return this.http.get<Route>(`${this.apiUrl}/${id}`);
+  }
 
   create(route: Route): Observable<Route> {
     // Remove id from the route object as it's not part of RouteInputDto
