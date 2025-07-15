@@ -36,6 +36,9 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   // Vessel filtering configuration
   private vesselFilter: number | null = null;
   
+  // Show vessel names configuration
+  private showVesselNames = false;
+  
   // Expose vessel positions as Observable
   private vesselPositions$ = new BehaviorSubject<PositionUpdate[]>([]);
   public readonly vesselPositionsObservable$ = this.vesselPositions$.asObservable();
@@ -57,6 +60,20 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     }
   }
   
+  // Configure vessel name display
+  setShowVesselNames(show: boolean): void {
+    this.showVesselNames = show;
+    console.log('AIS Layer: show vessel names set to', show);
+    
+    // Clear icon cache when toggling names to force recreation
+    this.iconCache.clear();
+    
+    // Update the map display to use new icons with/without names
+    if (this.map) {
+      this.updateMapDisplay();
+    }
+  }
+  
   initialize(map: MapLibreMap): void {
     this.map = map;
     console.log('AIS Layer: Initializing AIS ships layer');
@@ -69,24 +86,28 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     this.initializeLayers();
   }
   
-  private async ensureIconExists(color: string): Promise<string> {
+  private async ensureIconExists(color: string, vesselName?: string): Promise<string> {
     if (!this.map || !color) {
       return 'ship-icon-#808080'; // Default gray
     }
     
-    const iconName = `ship-icon-${color}`;
+    // Create unique icon name based on color and whether names are shown
+    const iconName = this.showVesselNames && vesselName 
+      ? `ship-icon-${color}-${vesselName.replace(/[^a-zA-Z0-9]/g, '-')}`
+      : `ship-icon-${color}`;
     
     // Check if icon already exists
-    if (this.iconCache.has(color)) {
+    const cacheKey = this.showVesselNames && vesselName ? `${color}-${vesselName}` : color;
+    if (this.iconCache.has(cacheKey)) {
       return iconName;
     }
     
     try {
       // Create the icon if it doesn't exist
-      const response = await this.createShipIcon(color);
+      const response = await this.createShipIcon(color, vesselName);
       this.map.addImage(iconName, response.data);
-      this.iconCache.add(color);
-      console.log(`AIS Layer: Created icon '${iconName}' with color ${color}`);
+      this.iconCache.add(cacheKey);
+      console.log(`AIS Layer: Created icon '${iconName}' with color ${color}${vesselName ? ' and name ' + vesselName : ''}`);
       return iconName;
     } catch (error) {
       console.error(`Failed to create icon for color ${color}:`, error);
@@ -95,30 +116,70 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     }
   }
 
-  private createShipIcon(color: string): Promise<{data: HTMLImageElement | ImageBitmap | ImageData | {width: number, height: number, data: Uint8Array | Uint8ClampedArray}}> {
+  private createShipIcon(color: string, vesselName?: string): Promise<{data: HTMLImageElement | ImageBitmap | ImageData | {width: number, height: number, data: Uint8Array | Uint8ClampedArray}}> {
     return new Promise((resolve, reject) => {
+      // Determine canvas size based on whether we're including the name
+      const includeNameLabel = vesselName && this.showVesselNames;
+      const canvasWidth = includeNameLabel ? Math.max(100, vesselName.length * 8 + 20) : 24;
+      const canvasHeight = includeNameLabel ? 40 : 24;
+      
       // Create a directional ship icon using SVG (pointing up/north by default)
-      const svgString = `
-        <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <!-- Simple triangular arrow pointing up -->
-          <path d="M12 3 L20 16 L12 13 L4 16 Z" 
-                fill="${color}" 
-                stroke="#000000" 
-                stroke-width="1.5" 
-                stroke-linejoin="round"/>
-        </svg>
-      `;
+      let svgString: string;
+      
+      if (includeNameLabel) {
+        // SVG with vessel name
+        svgString = `
+          <svg width="${canvasWidth}" height="${canvasHeight}" viewBox="0 0 ${canvasWidth} ${canvasHeight}" xmlns="http://www.w3.org/2000/svg">
+            <!-- Ship icon centered horizontally -->
+            <g transform="translate(${canvasWidth/2}, 12)">
+              <path d="M0 -9 L8 4 L0 1 L-8 4 Z" 
+                    fill="${color}" 
+                    stroke="#000000" 
+                    stroke-width="1.5" 
+                    stroke-linejoin="round"/>
+            </g>
+            <!-- Vessel name below the icon -->
+            <text x="${canvasWidth/2}" y="32" 
+                  text-anchor="middle" 
+                  font-family="Arial, sans-serif" 
+                  font-size="11" 
+                  font-weight="bold"
+                  fill="#000000"
+                  stroke="#FFFFFF"
+                  stroke-width="3"
+                  paint-order="stroke">${vesselName}</text>
+            <text x="${canvasWidth/2}" y="32" 
+                  text-anchor="middle" 
+                  font-family="Arial, sans-serif" 
+                  font-size="11" 
+                  font-weight="bold"
+                  fill="#000000">${vesselName}</text>
+          </svg>
+        `;
+      } else {
+        // Simple icon without name
+        svgString = `
+          <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <!-- Simple triangular arrow pointing up -->
+            <path d="M12 3 L20 16 L12 13 L4 16 Z" 
+                  fill="${color}" 
+                  stroke="#000000" 
+                  stroke-width="1.5" 
+                  stroke-linejoin="round"/>
+          </svg>
+        `;
+      }
       
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      canvas.width = 24;
-      canvas.height = 24;
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
       
       const img = new Image();
       img.onload = () => {
         if (ctx) {
-          ctx.drawImage(img, 0, 0, 24, 24);
-          const imageData = ctx.getImageData(0, 0, 24, 24);
+          ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+          const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
           resolve({ data: imageData });
         } else {
           reject(new Error('Failed to get canvas context'));
@@ -206,13 +267,9 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     
     // Check if layer already exists
     if (!this.map.getLayer(this.layerId)) {
-      // Add layer for ships
-      this.map.addLayer({
-      id: this.layerId,
-      type: 'symbol',
-      source: this.layerId,
-      layout: {
-        'icon-image': ['concat', 'ship-icon-', ['get', 'vesselTypeColor']],
+      // Build the layout configuration
+      const layout: any = {
+        'icon-image': ['get', 'vesselIconName'], // Use the specific icon name from properties
         'icon-rotate': ['get', 'heading'],
         'icon-size': [
           'case',
@@ -220,9 +277,18 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           1.2,  // Larger size for selected vessel
           0.75  // Normal size for other vessels
         ],
-        'icon-allow-overlap': true
-      }
-    });
+        'icon-allow-overlap': true,
+        'icon-anchor': 'center',
+        'icon-offset': this.showVesselNames ? [0, -8] : [0, 0] // Offset icon up when showing names
+      };
+      
+      // Add layer for ships
+      this.map.addLayer({
+        id: this.layerId,
+        type: 'symbol',
+        source: this.layerId,
+        layout: layout
+      });
     }
     
     // Add click event listener for vessel popups - only if not already added
@@ -304,8 +370,8 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           const coordinates: [number, number] = vessel.latest_position_coordinates.coordinates;
           const vesselTypeColor = vessel.vessel_type?.color || '#808080';
           
-          // Ensure icon exists for this color
-          await this.ensureIconExists(vesselTypeColor);
+          // Ensure icon exists for this color and vessel name
+          await this.ensureIconExists(vesselTypeColor, vessel.name);
           
           const positionUpdate: PositionUpdate = {
             vesselId: vessel.id,
@@ -335,6 +401,9 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           const heading = positionUpdate.heading || 0;
           console.log(`🧭 Vessel ${positionUpdate.vesselName}: heading = ${heading}°, color = ${vesselTypeColor}`);
           
+          // Get icon name for this vessel
+          const iconName = await this.ensureIconExists(vesselTypeColor, vessel.name);
+          
           features.push({
             type: 'Feature',
             geometry: {
@@ -349,6 +418,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
               type: positionUpdate.vesselType,
               vesselTypeId: positionUpdate.vesselTypeId,
               vesselTypeColor: vesselTypeColor,
+              vesselIconName: iconName,
               status: 'Active',
               lastUpdate: positionUpdate.timestamp,
               isSelected: this.vesselFilter === vessel.id
@@ -583,9 +653,9 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   }
   
   private async handlePositionUpdate(update: PositionUpdate): Promise<void> {
-    // Ensure icon exists for this vessel's color
+    // Ensure icon exists for this vessel's color and name
     if (update.vesselTypeColor) {
-      await this.ensureIconExists(update.vesselTypeColor);
+      await this.ensureIconExists(update.vesselTypeColor, update.vesselName);
     }
     
     // Store the position update
@@ -610,7 +680,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     this.updateMapDisplay();
   }
   
-  private updateMapDisplay(): void {
+  private async updateMapDisplay(): Promise<void> {
     if (!this.map) return;
     
     const source = this.map.getSource(this.layerId) as GeoJSONSource;
@@ -621,26 +691,32 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
       console.log(`AIS Layer: Displaying ${allPositions.length} vessels (highlighted: ${this.vesselFilter || 'none'})`);
       
       // Convert all vessel positions to GeoJSON with highlight flag
-      const features: GeoJSON.Feature[] = allPositions.map((pos: PositionUpdate) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [pos.lng, pos.lat]
-        },
-        properties: {
-          id: pos.vesselId,
-          name: pos.vesselName,
-          heading: pos.heading || 0,
-          speed: pos.speed || 0,
-          type: pos.vesselType,
-          vesselTypeId: pos.vesselTypeId,
-          vesselTypeColor: pos.vesselTypeColor || '#808080',
-          status: pos.status || 'Active',
-          lastUpdate: pos.timestamp,
-          // Add a property to indicate if this vessel is selected
-          isSelected: this.vesselFilter === pos.vesselId
-        }
-      } as GeoJSON.Feature));
+      const features: GeoJSON.Feature[] = await Promise.all(allPositions.map(async (pos: PositionUpdate) => {
+        // Get the appropriate icon name for this vessel
+        const iconName = await this.ensureIconExists(pos.vesselTypeColor || '#808080', pos.vesselName);
+        
+        return {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [pos.lng, pos.lat]
+          },
+          properties: {
+            id: pos.vesselId,
+            name: pos.vesselName,
+            heading: pos.heading || 0,
+            speed: pos.speed || 0,
+            type: pos.vesselType,
+            vesselTypeId: pos.vesselTypeId,
+            vesselTypeColor: pos.vesselTypeColor || '#808080',
+            vesselIconName: iconName, // Use specific icon name
+            status: pos.status || 'Active',
+            lastUpdate: pos.timestamp,
+            // Add a property to indicate if this vessel is selected
+            isSelected: this.vesselFilter === pos.vesselId
+          }
+        } as GeoJSON.Feature;
+      }));
       
       source.setData({
         type: 'FeatureCollection',

@@ -83,6 +83,19 @@ export interface VesselWithLocation {
         </lib-search-dropdown>
       </div>
       
+      <!-- Vessel Names Toggle -->
+      <div class="vessel-names-overlay" *ngIf="vesselMode">
+        <div class="vessel-names-toggle">
+          <label>
+            <input 
+              type="checkbox" 
+              [checked]="showVesselNames()"
+              (change)="toggleVesselNames()">
+            <span>Show names</span>
+          </label>
+        </div>
+      </div>
+      
       <!-- Vessel Item Template -->
       <ng-template #vesselItemTemplate let-vessel let-selected="selected">
         <div class="vessel-header">
@@ -289,6 +302,35 @@ export interface VesselWithLocation {
       overflow: hidden;
       width: 320px;
     }
+    
+    .vessel-names-overlay {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1;
+    }
+    
+    .vessel-names-toggle {
+      pointer-events: auto;
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 8px 12px;
+    }
+    
+    .vessel-names-toggle label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #333;
+      white-space: nowrap;
+    }
+    
+    .vessel-names-toggle input[type="checkbox"] {
+      cursor: pointer;
+    }
 
     .vessel-header {
       margin-bottom: 4px;
@@ -367,6 +409,12 @@ export interface VesselWithLocation {
       .vessel-search-overlay {
         width: 100%;
         box-sizing: border-box;
+      }
+      
+      .vessel-names-overlay {
+        top: auto;
+        bottom: 10px;
+        right: 10px;
       }
     }
   `]
@@ -455,6 +503,9 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
   vesselSearchLoading = signal(false);
   selectedVesselId: number | null = null;
   
+  // Show vessel names state
+  showVesselNames = signal<boolean>(false);
+  
   // Highlight tracking
   private highlightedVesselId: number | null = null;
   private highlightIntervals: any[] = [];
@@ -495,7 +546,13 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
   }
   
   ngOnInit(): void {
-    //
+    // Load show vessel names preference from localStorage
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const savedPreference = localStorage.getItem('showVesselNames');
+      if (savedPreference !== null) {
+        this.showVesselNames.set(savedPreference === 'true');
+      }
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -785,6 +842,11 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
     if (aisLayer && aisLayer instanceof AisShipLayerService) {
       this.aisLayerService = aisLayer;
       
+      // Set initial vessel names visibility
+      if ('setShowVesselNames' in this.aisLayerService) {
+        (this.aisLayerService as any).setShowVesselNames(this.showVesselNames());
+      }
+      
       // Subscribe to vessel position updates
       this.subscribeToVesselUpdates();
     }
@@ -869,6 +931,21 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
+  }
+  
+  toggleVesselNames(): void {
+    const newValue = !this.showVesselNames();
+    this.showVesselNames.set(newValue);
+    
+    // Save preference to localStorage
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('showVesselNames', newValue.toString());
+    }
+    
+    // Update the AIS layer if it exists
+    if (this.aisLayerService && 'setShowVesselNames' in this.aisLayerService) {
+      (this.aisLayerService as any).setShowVesselNames(newValue);
+    }
   }
   
   private createHighlightEffect(vesselId: number, lng: number, lat: number): void {

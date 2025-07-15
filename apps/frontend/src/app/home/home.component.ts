@@ -7,7 +7,7 @@ import { MapComponent, MapConfig, OSM_STYLE, LayerManagerService, AisShipLayerSe
   imports: [MapComponent],
   providers: [AisShipLayerService],
   template: `
-    <div class="container">
+    <div class="map-layout">
       <div class="header">
         <h1>Ghana Maritime Authority - Vessel Tracking</h1>
       </div>
@@ -22,7 +22,7 @@ import { MapComponent, MapConfig, OSM_STYLE, LayerManagerService, AisShipLayerSe
     </div>
   `,
   styles: [`
-    .container {
+    .map-layout {
       padding: 0px;
       height: 100vh;
       display: flex;
