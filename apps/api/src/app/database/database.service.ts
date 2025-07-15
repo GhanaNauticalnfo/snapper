@@ -103,15 +103,18 @@ export class DatabaseService {
     // Get current size
     const currentSize = await this.getCurrentSize();
     
-    // Get historical statistics (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Get retention days setting
+    const retentionDaysStr = await this.settingService.getSettingValue(
+      SETTING_KEYS.DATABASE_TELEMETRY_RETENTION_DAYS
+    );
+    const retentionDays = parseInt(retentionDaysStr, 10);
     
+    // Get historical statistics limited to retention days
     const statistics = await this.databaseStatisticsRepository.find({
       order: {
         date: 'DESC'
       },
-      take: 30
+      take: retentionDays
     });
 
     return {
