@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputGroupModule } from 'primeng/inputgroup';
 import { TextareaModule } from 'primeng/textarea';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { DividerModule } from 'primeng/divider';
@@ -25,6 +26,7 @@ import { Map as MaplibreMap, Marker, LngLatLike } from 'maplibre-gl';
     ReactiveFormsModule,
     ButtonModule,
     InputTextModule,
+    InputGroupModule,
     TextareaModule,
     InputSwitchModule,
     DividerModule,
@@ -84,27 +86,68 @@ import { Map as MaplibreMap, Marker, LngLatLike } from 'maplibre-gl';
               </textarea>
             </div>
 
+            <div class="field">
+              <label class="block mb-2">Location</label>
+              <div class="location-inputs">
+                <div class="location-input-group">
+                  <label for="latitude" class="location-input-label">Latitude:</label>
+                  <div class="p-inputgroup location-input">
+                    <input 
+                      pInputText
+                      type="text"
+                      id="latitude"
+                      formControlName="latitudeText"
+                      placeholder="-90 to 90"
+                      class="p-inputtext-sm">
+                    <span class="p-inputgroup-addon">°</span>
+                  </div>
+                </div>
+                <div class="location-input-group">
+                  <label for="longitude" class="location-input-label">Longitude:</label>
+                  <div class="p-inputgroup location-input">
+                    <input 
+                      pInputText
+                      type="text"
+                      id="longitude"
+                      formControlName="longitudeText"
+                      placeholder="-180 to 180"
+                      class="p-inputtext-sm">
+                    <span class="p-inputgroup-addon">°</span>
+                  </div>
+                </div>
+              </div>
+              @if (mode() === 'view') {
+                <small class="text-color-secondary">Location coordinates</small>
+              } @else {
+                <small class="text-color-secondary">Click on the map or enter coordinates manually</small>
+                @if (landingSiteForm.get('latitudeText')?.errors && landingSiteForm.get('latitudeText')?.touched) {
+                  <small class="p-error block mt-1">
+                    @if (landingSiteForm.get('latitudeText')?.errors?.['invalidNumber']) {
+                      Latitude must be a valid number
+                    }
+                    @if (landingSiteForm.get('latitudeText')?.errors?.['outOfRange']) {
+                      Latitude must be between -90 and 90
+                    }
+                  </small>
+                }
+                @if (landingSiteForm.get('longitudeText')?.errors && landingSiteForm.get('longitudeText')?.touched) {
+                  <small class="p-error block mt-1">
+                    @if (landingSiteForm.get('longitudeText')?.errors?.['invalidNumber']) {
+                      Longitude must be a valid number
+                    }
+                    @if (landingSiteForm.get('longitudeText')?.errors?.['outOfRange']) {
+                      Longitude must be between -180 and 180
+                    }
+                  </small>
+                }
+              }
+            </div>
+
             <div class="field-checkbox">
               <p-inputSwitch 
                 formControlName="enabled">
               </p-inputSwitch>
               <label class="ml-2">Active</label>
-            </div>
-
-            <p-divider></p-divider>
-
-            <div class="location-section">
-              <h4 class="m-0 mb-3">Location</h4>
-              <div class="location-display">
-                <div class="location-item">
-                  <span class="location-label">Latitude:</span>
-                  <span class="location-value">{{ currentLocation().coordinates[1].toFixed(6) }}°</span>
-                </div>
-                <div class="location-item">
-                  <span class="location-label">Longitude:</span>
-                  <span class="location-value">{{ currentLocation().coordinates[0].toFixed(6) }}°</span>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -241,32 +284,31 @@ import { Map as MaplibreMap, Marker, LngLatLike } from 'maplibre-gl';
       align-items: center;
     }
 
-    .location-section {
-      background: var(--surface-50);
-      padding: 1rem;
-      border-radius: var(--border-radius);
-    }
-
-    .location-display {
+    .location-inputs {
       display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .location-item {
-      display: flex;
-      justify-content: space-between;
+      gap: 1.5rem;
       align-items: center;
     }
 
-    .location-label {
-      font-weight: 600;
-      color: var(--text-color-secondary);
+    .location-input-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
     }
 
-    .location-value {
-      font-family: monospace;
-      font-size: 1.1rem;
+    .location-input-label {
+      font-weight: 500;
+      color: var(--text-color-secondary);
+      white-space: nowrap;
+    }
+
+    .location-input {
+      flex: 1;
+    }
+
+    .location-input ::ng-deep .p-inputnumber-input {
+      width: 100%;
     }
   `]
 })
@@ -279,7 +321,10 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
     // Basic validation: name must not be empty
     const hasValidName = current.name && current.name.trim().length > 0;
     
-    if (!hasValidName) {
+    // Check if the form is valid (including lat/lon validation)
+    const isFormValid = this.landingSiteForm.valid;
+    
+    if (!hasValidName || !isFormValid) {
       return false;
     }
     
@@ -315,12 +360,14 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
   mapReady = signal(false);
   
   // Change tracking
-  currentFormValues = signal<{ name: string; description: string; enabled: boolean }>({ 
+  currentFormValues = signal<{ name: string; description: string; enabled: boolean; latitude: number; longitude: number }>({ 
     name: '', 
     description: '', 
-    enabled: true 
+    enabled: true,
+    latitude: 5.6,
+    longitude: -0.4
   });
-  originalFormValues = signal<{ name: string; description: string; enabled: boolean } | null>(null);
+  originalFormValues = signal<{ name: string; description: string; enabled: boolean; latitude: number; longitude: number } | null>(null);
   originalLocation = signal<GeoPoint | null>(null);
   
   private marker?: Marker;
@@ -341,7 +388,9 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
     this.landingSiteForm = this.fb.group({
       name: ['', Validators.required],
       description: [''],
-      enabled: [true]
+      enabled: [true],
+      latitudeText: ['5.6', [Validators.required, this.latitudeValidator]],
+      longitudeText: ['-0.4', [Validators.required, this.longitudeValidator]]
     });
     
     // Initialize map configuration
@@ -363,7 +412,36 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
     
     // Watch for form changes to update current values signal
     this.landingSiteForm.valueChanges.subscribe((values) => {
-      this.currentFormValues.set(values);
+      this.currentFormValues.set({
+        name: values.name,
+        description: values.description,
+        enabled: values.enabled,
+        latitude: parseFloat(values.latitudeText) || 0,
+        longitude: parseFloat(values.longitudeText) || 0
+      });
+    });
+    
+    // Watch for latitude/longitude text changes to update map
+    this.landingSiteForm.get('latitudeText')?.valueChanges.subscribe((latText) => {
+      const lat = parseFloat(latText);
+      if (!isNaN(lat) && lat >= -90 && lat <= 90) {
+        const lng = this.currentLocation().coordinates[0];
+        // Only update if the value actually changed (to avoid infinite loops)
+        if (Math.abs(lat - this.currentLocation().coordinates[1]) > 0.000001) {
+          this.updateLocation(lng, lat);
+        }
+      }
+    });
+    
+    this.landingSiteForm.get('longitudeText')?.valueChanges.subscribe((lngText) => {
+      const lng = parseFloat(lngText);
+      if (!isNaN(lng) && lng >= -180 && lng <= 180) {
+        const lat = this.currentLocation().coordinates[1];
+        // Only update if the value actually changed (to avoid infinite loops)
+        if (Math.abs(lng - this.currentLocation().coordinates[0]) > 0.000001) {
+          this.updateLocation(lng, lat);
+        }
+      }
     });
   }
   
@@ -379,17 +457,19 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
       const formChanged = (
         current.name !== originalForm.name ||
         current.description !== originalForm.description ||
-        current.enabled !== originalForm.enabled
+        current.enabled !== originalForm.enabled ||
+        Math.abs(current.latitude - originalForm.latitude) > 0.000001 ||
+        Math.abs(current.longitude - originalForm.longitude) > 0.000001
       );
       
       if (formChanged) return true;
     }
     
-    // Check location changes
+    // Check location changes (this is now redundant since we track lat/lon in form)
     if (originalLoc && currentLoc) {
       return (
-        currentLoc.coordinates[0] !== originalLoc.coordinates[0] ||
-        currentLoc.coordinates[1] !== originalLoc.coordinates[1]
+        Math.abs(currentLoc.coordinates[0] - originalLoc.coordinates[0]) > 0.000001 ||
+        Math.abs(currentLoc.coordinates[1] - originalLoc.coordinates[1]) > 0.000001
       );
     }
     
@@ -399,10 +479,13 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
   private resetFormWithLandingSiteData() {
     const site = this.landingSite();
     if (site) {
+      const location = site.location || { type: 'Point', coordinates: [-0.4, 5.6] };
       const formData = {
         name: site.name || '',
         description: site.description || '',
-        enabled: site.enabled !== undefined ? site.enabled : true
+        enabled: site.enabled !== undefined ? site.enabled : true,
+        latitudeText: location.coordinates[1].toString(),
+        longitudeText: location.coordinates[0].toString()
       };
       this.landingSiteForm.reset(formData);
       
@@ -414,25 +497,45 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
       }
       
       // Store both current and original values for change tracking
-      this.currentFormValues.set({ ...formData });
-      this.originalFormValues.set({ ...formData });
+      this.currentFormValues.set({ 
+        name: formData.name,
+        description: formData.description,
+        enabled: formData.enabled,
+        latitude: location.coordinates[1],
+        longitude: location.coordinates[0]
+      });
+      this.originalFormValues.set({ 
+        name: formData.name,
+        description: formData.description,
+        enabled: formData.enabled,
+        latitude: location.coordinates[1],
+        longitude: location.coordinates[0]
+      });
       // Deep copy location to track changes
       this.originalLocation.set(site.location ? { ...site.location, coordinates: [...site.location.coordinates] } : null);
     } else {
-      const formData = {
-        name: '',
-        description: '',
-        enabled: true
-      };
-      this.landingSiteForm.reset(formData);
       const defaultLocation: GeoPoint = {
         type: 'Point',
         coordinates: [-0.4, 5.6]
       };
+      const formData = {
+        name: '',
+        description: '',
+        enabled: true,
+        latitudeText: defaultLocation.coordinates[1].toString(),
+        longitudeText: defaultLocation.coordinates[0].toString()
+      };
+      this.landingSiteForm.reset(formData);
       this.currentLocation.set(defaultLocation);
       
       // For create mode, set current values and original to null
-      this.currentFormValues.set({ ...formData });
+      this.currentFormValues.set({ 
+        name: '',
+        description: '',
+        enabled: true,
+        latitude: defaultLocation.coordinates[1],
+        longitude: defaultLocation.coordinates[0]
+      });
       this.originalFormValues.set(null);
       this.originalLocation.set(null);
     }
@@ -507,6 +610,35 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
       this.marker.remove();
     }
   }
+  
+  // Custom validators
+  private latitudeValidator = (control: any) => {
+    const value = control.value;
+    if (!value) return null;
+    
+    const num = parseFloat(value);
+    if (isNaN(num)) {
+      return { invalidNumber: true };
+    }
+    if (num < -90 || num > 90) {
+      return { outOfRange: true };
+    }
+    return null;
+  }
+  
+  private longitudeValidator = (control: any) => {
+    const value = control.value;
+    if (!value) return null;
+    
+    const num = parseFloat(value);
+    if (isNaN(num)) {
+      return { invalidNumber: true };
+    }
+    if (num < -180 || num > 180) {
+      return { outOfRange: true };
+    }
+    return null;
+  }
 
   // Public method to prepare the map - called by parent component when dialog is shown
   public prepareMap(): void {
@@ -526,7 +658,17 @@ export class LandingSiteFormComponent implements OnInit, OnDestroy, AfterViewIni
       type: 'Point',
       coordinates: [lng, lat]
     });
+    
+    // Update form controls without triggering valueChanges (to avoid infinite loops)
+    this.landingSiteForm.get('latitudeText')?.setValue(lat.toString(), { emitEvent: false });
+    this.landingSiteForm.get('longitudeText')?.setValue(lng.toString(), { emitEvent: false });
+    
     this.updateMarker();
+    
+    // Update map view to center on the new location
+    if (this.map) {
+      this.map.setCenter([lng, lat]);
+    }
   }
 
   private updateMarker() {

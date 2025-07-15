@@ -452,10 +452,43 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
   }
   
   private createVesselPopupContent(properties: any): string {
-    const lastUpdate = properties.lastUpdate ? new Date(properties.lastUpdate).toLocaleString() : 'Unknown';
-    const speed = properties.speed ? `${Number(properties.speed).toFixed(1)} knots` : 'Unknown';
-    const heading = properties.heading ? `${Math.round(Number(properties.heading))}°` : 'Unknown';
-    const status = properties.status || 'Unknown';
+    // Calculate time ago
+    const timeAgo = (timestamp: string | Date): string => {
+      if (!timestamp) return 'Unknown';
+      
+      const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+      const now = new Date();
+      const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+      
+      if (seconds < 60) return 'Just now';
+      
+      const intervals = [
+        { label: 'year', seconds: 31536000 },
+        { label: 'month', seconds: 2592000 },
+        { label: 'day', seconds: 86400 },
+        { label: 'hour', seconds: 3600 },
+        { label: 'minute', seconds: 60 }
+      ];
+      
+      for (const interval of intervals) {
+        const count = Math.floor(seconds / interval.seconds);
+        if (count > 0) {
+          return count === 1 
+            ? `${count} ${interval.label} ago`
+            : `${count} ${interval.label}s ago`;
+        }
+      }
+      
+      return 'Just now';
+    };
+    
+    const lastUpdateAgo = timeAgo(properties.lastUpdate);
+    const speed = properties.speed !== null && properties.speed !== undefined 
+      ? `${Number(properties.speed).toFixed(1)} knots` 
+      : '0.0 knots';
+    const heading = properties.heading !== null && properties.heading !== undefined 
+      ? `${Math.round(Number(properties.heading))}°` 
+      : '0°';
     
     return `
       <div style="font-family: Arial, sans-serif; min-width: 200px;">
@@ -476,15 +509,8 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           <strong style="color: #34495e;">Heading:</strong> ${heading}
         </div>
         
-        <div style="margin-bottom: 8px;">
-          <strong style="color: #34495e;">Status:</strong> 
-          <span style="padding: 2px 6px; border-radius: 3px; background: ${status === 'Active' ? '#27ae60' : '#95a5a6'}; color: white; font-size: 11px;">
-            ${status}
-          </span>
-        </div>
-        
         <div style="font-size: 11px; color: #7f8c8d; border-top: 1px solid #ecf0f1; padding-top: 6px; margin-top: 8px;">
-          <strong>Last Update:</strong> ${lastUpdate}
+          <strong>Last seen:</strong> ${lastUpdateAgo}
         </div>
       </div>
     `;

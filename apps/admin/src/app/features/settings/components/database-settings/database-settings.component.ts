@@ -40,7 +40,6 @@ interface DatabaseStatistics {
       <p-card class="mb-4">
         <ng-template pTemplate="header">
           <div class="flex align-items-center justify-content-between p-3">
-            <h3 class="m-0">Telemetry Data Management</h3>
             <span class="text-2xl font-semibold" *ngIf="statistics">
               Current Size: {{ statistics.currentSizeGb.toFixed(2) }} GB
             </span>
