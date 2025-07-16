@@ -11,7 +11,7 @@ import { VesselListComponent } from './components/vessel-list.component';
   template: `
     <div class="vessel-container">
       <div class="page-header">
-        <h2>Vessels</h2>
+        <h2 class="text-2xl">Vessels</h2>
       </div>
       <app-vessel-list></app-vessel-list>
     </div>

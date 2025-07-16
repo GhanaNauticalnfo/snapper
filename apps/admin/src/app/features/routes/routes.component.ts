@@ -11,7 +11,7 @@ import { RouteListComponent } from './components/route-list.component';
   template: `
     <div class="routes-container">
       <div class="page-header">
-        <h2>Routes</h2>
+        <h2 class="text-2xl">Routes</h2>
       </div>
       <app-route-list></app-route-list>
     </div>

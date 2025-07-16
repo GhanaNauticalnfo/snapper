@@ -74,7 +74,7 @@ import { UploadResponse } from '../../models/upload-response.model';
         </ng-template>
       </p-fileUpload>
 
-      <div *ngIf="uploadError()" class="p-error upload-error-message mt-2">
+      <div *ngIf="uploadError()" class="p-error upload-error-message mt-2 text-sm">
         <i class="pi pi-exclamation-triangle mr-2"></i>{{ uploadError() }}
       </div>
     </div>
@@ -83,7 +83,7 @@ import { UploadResponse } from '../../models/upload-response.model';
     :host { display: block; margin-bottom: 1rem; }
     .tile-upload-wrapper { padding: 1rem 1.25rem; border: 1px solid var(--surface-d); background-color: var(--surface-a); border-radius: 6px; }
     h4 { margin-top: 0; margin-bottom: 1rem; color: var(--text-color-secondary); }
-    .upload-error-message { margin-top: 0.75rem; font-size: 0.9em; padding: 0.5rem; border-radius: 4px; background-color: var(--red-50); }
+    .upload-error-message { margin-top: 0.75rem; padding: 0.5rem; border-radius: 4px; background-color: var(--red-50); }
   `]
 })
 export class TileUploadComponent {

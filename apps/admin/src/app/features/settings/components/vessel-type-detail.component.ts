@@ -74,16 +74,16 @@ import { BoatIconComponent } from '@ghanawaters/shared';
           </ng-template>
           
           <div class="vessel-type-info-section">
-            <h5 class="section-title">Vessel Type Information</h5>
+            <h5 class="section-title text-lg font-semibold">Vessel Type Information</h5>
             <form [formGroup]="vesselTypeForm" class="vessel-type-details-form">
               <div class="info-rows">
                 <!-- Name with rename button -->
                 <div class="info-row">
-                  <label class="field-label">Name</label>
+                  <label class="field-label text-sm font-medium">Name</label>
                   @if (vesselType()?.id === 1) {
                     <!-- Read-only display for Unspecified vessel type -->
                     <div class="field-content">
-                      <span class="field-value readonly-name">{{ vesselType()?.name }}</span>
+                      <span class="field-value readonly-name font-medium">{{ vesselType()?.name }}</span>
                     </div>
                   } @else {
                     <!-- Editable input for other vessel types -->
@@ -103,9 +103,9 @@ import { BoatIconComponent } from '@ghanawaters/shared';
                         [loading]="savingName()"
                       ></p-button>
                       @if (nameUpdateStatus() === 'success') {
-                        <i class="pi pi-check status-icon success-icon"></i>
+                        <i class="pi pi-check status-icon success-icon text-base"></i>
                       } @else if (nameUpdateStatus() === 'error') {
-                        <i class="pi pi-times status-icon error-icon"></i>
+                        <i class="pi pi-times status-icon error-icon text-base"></i>
                       }
                     </div>
                   }
@@ -113,12 +113,12 @@ import { BoatIconComponent } from '@ghanawaters/shared';
 
                 <!-- Color picker -->
                 <div class="info-row">
-                  <label class="field-label">Color</label>
+                  <label class="field-label text-sm font-medium">Color</label>
                   <div class="field-content">
                     <div class="color-comparison-wrapper">
                       <!-- Current saved color -->
                       <div class="color-section">
-                        <span class="color-label">Current</span>
+                        <span class="color-label text-xs font-semibold uppercase">Current</span>
                         <div class="boat-icon-wrapper saved-color">
                           <app-boat-icon 
                             [color]="vesselType()?.color || '#3B82F6'"
@@ -126,20 +126,20 @@ import { BoatIconComponent } from '@ghanawaters/shared';
                             [title]="'Saved color: ' + vesselType()?.color">
                           </app-boat-icon>
                         </div>
-                        <span class="color-code">{{ vesselType()?.color }}</span>
+                        <span class="color-code text-xs font-medium">{{ vesselType()?.color }}</span>
                       </div>
                       
                       <!-- Arrow indicator -->
                       @if (hasColorChanged()) {
                         <div class="color-arrow">
-                          <i class="pi pi-arrow-right"></i>
+                          <i class="pi pi-arrow-right text-xl"></i>
                         </div>
                       }
                       
                       <!-- New selected color -->
                       @if (hasColorChanged()) {
                         <div class="color-section">
-                          <span class="color-label">New</span>
+                          <span class="color-label text-xs font-semibold uppercase">New</span>
                           <div class="boat-icon-wrapper new-color">
                             <app-boat-icon 
                               [color]="vesselTypeForm.get('color')?.value"
@@ -148,7 +148,7 @@ import { BoatIconComponent } from '@ghanawaters/shared';
                               [title]="'New color: ' + vesselTypeForm.get('color')?.value">
                             </app-boat-icon>
                           </div>
-                          <span class="color-code">{{ vesselTypeForm.get('color')?.value }}</span>
+                          <span class="color-code text-xs font-medium">{{ vesselTypeForm.get('color')?.value }}</span>
                         </div>
                       }
                     </div>
@@ -178,9 +178,9 @@ import { BoatIconComponent } from '@ghanawaters/shared';
                       }
                       
                       @if (colorUpdateStatus() === 'success') {
-                        <i class="pi pi-check status-icon success-icon"></i>
+                        <i class="pi pi-check status-icon success-icon text-base"></i>
                       } @else if (colorUpdateStatus() === 'error') {
-                        <i class="pi pi-times status-icon error-icon"></i>
+                        <i class="pi pi-times status-icon error-icon text-base"></i>
                       }
                     </div>
                   </div>
@@ -189,7 +189,7 @@ import { BoatIconComponent } from '@ghanawaters/shared';
                 @if (vesselType()?.id !== 0) {
                   <!-- Vessels Using This Type -->
                   <div class="info-row">
-                    <label class="field-label">Vessels Using This Type</label>
+                    <label class="field-label text-sm font-medium">Vessels Using This Type</label>
                     <div class="field-content">
                       <span class="field-value">{{ vesselType()?.vessel_count || 0 }}</span>
                     </div>
@@ -230,8 +230,6 @@ import { BoatIconComponent } from '@ghanawaters/shared';
     }
 
     .section-title {
-      font-size: 1.125rem;
-      font-weight: 600;
       margin-bottom: 1rem;
       color: var(--text-color);
     }
@@ -253,9 +251,7 @@ import { BoatIconComponent } from '@ghanawaters/shared';
     }
 
     .field-label {
-      font-weight: 500;
       color: var(--text-color);
-      font-size: 0.875rem;
     }
 
     .field-content {
@@ -277,7 +273,6 @@ import { BoatIconComponent } from '@ghanawaters/shared';
     }
 
     .readonly-name {
-      font-weight: 500;
       padding: 0.75rem;
       background: var(--surface-100);
       border: 1px solid var(--surface-border);
@@ -286,7 +281,6 @@ import { BoatIconComponent } from '@ghanawaters/shared';
     }
 
     .status-icon {
-      font-size: 1rem;
       margin-left: 0.5rem;
     }
 
@@ -321,11 +315,7 @@ import { BoatIconComponent } from '@ghanawaters/shared';
     }
 
     .color-label {
-      font-size: 0.75rem;
-      font-weight: 600;
       color: var(--text-color-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
     .boat-icon-wrapper {
@@ -352,16 +342,13 @@ import { BoatIconComponent } from '@ghanawaters/shared';
 
     .color-code {
       font-family: monospace;
-      font-size: 0.75rem;
       color: var(--text-color-secondary);
-      font-weight: 500;
     }
 
     .color-arrow {
       display: flex;
       align-items: center;
       color: var(--primary-color);
-      font-size: 1.25rem;
       margin: 0 0.5rem;
     }
 

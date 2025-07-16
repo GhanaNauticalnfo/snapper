@@ -28,24 +28,24 @@ interface Vessel {
   template: `
     <div class="home-container">
       <div class="home-header">
-        <h1 class="home-title">Overview</h1>
+        <h1 class="home-title text-4xl font-bold">Overview</h1>
       </div>
 
       <div class="dashboard-content">
         <div class="stats-grid">
           <div class="stat-card stat-vessels">
-            <div class="stat-icon">
+            <div class="stat-icon text-2xl">
               <i class="pi pi-compass"></i>
             </div>
             <div class="stat-info">
-              <h3>Total Vessels</h3>
-              <p class="stat-number">{{ totalVessels() }}</p>
+              <h3 class="text-sm font-semibold uppercase tracking-wide">Vessels</h3>
+              <p class="stat-number text-4xl font-bold">{{ totalVessels() }}</p>
               <div class="vessel-types-list">
                 @for (type of vesselTypes(); track type.id) {
                   @if (type.vessel_count > 0) {
                     <div class="vessel-type-item">
                       <span class="type-color" [style.background-color]="type.color"></span>
-                      <span class="type-name">{{ type.name }}: {{ type.vessel_count }}</span>
+                      <span class="type-name text-sm">{{ type.name }}: {{ type.vessel_count }}</span>
                     </div>
                   }
                 }
@@ -54,24 +54,22 @@ interface Vessel {
           </div>
 
           <div class="stat-card stat-routes">
-            <div class="stat-icon">
+            <div class="stat-icon text-2xl">
               <i class="pi pi-map"></i>
             </div>
             <div class="stat-info">
-              <h3>Total Routes</h3>
-              <p class="stat-number">{{ totalRoutes() }}</p>
-              <span class="stat-label">Navigation routes</span>
+              <h3 class="text-sm font-semibold uppercase tracking-wide">Routes</h3>
+              <p class="stat-number text-4xl font-bold">{{ totalRoutes() }}</p>
             </div>
           </div>
 
           <div class="stat-card stat-landing-sites">
-            <div class="stat-icon">
+            <div class="stat-icon text-2xl">
               <i class="pi pi-flag"></i>
             </div>
             <div class="stat-info">
-              <h3>Total Landing Sites</h3>
-              <p class="stat-number">{{ totalLandingSites() }}</p>
-              <span class="stat-label">Active sites</span>
+              <h3 class="text-sm font-semibold uppercase tracking-wide">Landing Sites</h3>
+              <p class="stat-number text-4xl font-bold">{{ totalLandingSites() }}</p>
             </div>
           </div>
         </div>
@@ -90,14 +88,11 @@ interface Vessel {
     }
 
     .home-title {
-      font-size: 2rem;
-      font-weight: 700;
       color: var(--text-color);
       margin: 0 0 0.5rem 0;
     }
 
     .home-subtitle {
-      font-size: 1rem;
       color: var(--text-color-secondary);
       margin: 0;
     }
@@ -137,7 +132,6 @@ interface Vessel {
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
       color: white;
     }
 
@@ -147,22 +141,15 @@ interface Vessel {
 
     .stat-info h3 {
       margin: 0 0 0.25rem 0;
-      font-size: 0.875rem;
-      font-weight: 600;
       color: var(--text-color-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
     .stat-number {
       margin: 0 0 0.25rem 0;
-      font-size: 2rem;
-      font-weight: 700;
       color: var(--text-color);
     }
 
     .stat-label {
-      font-size: 0.875rem;
       color: var(--text-color-secondary);
     }
 
@@ -177,7 +164,6 @@ interface Vessel {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      font-size: 0.875rem;
       color: var(--text-color-secondary);
     }
 
@@ -188,9 +174,7 @@ interface Vessel {
       flex-shrink: 0;
     }
 
-    .type-name {
-      font-size: 0.875rem;
-    }
+    /* type-name font size handled by Tailwind text-sm class */
 
     @media (max-width: 768px) {
       .home-container {

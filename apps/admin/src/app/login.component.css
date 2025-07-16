@@ -33,14 +33,11 @@
 }
 
 .login-title {
-  font-size: 1.75rem;
-  font-weight: 600;
   color: var(--text-color);
   margin: 0 0 0.5rem 0;
 }
 
 .login-subtitle {
-  font-size: 1rem;
   color: var(--text-color-secondary);
   margin: 0 0 2rem 0;
 }
@@ -95,7 +92,5 @@
     height: 60px;
   }
   
-  .login-title {
-    font-size: 1.5rem;
-  }
+  /* Responsive font-size handled by Tailwind */
 }

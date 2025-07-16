@@ -34,7 +34,7 @@ interface DatabaseStatistics {
   template: `
     <div class="database-settings">
       <div class="page-header">
-        <h2>Database Settings</h2>
+        <h2 class="text-2xl">Database Settings</h2>
       </div>
 
       <p-card class="mb-4">
@@ -145,7 +145,6 @@ interface DatabaseStatistics {
 
     .page-header h2 {
       margin: 0;
-      font-size: 1.5rem;
       font-weight: 600;
     }
   `]

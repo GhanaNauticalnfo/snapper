@@ -26,7 +26,7 @@ import { VoltaDepthComponent } from '../../volta-depth.component';
     template: `
    <div class="confirmation-content">
       @if (parentState(); as staged) {
-        <div class="details p-mb-3">
+        <div class="details p-mb-3 text-sm">
           <p><strong>Tile ID:</strong> <span class="font-mono">{{ staged.response.deducedTileId }}</span></p>
           <p><strong>Features Found:</strong> {{ staged.response.featureCount | number }}</p>
           <p><strong>Backend Message:</strong> {{ staged.response.message }}</p>
@@ -38,10 +38,10 @@ import { VoltaDepthComponent } from '../../volta-depth.component';
         </div>
 
         <div class="map-section">
-          <h5>Data Preview</h5>
+          <h5 class="text-base">Data Preview</h5>
           <div #mapContainer class="map-preview border border-surface-300">
             @if (mapError(); as errorMsg) {
-              <div class="map-overlay map-error"><i class="pi pi-exclamation-triangle p-mr-2"></i> {{ errorMsg }}</div>
+              <div class="map-overlay map-error"><i class="pi pi-exclamation-triangle p-mr-2 text-xl"></i> {{ errorMsg }}</div>
             } @else if (!isMapInitialized()) {
               <div class="map-overlay map-placeholder">Initializing Map...</div>
             } @else if (isReadingFile()) {
@@ -51,7 +51,7 @@ import { VoltaDepthComponent } from '../../volta-depth.component';
         </div>
 
          @if(parentCommitError(); as errorMsg) {
-            <p-message severity="error" [text]="errorMsg" styleClass="commit-error-message"></p-message>
+            <p-message severity="error" [text]="errorMsg" styleClass="commit-error-message text-sm"></p-message>
          }
 
         <div class="actions p-dialog-footer">
@@ -70,20 +70,20 @@ import { VoltaDepthComponent } from '../../volta-depth.component';
     styles: [
         `:host { display: block; } 
         .confirmation-content { padding: 0.5rem 0; } 
-        .details p { margin: 0.5rem 0; font-size: 0.95em; line-height: 1.5; } 
+        .details p { margin: 0.5rem 0; line-height: 1.5; } 
         .font-mono { font-family: monospace; background-color: var(--surface-100); padding: 0.1rem 0.3rem; border-radius: 3px; } 
         .font-medium { font-weight: 500; } 
         .font-bold { font-weight: 700; } 
         .p-text-warning { color: var(--yellow-600); } 
         .map-section { margin-top: 1.5rem; } 
-        h5 { margin-top: 0; margin-bottom: 0.75rem; font-size: 1rem; color: var(--text-color-secondary); } 
+        h5 { margin-top: 0; margin-bottom: 0.75rem; color: var(--text-color-secondary); } 
         .map-preview { height: 35vh; min-height: 280px; width: 100%; background-color: var(--surface-ground); position: relative; overflow: hidden; border-radius: var(--border-radius); } 
         .map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: row; align-items: center; justify-content: center; background-color: rgba(255, 255, 255, 0.8); color: var(--text-color-secondary); font-style: italic; text-align: center; padding: 1rem; z-index: 10; } 
         .map-error { color: var(--red-600); background-color: rgba(255, 235, 238, 0.9); font-weight: 500; } 
-        .map-error .pi { font-size: 1.2rem; margin-right: 0.5rem; } 
+        .map-error .pi { margin-right: 0.5rem; } 
         .map-placeholder .p-ml-2 { margin-left: 0.5rem; } 
         .actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--surface-d);} 
-        .commit-error-message { margin-top: 1rem; font-size: 0.9em;}`
+        .commit-error-message { margin-top: 1rem; }`
     ]
 })
 export class UploadConfirmationComponent implements AfterViewInit, OnDestroy {

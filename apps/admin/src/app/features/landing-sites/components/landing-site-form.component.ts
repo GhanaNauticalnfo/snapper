@@ -46,14 +46,14 @@ import { Map as MaplibreMap, Marker, LngLatLike } from 'maplibre-gl';
               [config]="mapConfig()">
             </lib-map>
             @if (mode() !== 'view') {
-              <div class="map-instructions">
+              <div class="map-instructions text-sm">
                 <i class="pi pi-info-circle"></i> Click on the map to set the landing site location
               </div>
             }
           } @else {
             <div class="map-skeleton">
               <p-skeleton width="100%" height="100%"></p-skeleton>
-              <div class="loading-text">Loading map...</div>
+              <div class="loading-text text-xl">Loading map...</div>
             </div>
           }
         </div>
@@ -237,7 +237,6 @@ import { Map as MaplibreMap, Marker, LngLatLike } from 'maplibre-gl';
     .loading-text {
       position: absolute;
       color: var(--text-color-secondary);
-      font-size: 1.2rem;
     }
 
     .map-instructions {
@@ -248,7 +247,6 @@ import { Map as MaplibreMap, Marker, LngLatLike } from 'maplibre-gl';
       padding: 8px 12px;
       border-radius: 4px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      font-size: 0.875rem;
       z-index: 10;
     }
 

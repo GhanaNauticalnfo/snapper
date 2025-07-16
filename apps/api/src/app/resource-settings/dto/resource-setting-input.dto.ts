@@ -1,5 +1,6 @@
 import { IsObject, IsString, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { SingleResourceSettingInput } from '@ghanawaters/shared-models';
 
 export class ResourceSettingInputDto {
   @ApiProperty({ 
@@ -13,7 +14,7 @@ export class ResourceSettingInputDto {
   settings: Record<string, string>;
 }
 
-export class SingleResourceSettingInputDto {
+export class SingleResourceSettingInputDto implements SingleResourceSettingInput {
   @ApiProperty({ 
     description: 'Value for the setting',
     example: '+233 20 123 4567'

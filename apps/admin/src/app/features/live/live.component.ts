@@ -19,7 +19,7 @@ import {
   template: `
     <div class="live-container">
       <div class="page-header">
-        <h2>Live</h2>
+        <h2 class="text-2xl">Live</h2>
       </div>
       <div class="map-container">
         <lib-map 
@@ -63,7 +63,6 @@ import {
       
       h2 {
         text-align: center;
-        font-size: 20px;
       }
     }
   `],

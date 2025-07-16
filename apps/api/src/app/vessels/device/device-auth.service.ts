@@ -1,7 +1,8 @@
 import { Injectable, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Device, DeviceState } from './device.entity';
+import { Device } from './device.entity';
+import { DeviceState } from '@ghanawaters/shared-models';
 import { DeviceGateway } from './device.gateway';
 import { randomBytes } from 'crypto';
 

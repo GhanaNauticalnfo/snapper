@@ -20,7 +20,7 @@ import { ExportTabVesselTelemetryComponent } from './components/export-tab-vesse
   template: `
     <div class="export-container">
       <div class="page-header">
-        <h2>Exports</h2>
+        <h2 class="text-2xl">Exports</h2>
       </div>
 
       <!-- We only have one tab for now, but this structure allows for easy expansion in the future. -->

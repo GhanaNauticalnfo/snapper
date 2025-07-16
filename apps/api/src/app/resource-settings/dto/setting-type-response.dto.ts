@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ResourceType } from '../entities/setting-type.entity';
+import { SettingTypeResponse, ResourceType } from '@ghanawaters/shared-models';
 
-export class SettingTypeResponseDto {
+export class SettingTypeResponseDto implements SettingTypeResponse {
   @ApiProperty({ description: 'Unique identifier for the setting type' })
   id: number;
 

@@ -15,13 +15,13 @@ import { NiordMessage, NiordResponse } from '@ghanawaters/shared-models';
       <h2>Niord Messages</h2>
       
       @if (messagesResource.isLoading()) {
-        <div class="loading">
+        <div class="loading text-center">
           Loading messages...
         </div>
       }
       
       @if (messagesResource.error()) {
-        <div class="error">
+        <div class="error text-center">
           Error loading messages: {{ messagesResource.error()?.toString() }}
         </div>
       }
@@ -47,7 +47,7 @@ import { NiordMessage, NiordResponse } from '@ghanawaters/shared-models';
         </table>
       }
       
-      <div class="footer">
+      <div class="footer text-sm text-right">
         <p>Last updated: {{ lastUpdated() | date:'medium' }}</p>
         <p>Auto-refresh: 
           <button (click)="toggleAutoRefresh()" [class.active]="isAutoRefreshEnabled()">
@@ -74,7 +74,6 @@ import { NiordMessage, NiordResponse } from '@ghanawaters/shared-models';
     
     th, td {
       padding: 12px;
-      text-align: left;
       border-bottom: 1px solid #ddd;
     }
     
@@ -89,14 +88,12 @@ import { NiordMessage, NiordResponse } from '@ghanawaters/shared-models';
     
     .loading {
       padding: 20px;
-      text-align: center;
       font-style: italic;
       color: #666;
     }
     
     .error {
       padding: 20px;
-      text-align: center;
       color: #d9534f;
       background-color: #f9eaea;
       border-radius: 4px;
@@ -105,9 +102,7 @@ import { NiordMessage, NiordResponse } from '@ghanawaters/shared-models';
     
     .footer {
       margin-top: 20px;
-      font-size: 0.8em;
       color: #777;
-      text-align: right;
     }
     
     button {

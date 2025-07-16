@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ResourceType } from '../entities/setting-type.entity';
+import { ResourceSettingResponse, ResourceSettingsMapResponse, ResourceType } from '@ghanawaters/shared-models';
 
-export class ResourceSettingResponseDto {
+export class ResourceSettingResponseDto implements ResourceSettingResponse {
   @ApiProperty({ description: 'Unique identifier for the resource setting' })
   id: number;
 
@@ -42,7 +42,7 @@ export class ResourceSettingResponseDto {
   updated_at: string;
 }
 
-export class ResourceSettingsMapResponseDto {
+export class ResourceSettingsMapResponseDto implements ResourceSettingsMapResponse {
   @ApiProperty({ 
     description: 'Map of setting keys to values',
     example: {

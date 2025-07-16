@@ -1,6 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Unique, Index } from 'typeorm';
-
-export type ResourceType = 'vessel' | 'route' | 'landing_site' | 'vessel_type';
+import { ResourceType } from '@ghanawaters/shared-models';
 
 @Entity('setting_types')
 @Unique(['resource_type', 'setting_key'])

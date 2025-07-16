@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsBoolean, IsArray, IsOptional, MinLength, ArrayMinSize, ValidateNested, IsNumber, IsInt, Min, IsLatitude, IsLongitude, ValidationOptions, registerDecorator, ValidationArguments } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Waypoint } from '@ghanawaters/shared-models';
+import { Waypoint, RouteInput } from '@ghanawaters/shared-models';
 
 // Custom validator to ensure waypoint orders are unique
 export function HasUniqueWaypointOrders(validationOptions?: ValidationOptions) {
@@ -76,7 +76,7 @@ export class WaypointDto implements Waypoint {
   order: number;
 }
 
-export class RouteInputDto {
+export class RouteInputDto implements RouteInput {
   @ApiProperty({ description: 'Name of the route' })
   @IsString()
   @MinLength(1)

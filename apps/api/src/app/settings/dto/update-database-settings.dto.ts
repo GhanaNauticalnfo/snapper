@@ -1,7 +1,8 @@
 import { IsNumber, Min, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { UpdateDatabaseSettings } from '@ghanawaters/shared-models';
 
-export class UpdateRetentionDto {
+export class UpdateRetentionDto implements UpdateDatabaseSettings {
   @ApiProperty({ 
     description: 'Number of days to retain telemetry data',
     minimum: 1,

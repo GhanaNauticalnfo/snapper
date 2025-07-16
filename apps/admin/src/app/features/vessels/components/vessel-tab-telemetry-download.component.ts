@@ -53,26 +53,26 @@ interface ExportStats {
               <div class="telemetry-empty-state">
                 <div class="empty-state-content">
                   <div class="empty-state-icon-wrapper">
-                    <i class="pi pi-chart-line empty-state-icon"></i>
+                    <i class="pi pi-chart-line empty-state-icon text-4xl md:text-5xl"></i>
                   </div>
-                  <h3 class="empty-state-title">No Telemetry Data Available</h3>
-                  <p class="empty-state-description">
+                  <h3 class="empty-state-title text-xl md:text-2xl">No Telemetry Data Available</h3>
+                  <p class="empty-state-description text-base">
                     No telemetry has been received for vessel <strong>"{{ vessel.name }}"</strong>
                   </p>
                   <div class="empty-state-info">
                     <div class="info-item">
-                      <i class="pi pi-info-circle text-blue-500"></i>
-                      <span>Telemetry data appears once the vessel device starts reporting</span>
+                      <i class="pi pi-info-circle text-blue-500 text-lg"></i>
+                      <span class="text-sm">Telemetry data appears once the vessel device starts reporting</span>
                     </div>
                     <div class="info-item">
-                      <i class="pi pi-clock text-blue-500"></i>
-                      <span>Data collection begins immediately after device activation</span>
+                      <i class="pi pi-clock text-blue-500 text-lg"></i>
+                      <span class="text-sm">Data collection begins immediately after device activation</span>
                     </div>
                   </div>
                 </div>
               </div>
             } @else {
-              <p class="text-600 mb-4">
+              <p class="text-600 mb-4 text-base">
                 Export vessel telemetry data as a zipped CSV file. Data includes position, speed, heading, 
                 and status information.
               </p>
@@ -80,7 +80,7 @@ interface ExportStats {
               <form [formGroup]="exportForm">
               <!-- Date Range Selection -->
               <div class="field">
-                <label class="block text-900 font-medium mb-3">Date Range</label>
+                <label class="block text-900 font-medium mb-3 text-base">Date Range</label>
                 <div class="flex gap-3 items-end">
                   <div class="flex-1">
                     <label class="block text-600 text-sm mb-2">From Date & Time</label>
@@ -112,7 +112,7 @@ interface ExportStats {
                   </div>
                 </div>
                 @if (exportForm.get('startDate')?.errors?.['required'] || exportForm.get('endDate')?.errors?.['required']) {
-                  <small class="p-error mt-2 block">Both start and end dates are required</small>
+                  <small class="p-error mt-2 block text-xs">Both start and end dates are required</small>
                 }
               </div>
 
@@ -120,18 +120,18 @@ interface ExportStats {
 
               <!-- Current Vessel Info -->
               <div class="field">
-                <label class="block text-900 font-medium mb-3">Export Scope</label>
+                <label class="block text-900 font-medium mb-3 text-base">Export Scope</label>
                 @if (vessel) {
                   <p-card styleClass="surface-50">
                     <div class="flex items-center">
                       <i class="pi pi-compass text-2xl mr-3 text-blue-500"></i>
                       <div>
-                        <div class="text-900 font-semibold">{{ vessel.name }}</div>
+                        <div class="text-900 font-semibold text-base">{{ vessel.name }}</div>
                         <div class="text-600 text-sm">{{ vessel.type }} • ID: {{ vessel.id }}</div>
                       </div>
                     </div>
                   </p-card>
-                  <small class="text-600 mt-2 block">
+                  <small class="text-600 mt-2 block text-xs">
                     <i class="pi pi-info-circle mr-1"></i>
                     Telemetry data will be exported for this vessel only.
                   </small>
@@ -142,7 +142,7 @@ interface ExportStats {
               <!-- Progress Bar -->
               @if (downloadProgress() > 0 && downloadProgress() < 100) {
                 <div class="field">
-                  <label class="block text-900 font-medium mb-2">Download Progress</label>
+                  <label class="block text-900 font-medium mb-2 text-base">Download Progress</label>
                   <p-progressBar [value]="downloadProgress()"></p-progressBar>
                 </div>
               }
@@ -195,7 +195,7 @@ interface ExportStats {
               </div>
               <div class="col-12 mt-2">
                 <strong>Data Range:</strong><br>
-                <small class="text-600">
+                <small class="text-600 text-xs">
                   @if (exportStats()?.dateRange?.min && exportStats()?.dateRange?.max) {
                     {{ formatDate(exportStats()!.dateRange.min) }} to {{ formatDate(exportStats()!.dateRange.max) }}
                   }
@@ -206,16 +206,16 @@ interface ExportStats {
         </div>
 
         <div class="field">
-          <label class="block text-900 font-medium mb-3">Export Options</label>
+          <label class="block text-900 font-medium mb-3 text-base">Export Options</label>
           <div class="flex align-items-center">
             <p-checkbox 
               inputId="zipOption"
               [(ngModel)]="zipDownload"
               binary="true">
             </p-checkbox>
-            <label for="zipOption" class="ml-2">Compress as ZIP file (recommended)</label>
+            <label for="zipOption" class="ml-2 text-base">Compress as ZIP file (recommended)</label>
           </div>
-          <small class="text-600 block mt-1">
+          <small class="text-600 block mt-1 text-xs">
             ZIP compression reduces file size and download time for large datasets.
           </small>
         </div>
@@ -316,12 +316,10 @@ interface ExportStats {
     }
 
     .empty-state-icon {
-      font-size: 2.5rem;
       color: var(--blue-600, #1976d2);
     }
 
     .empty-state-title {
-      font-size: 1.5rem;
       font-weight: 600;
       color: var(--text-color, #212529);
       margin: 0 0 1rem 0;
@@ -329,7 +327,6 @@ interface ExportStats {
     }
 
     .empty-state-description {
-      font-size: 1rem;
       color: var(--text-color-secondary, #6c757d);
       margin: 0 0 2rem 0;
       line-height: 1.5;
@@ -359,13 +356,11 @@ interface ExportStats {
     }
 
     .info-item i {
-      font-size: 1.1rem;
       flex-shrink: 0;
     }
 
     .info-item span {
       color: var(--text-color-secondary, #6c757d);
-      font-size: 0.9rem;
       line-height: 1.4;
     }
 
@@ -380,13 +375,9 @@ interface ExportStats {
         height: 60px;
       }
       
-      .empty-state-icon {
-        font-size: 2rem;
-      }
+      /* empty-state-icon responsive size handled in template */
       
-      .empty-state-title {
-        font-size: 1.25rem;
-      }
+      /* empty-state-title responsive size handled in template */
       
       .info-item {
         padding: 0.6rem 0.8rem;

@@ -8,4 +8,10 @@ export * from './lib/landing-site.model';
 export * from './lib/vessel.model';
 export * from './lib/vessel-type.model';
 export * from './lib/vessel-telemetry.model';
+export * from './lib/route.model';
+export * from './lib/settings.model';
+export * from './lib/resource-settings.model';
+export * from './lib/volta-depth.model';
+export * from './lib/device.model';
+export * from './lib/kml-dataset.model';
  

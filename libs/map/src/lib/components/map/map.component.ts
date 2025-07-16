@@ -43,7 +43,7 @@ export interface VesselWithLocation {
       </div>
       
       <div class="layer-controls" *ngIf="_config.showControls">
-        <h3>Map Layers</h3>
+        <h3 class="text-base">Map Layers</h3>
         <div class="layer-button" *ngFor="let layerId of _config.availableLayers">
           <button 
             [class.active]="layerManager.getLayerStatus(layerId)"
@@ -59,15 +59,15 @@ export interface VesselWithLocation {
       </div>
       
       <div class="coordinate-display" *ngIf="_config.showCoordinateDisplay">
-        <div class="coordinate-text">
-          <div class="coord-line">{{ getLatitudeDMS() }}</div>
-          <div class="coord-line">{{ getLongitudeDMS() }}</div>
-          <div class="coord-decimal">({{ getLatitudeDD() }}, {{ getLongitudeDD() }})</div>
+        <div class="coordinate-text text-sm text-center leading-tight">
+          <div class="coord-line font-medium">{{ getLatitudeDMS() }}</div>
+          <div class="coord-line font-medium">{{ getLongitudeDMS() }}</div>
+          <div class="coord-decimal text-xs">({{ getLatitudeDD() }}, {{ getLongitudeDD() }})</div>
         </div>
         <div class="zoom-controls">
-          <button class="zoom-btn" (click)="zoomIn()">+</button>
-          <div class="zoom-level">{{ currentZoom().toFixed(0) }}</div>
-          <button class="zoom-btn" (click)="zoomOut()">−</button>
+          <button class="zoom-btn text-lg font-bold" (click)="zoomIn()">+</button>
+          <div class="zoom-level text-xs font-bold">{{ currentZoom().toFixed(0) }}</div>
+          <button class="zoom-btn text-lg font-bold" (click)="zoomOut()">−</button>
         </div>
       </div>
       
@@ -91,7 +91,7 @@ export interface VesselWithLocation {
               type="checkbox" 
               [checked]="showVesselNames()"
               (change)="toggleVesselNames()">
-            <span>Show names</span>
+            <span class="text-sm">Show names</span>
           </label>
         </div>
       </div>
@@ -99,19 +99,19 @@ export interface VesselWithLocation {
       <!-- Vessel Item Template -->
       <ng-template #vesselItemTemplate let-vessel let-selected="selected">
         <div class="vessel-header">
-          <span class="vessel-name">{{ vessel.name }}</span>
-          <span class="live-indicator" *ngIf="isVesselLive(vessel)">LIVE</span>
+          <span class="vessel-name text-sm font-semibold">{{ vessel.name }}</span>
+          <span class="live-indicator text-xs font-semibold" *ngIf="isVesselLive(vessel)">LIVE</span>
         </div>
-        <div class="vessel-details">
+        <div class="vessel-details text-xs">
           <span class="type">{{ vessel.vessel_type }}</span>
           <span class="separator" *ngIf="vessel.home_port">•</span>
           <span class="port" *ngIf="vessel.home_port">{{ vessel.home_port }}</span>
         </div>
-        <div class="location-info" *ngIf="vessel.latitude && vessel.longitude">
+        <div class="location-info text-xs" *ngIf="vessel.latitude && vessel.longitude">
           <span class="coordinates">{{ formatVesselLocation(vessel.latitude, vessel.longitude) }}</span>
-          <span class="timestamp" *ngIf="vessel.lastSeen">{{ formatTimestamp(vessel.lastSeen) }}</span>
+          <span class="timestamp text-xs" *ngIf="vessel.lastSeen">{{ formatTimestamp(vessel.lastSeen) }}</span>
         </div>
-        <div class="movement-info" *ngIf="vessel.speed !== null && vessel.speed !== undefined">
+        <div class="movement-info text-xs" *ngIf="vessel.speed !== null && vessel.speed !== undefined">
           <span class="speed">{{ vessel.speed.toFixed(1) }} kts</span>
           <span class="separator" *ngIf="vessel.heading !== null && vessel.heading !== undefined">•</span>
           <span class="heading" *ngIf="vessel.heading !== null && vessel.heading !== undefined">{{ vessel.heading.toFixed(0) }}°</span>
@@ -184,7 +184,6 @@ export interface VesselWithLocation {
     h3 {
       margin-top: 0;
       margin-bottom: 10px;
-      font-size: 16px;
     }
     .layer-button {
       margin-bottom: 8px;
@@ -228,17 +227,12 @@ export interface VesselWithLocation {
       border: 1px solid rgba(0, 0, 0, 0.1);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       font-family: 'Courier New', monospace;
-      font-size: 13px;
-      line-height: 1.3;
-      text-align: center;
       min-width: 140px;
       pointer-events: none;
     }
     .coord-line {
-      font-weight: 500;
     }
     .coord-decimal {
-      font-size: 11px;
       color: #666;
       margin-top: 2px;
     }
@@ -258,8 +252,6 @@ export interface VesselWithLocation {
       background: transparent;
       border: none;
       color: #333;
-      font-size: 18px;
-      font-weight: bold;
       cursor: pointer;
       transition: background-color 0.2s;
       display: flex;
@@ -274,8 +266,6 @@ export interface VesselWithLocation {
       height: 24px;
       background: transparent;
       color: #333;
-      font-size: 12px;
-      font-weight: bold;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -323,7 +313,6 @@ export interface VesselWithLocation {
       align-items: center;
       gap: 6px;
       cursor: pointer;
-      font-size: 13px;
       color: #333;
       white-space: nowrap;
     }
@@ -340,18 +329,14 @@ export interface VesselWithLocation {
     }
 
     .vessel-name {
-      font-weight: 600;
       color: #1e3c72;
-      font-size: 14px;
     }
 
     .live-indicator {
       background: #10b981;
       color: white;
-      font-size: 10px;
       padding: 2px 6px;
       border-radius: 3px;
-      font-weight: 600;
       animation: pulse 2s infinite;
     }
 
@@ -365,7 +350,6 @@ export interface VesselWithLocation {
       display: flex;
       gap: 8px;
       margin-bottom: 4px;
-      font-size: 12px;
       color: #666;
     }
 
@@ -374,7 +358,6 @@ export interface VesselWithLocation {
     }
 
     .location-info {
-      font-size: 11px;
       color: #059669;
       display: flex;
       justify-content: space-between;
@@ -383,7 +366,6 @@ export interface VesselWithLocation {
     }
 
     .movement-info {
-      font-size: 11px;
       color: #6366f1;
       display: flex;
       gap: 8px;
@@ -395,7 +377,6 @@ export interface VesselWithLocation {
 
     .timestamp {
       color: #9ca3af;
-      font-size: 10px;
     }
 
     @media (max-width: 768px) {
@@ -659,7 +640,7 @@ export class MapComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges
         const popup = new Popup()
           .setLngLat(coordinates)
           .setHTML(`
-            <div style="font-family: monospace; font-size: 12px;">
+            <div style="font-family: monospace;" class="text-xs">
               <strong>Coordinates:</strong><br>
               Longitude: ${coordinates.lng.toFixed(6)}°<br>
               Latitude: ${coordinates.lat.toFixed(6)}°

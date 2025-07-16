@@ -1,19 +1,13 @@
-import { Component, OnInit, AfterViewInit, TemplateRef, signal, viewChild, inject } from '@angular/core';
+import { Component, OnInit, AfterViewInit, TemplateRef, signal, viewChild, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
 import { ResourceListComponent, ResourceListConfig, ResourceAction, TimeAgoPipe, VesselIdPipe } from '@ghanawaters/shared';
 import { VesselService } from '../services/vessel.service';
-import { VesselResponseDto, CreateVesselDto, UpdateVesselDto, Vessel } from '../models/vessel.dto';
-import { VesselResourceFormComponent } from './vessel-resource-form.component';
+import { VesselResponseDto, CreateVesselDto, UpdateVesselDto } from '../models/vessel.dto';
+import { VesselFormComponent, VesselFormData } from './vessel-form.component';
 import { DialogModule } from 'primeng/dialog';
-import { TabsModule } from 'primeng/tabs';
 import Keycloak from 'keycloak-js';
-
-// Tab components for vessel details dialog
-import { VesselTabInfoComponent } from './vessel-tab-info.component';
-import { VesselTabDeviceComponent } from './vessel-tab-device.component';
-import { VesselTabTrackingComponent } from './vessel-tab-tracking.component';
 import { VesselDatasetService } from '../services/vessel-dataset.service';
 import { VesselDataset } from '../models/vessel-dataset.model';
 
@@ -24,14 +18,10 @@ import { VesselDataset } from '../models/vessel-dataset.model';
     CommonModule,
     TagModule,
     ResourceListComponent,
-    VesselResourceFormComponent,
+    VesselFormComponent,
     DialogModule,
-    TabsModule,
     TimeAgoPipe,
-    VesselIdPipe,
-    VesselTabInfoComponent,
-    VesselTabDeviceComponent,
-    VesselTabTrackingComponent
+    VesselIdPipe
   ],
   providers: [MessageService],
   host: {
@@ -50,24 +40,25 @@ import { VesselDataset } from '../models/vessel-dataset.model';
       (dialogShown)="onDialogShow()">
       
       @if (showDialog) {
-        <app-vessel-resource-form
+        <app-vessel-form
           formContent
           #vesselForm
-          [vesselData]="formVessel()"
+          [vessel]="selectedVesselDataset()"
           [mode]="dialogMode()"
           (save)="saveVessel($event)"
-          (cancel)="showDialog = false">
-        </app-vessel-resource-form>
+          (cancel)="showDialog = false"
+          (deviceUpdated)="onDeviceUpdated()">
+        </app-vessel-form>
       }
     </lib-resource-list>
     
     <!-- Column Templates -->
     <ng-template #idTemplate let-item>
-      <span class="font-mono">{{ item.id | vesselId }}</span>
+      <span class="font-mono text-sm">{{ item.id | vesselId }}</span>
     </ng-template>
     
     <ng-template #typeTemplate let-item>
-      <span [class]="'type-badge ' + getVesselTypeClass(item.vessel_type?.name)">
+      <span [class]="'type-badge text-xs font-bold uppercase tracking-tight ' + getVesselTypeClass(item.vessel_type?.name)">
         {{ item.vessel_type?.name || 'Unspecified' }}
       </span>
     </ng-template>
@@ -75,68 +66,11 @@ import { VesselDataset } from '../models/vessel-dataset.model';
     <ng-template #lastSeenTemplate let-item>
       @if (item.latest_position_timestamp) {
         {{ item.latest_position_timestamp | date:'dd/MM/yyyy HH:mm:ss' }}
-        <span class="text-muted"> ({{ item.latest_position_timestamp | timeAgo }})</span>
+        <span class="text-muted text-sm"> ({{ item.latest_position_timestamp | timeAgo }})</span>
       } @else {
-        <span class="text-muted">Never</span>
+        <span class="text-muted text-sm">Never</span>
       }
     </ng-template>
-
-    
-    <!-- Vessel Details Dialog (for viewing full vessel details with tabs) -->
-    <p-dialog
-      [(visible)]="detailsDialogVisible"
-      [style]="{width: '90vw', 'max-width': '1400px', height: '85vh'}"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="false"
-      [closeOnEscape]="true"
-      [closable]="true"
-      [header]="getDetailsDialogHeader()"
-      (onHide)="closeDetailsDialog()"
-      styleClass="vessel-details-dialog"
-    >
-      @if (selectedVesselDataset()) {
-        <p-tabs [value]="activeTabIndex.toString()" (onChange)="onTabChange($event)" styleClass="vessel-tabs">
-          <p-tablist>
-            <p-tab value="0">
-              <i class="pi pi-info-circle"></i>
-              <span class="ml-2">Info</span>
-            </p-tab>
-            <p-tab value="1">
-              <i class="pi pi-mobile"></i>
-              <span class="ml-2">Device</span>
-            </p-tab>
-            <p-tab value="2">
-              <i class="pi pi-map-marker"></i>
-              <span class="ml-2">Track</span>
-            </p-tab>
-          </p-tablist>
-          <p-tabpanels>
-            <p-tabpanel value="0">
-              <app-vessel-tab-info 
-                [vessel]="selectedVesselDataset()" 
-                (vesselUpdated)="onVesselUpdated($event)">
-              </app-vessel-tab-info>
-            </p-tabpanel>
-            
-            <p-tabpanel value="1">
-              <app-vessel-tab-device 
-                [vessel]="selectedVesselDataset()" 
-                (deviceUpdated)="onDeviceUpdated()">
-              </app-vessel-tab-device>
-            </p-tabpanel>
-            
-            <p-tabpanel value="2">
-              <app-vessel-tab-tracking 
-                [vessel]="selectedVesselDataset()"
-                [allVessels]="allVesselDatasets()"
-                [isVisible]="activeTabIndex === 2 && detailsDialogVisible">
-              </app-vessel-tab-tracking>
-            </p-tabpanel>
-          </p-tabpanels>
-        </p-tabs>
-      }
-    </p-dialog>
   `,
   styles: [`
     :host { display: block; }
@@ -146,25 +80,18 @@ import { VesselDataset } from '../models/vessel-dataset.model';
       background-color: var(--surface-100); 
       padding: 0.25rem 0.5rem; 
       border-radius: 3px; 
-      font-size: 0.875rem;
-      font-weight: 400;
       color: var(--text-color);
       border: 1px solid var(--surface-300);
     }
     
     .text-muted {
       color: var(--text-color-secondary, #6c757d);
-      font-size: 0.9em;
       white-space: nowrap;
     }
 
     .type-badge {
       border-radius: 4px;
       padding: 0.25rem 0.5rem;
-      text-transform: uppercase;
-      font-weight: 700;
-      font-size: 0.75rem;
-      letter-spacing: 0.3px;
       display: inline-block;
     }
 
@@ -222,27 +149,6 @@ import { VesselDataset } from '../models/vessel-dataset.model';
       background-color: var(--gray-100, #F5F5F5);
       color: var(--gray-600, #757575);
     }
-    
-    /* Tab Styles */
-    .vessel-tabs {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    /* Tab content padding */
-    .vessel-tabs .view-dialog-content {
-      padding: 1.5rem;
-      height: 100%;
-      overflow: auto;
-    }
-    
-    /* Track tab special handling */
-    .vessel-tabs .tracking-dialog-content {
-      height: 100%;
-      overflow: hidden;
-      padding: 0;
-    }
   `]
 })
 export class VesselListComponent implements OnInit, AfterViewInit {
@@ -253,7 +159,7 @@ export class VesselListComponent implements OnInit, AfterViewInit {
   private keycloak = inject(Keycloak);
 
   // View children
-  vesselFormComponent = viewChild<VesselResourceFormComponent>('vesselForm');
+  vesselFormComponent = viewChild<VesselFormComponent>('vesselForm');
   idTemplate = viewChild.required<TemplateRef<any>>('idTemplate');
   typeTemplate = viewChild.required<TemplateRef<any>>('typeTemplate');
   lastSeenTemplate = viewChild.required<TemplateRef<any>>('lastSeenTemplate');
@@ -265,16 +171,11 @@ export class VesselListComponent implements OnInit, AfterViewInit {
   showDialog = false;
   dialogMode = signal<'view' | 'edit' | 'create'>('create');
   
-  // Signals for vessel details dialog (tabs)
+  // Signals for vessel dataset
   selectedVesselDataset = signal<VesselDataset | null>(null);
   allVesselDatasets = signal<VesselDataset[]>([]);
-  detailsDialogVisible = false;
-  activeTabIndex = 0;
   
   listConfig!: ResourceListConfig<VesselResponseDto>;
-  
-  // Convert between DTO and model for the form
-  formVessel = signal<Vessel | null>(null);
   
   ngOnInit() {
     // Initialize config without template references
@@ -350,11 +251,7 @@ export class VesselListComponent implements OnInit, AfterViewInit {
         this.showCreateDialog();
         break;
       case 'view':
-        // Instead of showing the form dialog, open the details dialog with tabs
-        if (action.item) {
-          this.openDetailsDialog(action.item);
-          this.showDialog = false; // Ensure the form dialog is closed
-        }
+        if (action.item) this.viewVessel(action.item);
         break;
       case 'edit':
         if (action.item) this.editVessel(action.item);
@@ -366,35 +263,54 @@ export class VesselListComponent implements OnInit, AfterViewInit {
   }
   
   showCreateDialog() {
-    const newVessel: Vessel = {
-      name: '',
-      vessel_type_id: 1 // Default to Unspecified
-    };
-    this.formVessel.set(newVessel);
     this.selectedVessel.set(null);
+    this.selectedVesselDataset.set(null);
     this.dialogMode.set('create');
     this.showDialog = true;
   }
   
   viewVessel(vessel: VesselResponseDto) {
     this.selectedVessel.set(vessel);
-    this.formVessel.set(this.dtoToModel(vessel));
     this.dialogMode.set('view');
+    // Load the full vessel dataset
+    this.loadVesselDataset(vessel.id);
     this.showDialog = true;
   }
   
   editVessel(vessel: VesselResponseDto) {
     this.selectedVessel.set(vessel);
-    this.formVessel.set(this.dtoToModel(vessel));
     this.dialogMode.set('edit');
+    // Load the full vessel dataset
+    this.loadVesselDataset(vessel.id);
     this.showDialog = true;
   }
   
-  saveVessel(vessel: Vessel) {
+  private loadVesselDataset(vesselId: number) {
+    const existingDataset = this.allVesselDatasets().find(v => v.id === vesselId);
+    if (existingDataset) {
+      this.selectedVesselDataset.set(existingDataset);
+    } else {
+      this.vesselDatasetService.getOne(vesselId).subscribe({
+        next: (dataset) => {
+          this.selectedVesselDataset.set(dataset);
+        },
+        error: (error) => {
+          console.error('Error loading vessel dataset:', error);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load vessel details'
+          });
+        }
+      });
+    }
+  }
+  
+  saveVessel(formData: VesselFormData) {
     if (this.dialogMode() === 'create') {
       const createDto: CreateVesselDto = {
-        name: vessel.name,
-        vessel_type_id: vessel.vessel_type_id
+        name: formData.name,
+        vessel_type_id: formData.vessel_type_id
       };
       
       this.vesselService.create(createDto).subscribe({
@@ -418,8 +334,8 @@ export class VesselListComponent implements OnInit, AfterViewInit {
       });
     } else if (this.dialogMode() === 'edit' && this.selectedVessel()?.id) {
       const updateDto: UpdateVesselDto = {
-        name: vessel.name,
-        vessel_type_id: vessel.vessel_type_id
+        name: formData.name,
+        vessel_type_id: formData.vessel_type_id
       };
       
       this.vesselService.update(this.selectedVessel()!.id, updateDto).subscribe({
@@ -480,75 +396,8 @@ export class VesselListComponent implements OnInit, AfterViewInit {
     }, 100);
   }
   
-  // Convert DTO to model for form
-  private dtoToModel(dto: VesselResponseDto): Vessel {
-    return {
-      id: dto.id,
-      name: dto.name,
-      vessel_type_id: dto.vessel_type.id,
-      created_at: dto.created instanceof Date ? dto.created : new Date(dto.created),
-      updated_at: dto.last_updated instanceof Date ? dto.last_updated : new Date(dto.last_updated)
-    };
-  }
-  
-  // --- Vessel Details Dialog Methods (with tabs) ---
-  openDetailsDialog(vessel: VesselResponseDto): void {
-    // Get the vessel dataset for the tabs
-    const vesselDataset = this.allVesselDatasets().find(v => v.id === vessel.id);
-    if (vesselDataset) {
-      this.selectedVesselDataset.set(vesselDataset);
-    } else {
-      // Fetch complete vessel data
-      this.vesselDatasetService.getOne(vessel.id).subscribe({
-        next: (dataset) => {
-          this.selectedVesselDataset.set(dataset);
-        },
-        error: (error) => {
-          console.error('Error loading vessel dataset:', error);
-        }
-      });
-    }
-    
-    this.activeTabIndex = 0; // Open on vessel info tab
-    this.detailsDialogVisible = true;
-  }
-  
-  closeDetailsDialog(): void {
-    this.detailsDialogVisible = false;
-    this.selectedVesselDataset.set(null);
-  }
-  
-  getDetailsDialogHeader(): string {
-    const vessel = this.selectedVesselDataset();
-    if (!vessel) return 'Vessel Details';
-    return `${vessel.name} - ${vessel.type}`;
-  }
-  
-  onTabChange(event: any): void {
-    this.activeTabIndex = parseInt(event.value || event, 10);
-  }
-  
-  onVesselUpdated(updatedVessel: VesselDataset): void {
-    // Update the vessel in both lists
-    this.loadVessels();
-    this.loadVesselDatasets();
-    
-    // Update selected vessel dataset if it's the same one
-    if (this.selectedVesselDataset()?.id === updatedVessel.id) {
-      this.selectedVesselDataset.set(updatedVessel);
-    }
-  }
-  
   onDeviceUpdated(): void {
     // Refresh the vessel data
-    this.loadVessels();
-    this.loadVesselDatasets();
-  }
-  
-  onVesselDeleted(id: number): void {
-    // Close the details dialog
-    this.closeDetailsDialog();
-    // Refresh the lists
     this.loadVessels();
     this.loadVesselDatasets();
   }

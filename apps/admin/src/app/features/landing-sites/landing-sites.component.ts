@@ -12,7 +12,7 @@ import { LandingSiteListComponent } from './components/landing-site-list.compone
   template: `
     <div class="landing-sites-container">
       <div class="page-header">
-        <h2>Landing Sites</h2>
+        <h2 class="text-2xl">Landing Sites</h2>
       </div>
       <app-landing-site-list></app-landing-site-list>
     </div>

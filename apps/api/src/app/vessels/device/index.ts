@@ -1,4 +1,5 @@
-export { Device, DeviceState } from './device.entity';
+export { Device } from './device.entity';
+export { DeviceState } from '@ghanawaters/shared-models';
 export { DeviceAuthService } from './device-auth.service';
 export { DeviceAuthGuard } from './device-auth.guard';
 export { DeviceController } from './device.controller';

@@ -30,22 +30,22 @@ import { DialogModule } from 'primeng/dialog';
       <div class="tracking-header">
         <div class="vessel-summary">
           <div class="vessel-title">
-            <h4>{{ vessel?.name }}</h4>
-            <span class="vessel-type-badge" [class.type-canoe]="vessel?.type === 'Canoe'" [class.type-vessel]="vessel?.type === 'Vessel'">
+            <h4 class="text-2xl">{{ vessel?.name }}</h4>
+            <span class="vessel-type-badge text-xs font-semibold uppercase tracking-tight" [class.type-canoe]="vessel?.type === 'Canoe'" [class.type-vessel]="vessel?.type === 'Vessel'">
               {{ vessel?.type }}
             </span>
           </div>
           <div class="tracking-stats">
             <div class="stat-item">
-              <span class="stat-label">Last Report:</span>
-              <span class="stat-value">
+              <span class="stat-label text-sm font-semibold">Last Report:</span>
+              <span class="stat-value text-base">
                 {{ vessel?.last_seen | date:'dd/MM/yyyy HH:mm:ss' }}
-                <span class="time-ago">({{ vessel?.last_seen | timeAgo }})</span>
+                <span class="time-ago text-xs">({{ vessel?.last_seen | timeAgo }})</span>
               </span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">Coordinates:</span>
-              <span class="stat-value coordinates">
+              <span class="stat-label text-sm font-semibold">Coordinates:</span>
+              <span class="stat-value coordinates text-base">
                 {{ vessel?.last_position?.latitude?.toFixed(6) || 'N/A' }}, 
                 {{ vessel?.last_position?.longitude?.toFixed(6) || 'N/A' }}
               </span>
@@ -58,16 +58,16 @@ import { DialogModule } from 'primeng/dialog';
                 (onClick)="openNearbyDialog()"
                 [badge]="nearbyVessels().length > 0 ? nearbyVessels().length.toString() : undefined"
               ></p-button>
-              <span class="nearby-info">Within {{ NEARBY_RADIUS_KM }}km in last {{ NEARBY_TIME_WINDOW_DAYS }} days</span>
+              <span class="nearby-info text-xs">Within {{ NEARBY_RADIUS_KM }}km in last {{ NEARBY_TIME_WINDOW_DAYS }} days</span>
             </div>
             <div class="stat-item">
-              <span class="stat-label">Live Tracking:</span>
-              <span class="stat-value">
+              <span class="stat-label text-sm font-semibold">Live Tracking:</span>
+              <span class="stat-value text-base">
                 @if (isTrackingLive()) {
                   <i class="pi pi-circle-fill live-indicator"></i>
                 } @else {
                   <i class="pi pi-circle offline-indicator"></i>
-                  <span class="offline-status">Offline</span>
+                  <span class="offline-status text-sm">Offline</span>
                 }
               </span>
             </div>
@@ -102,9 +102,9 @@ import { DialogModule } from 'primeng/dialog';
           <div class="no-position-message">
             <div class="no-position-content">
               <i class="pi pi-map-marker text-4xl mb-3 text-gray-400"></i>
-              <h5>No Position Data Available</h5>
-              <p class="text-muted">This vessel has not reported its position yet.</p>
-              <p class="text-muted">Position data will appear here once the vessel starts transmitting location updates.</p>
+              <h5 class="text-xl">No Position Data Available</h5>
+              <p class="text-muted text-sm">This vessel has not reported its position yet.</p>
+              <p class="text-muted text-sm">Position data will appear here once the vessel starts transmitting location updates.</p>
             </div>
           </div>
         }
@@ -125,35 +125,35 @@ import { DialogModule } from 'primeng/dialog';
     >
       <div class="nearby-dialog-content">
         <div class="nearby-header">
-          <h5>Vessels within {{ NEARBY_RADIUS_KM }}km of {{ vessel?.name }}</h5>
-          <p class="text-muted">Showing vessels that reported position in the last {{ NEARBY_TIME_WINDOW_DAYS }} days</p>
+          <h5 class="text-lg">Vessels within {{ NEARBY_RADIUS_KM }}km of {{ vessel?.name }}</h5>
+          <p class="text-muted text-sm">Showing vessels that reported position in the last {{ NEARBY_TIME_WINDOW_DAYS }} days</p>
         </div>
         
         <div class="nearby-container">
           <div class="nearby-list">
             @if (nearbyVessels().length === 0) {
               <div class="no-vessels-message">
-                <i class="pi pi-info-circle"></i>
-                <p>No vessels found within the specified range and time period.</p>
+                <i class="pi pi-info-circle text-4xl"></i>
+                <p class="text-sm">No vessels found within the specified range and time period.</p>
               </div>
             } @else {
-              <div class="vessel-count">Found {{ nearbyVessels().length }} vessel{{ nearbyVessels().length > 1 ? 's' : '' }}</div>
+              <div class="vessel-count text-sm">Found {{ nearbyVessels().length }} vessel{{ nearbyVessels().length > 1 ? 's' : '' }}</div>
               @for (vessel of nearbyVessels(); track vessel.id) {
                 <div class="nearby-vessel-card" (click)="selectNearbyVessel(vessel)" [class.selected]="selectedNearbyVessel()?.id === vessel.id">
                   <div class="vessel-header">
                     <strong>{{ vessel.name }}</strong>
-                    <span class="vessel-type-badge" [class.type-canoe]="vessel.type === 'Canoe'" [class.type-vessel]="vessel.type === 'Vessel'">{{ vessel.type }}</span>
+                    <span class="vessel-type-badge text-xs font-semibold" [class.type-canoe]="vessel.type === 'Canoe'" [class.type-vessel]="vessel.type === 'Vessel'">{{ vessel.type }}</span>
                   </div>
-                  <div class="vessel-info-row">
+                  <div class="vessel-info-row text-sm">
                     <i class="pi pi-map-marker"></i>
                     <span>{{ vessel.last_position?.latitude?.toFixed(4) }}°, {{ vessel.last_position?.longitude?.toFixed(4) }}°</span>
                   </div>
-                  <div class="vessel-info-row">
+                  <div class="vessel-info-row text-sm">
                     <i class="pi pi-clock"></i>
                     <span>{{ vessel.last_seen | timeAgo }}</span>
-                    <span class="exact-time">({{ vessel.last_seen | date:'dd/MM HH:mm' }})</span>
+                    <span class="exact-time text-xs">({{ vessel.last_seen | date:'dd/MM HH:mm' }})</span>
                   </div>
-                  <div class="vessel-info-row">
+                  <div class="vessel-info-row text-sm">
                     <i class="pi pi-compass"></i>
                     @if (this.vessel?.last_position?.latitude && this.vessel?.last_position?.longitude && vessel.last_position?.latitude && vessel.last_position?.longitude) {
                       <span>{{ calculateDistance(
@@ -211,16 +211,11 @@ import { DialogModule } from 'primeng/dialog';
     .vessel-title h4 {
       margin: 0;
       color: var(--text-color);
-      font-size: 1.5rem;
     }
 
     .vessel-type-badge {
       padding: 0.25rem 0.75rem;
       border-radius: 12px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.025em;
     }
 
     .vessel-type-badge.type-canoe {
@@ -253,13 +248,10 @@ import { DialogModule } from 'primeng/dialog';
     }
 
     .stat-label {
-      font-weight: 600;
-      font-size: 0.875rem;
       color: var(--text-color-secondary);
     }
 
     .stat-value {
-      font-size: 1rem;
       color: var(--text-color);
       display: flex;
       flex-wrap: nowrap;
@@ -272,25 +264,21 @@ import { DialogModule } from 'primeng/dialog';
       background: var(--surface-ground);
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
-      font-size: 0.875rem;
       color: var(--text-color);
     }
 
     .time-ago {
       color: var(--text-color-secondary);
-      font-size: 0.875rem;
       white-space: nowrap;
     }
 
     .nearby-info {
       color: var(--text-color-secondary);
-      font-size: 0.875rem;
     }
 
     .action-button {
       height: 40px;
       padding: 0 1rem;
-      font-size: 0.875rem;
       font-weight: 500;
       display: flex;
       align-items: center;
@@ -301,14 +289,12 @@ import { DialogModule } from 'primeng/dialog';
     /* Live tracking status indicators */
     .live-indicator {
       color: #4caf50;
-      font-size: 0.75rem;
       margin-right: 0.25rem;
       animation: pulse 2s infinite;
     }
 
     .offline-indicator {
       color: #f44336;
-      font-size: 0.75rem;
       margin-right: 0.25rem;
     }
 
@@ -365,7 +351,6 @@ import { DialogModule } from 'primeng/dialog';
     .no-position-content h5 {
       color: var(--text-color);
       margin-bottom: 1rem;
-      font-size: 1.25rem;
     }
 
     .no-position-content p {
@@ -373,9 +358,7 @@ import { DialogModule } from 'primeng/dialog';
       line-height: 1.5;
     }
 
-    .text-4xl {
-      font-size: 2.25rem;
-    }
+    /* text-4xl class comes from Tailwind */
 
     .mb-3 {
       margin-bottom: 1rem;
@@ -387,7 +370,6 @@ import { DialogModule } from 'primeng/dialog';
 
     .text-muted {
       color: var(--text-color-secondary, #6c757d);
-      font-size: 0.9em;
     }
     
     /* Nearby Vessels Dialog Styles */
@@ -428,7 +410,6 @@ import { DialogModule } from 'primeng/dialog';
     }
     
     .no-vessels-message i {
-      font-size: 2rem;
       margin-bottom: 1rem;
       display: block;
     }
@@ -465,11 +446,10 @@ import { DialogModule } from 'primeng/dialog';
       margin-bottom: 0.5rem;
     }
     
-    .vessel-type-badge {
-      font-size: 0.7rem;
+    /* Additional vessel-type-badge styles */
+    .nearby-vessel-card .vessel-type-badge {
       padding: 0.1rem 0.3rem;
       border-radius: 3px;
-      font-weight: 600;
     }
     
     .vessel-type-badge.type-canoe {
@@ -487,7 +467,6 @@ import { DialogModule } from 'primeng/dialog';
       align-items: center;
       gap: 0.5rem;
       margin-bottom: 0.25rem;
-      font-size: 0.875rem;
     }
     
     .vessel-info-row i {
@@ -497,7 +476,6 @@ import { DialogModule } from 'primeng/dialog';
     
     .exact-time {
       color: var(--text-color-secondary);
-      font-size: 0.75rem;
       margin-left: auto;
       white-space: nowrap;
     }

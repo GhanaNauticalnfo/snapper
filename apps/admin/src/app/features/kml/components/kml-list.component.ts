@@ -89,10 +89,10 @@ import { SkeletonModule } from 'primeng/skeleton';
 
         <ng-template pTemplate="body" let-dataset>
           <tr>
-            <td><span class="font-mono">{{ dataset.id }}</span></td>
+            <td><span class="font-mono text-sm">{{ dataset.id }}</span></td>
             <td>{{ dataset.name }}</td>
             <td>
-              <span [class]="dataset.enabled ? 'status-badge status-enabled' : 'status-badge status-disabled'">
+              <span [class]="dataset.enabled ? 'status-badge status-enabled text-xs font-bold uppercase tracking-tight' : 'status-badge status-disabled text-xs font-bold uppercase tracking-tight'">
                 {{ dataset.enabled ? 'Yes' : 'No' }}
               </span>
             </td>
@@ -166,22 +166,22 @@ import { SkeletonModule } from 'primeng/skeleton';
           <div class="grid">
             <div class="col-12 md:col-6">
               <div class="detail-item">
-                <span class="detail-label">ID:</span>
+                <span class="detail-label font-semibold">ID:</span>
                 <span class="detail-value">{{ selectedDataset()?.id }}</span>
               </div>
             </div>
 
             <div class="col-12 md:col-6">
               <div class="detail-item">
-                <span class="detail-label">Name:</span>
+                <span class="detail-label font-semibold">Name:</span>
                 <span class="detail-value">{{ selectedDataset()?.name }}</span>
               </div>
             </div>
 
             <div class="col-12 md:col-6">
               <div class="detail-item">
-                <span class="detail-label">Enabled:</span>
-                <span class="status-badge"
+                <span class="detail-label font-semibold">Enabled:</span>
+                <span class="status-badge text-xs font-bold uppercase tracking-tight"
                   [class]="selectedDataset()?.enabled ? 'status-enabled' : 'status-disabled'">
                   {{ selectedDataset()?.enabled ? 'Yes' : 'No' }}
                 </span>
@@ -190,14 +190,14 @@ import { SkeletonModule } from 'primeng/skeleton';
 
             <div class="col-12 md:col-6">
               <div class="detail-item">
-                <span class="detail-label">Created:</span>
+                <span class="detail-label font-semibold">Created:</span>
                 <span class="detail-value">{{ selectedDataset()?.created | date:'medium' }}</span>
               </div>
             </div>
 
             <div class="col-12 md:col-6">
               <div class="detail-item">
-                <span class="detail-label">Last Updated:</span>
+                <span class="detail-label font-semibold">Last Updated:</span>
                 <span class="detail-value">{{ selectedDataset()?.last_updated | date:'medium' }}</span>
               </div>
             </div>
@@ -206,7 +206,7 @@ import { SkeletonModule } from 'primeng/skeleton';
           <div class="kml-content">
             <h3>KML Content</h3>
             <div class="kml-code-container">
-              <pre class="kml-code">{{ selectedDataset()?.kml }}</pre>
+              <pre class="kml-code text-sm">{{ selectedDataset()?.kml }}</pre>
             </div>
           </div>
         </div>
@@ -249,7 +249,7 @@ import { SkeletonModule } from 'primeng/skeleton';
             />
           </span>
            @if (kmlForm.controls['name'].invalid && kmlForm.controls['name'].touched) {
-             <small class="p-error block mt-1">Name is required.</small>
+             <small class="p-error block mt-1 text-xs">Name is required.</small>
            }
         </div>
 
@@ -277,7 +277,7 @@ import { SkeletonModule } from 'primeng/skeleton';
             [ngClass]="{'ng-invalid ng-dirty': kmlForm.controls['kml'].invalid && kmlForm.controls['kml'].touched}"
           ></textarea>
            @if (kmlForm.controls['kml'].invalid && kmlForm.controls['kml'].touched) {
-             <small class="p-error block mt-1">KML content is required.</small>
+             <small class="p-error block mt-1 text-xs">KML content is required.</small>
            }
         </div>
       </form>
@@ -321,10 +321,6 @@ import { SkeletonModule } from 'primeng/skeleton';
     .status-badge {
       border-radius: 4px;
       padding: 0.25rem 0.5rem;
-      text-transform: uppercase;
-      font-weight: 700;
-      font-size: 0.75rem;
-      letter-spacing: 0.3px;
       display: inline-block;
     }
 
@@ -346,7 +342,6 @@ import { SkeletonModule } from 'primeng/skeleton';
     }
 
     .detail-label {
-      font-weight: 600;
       min-width: 120px;
       flex-shrink: 0;
     }
@@ -373,7 +368,6 @@ import { SkeletonModule } from 'primeng/skeleton';
       font-family: var(--font-family-monospace, monospace);
       color: var(--text-color, #333);
       margin: 0;
-      font-size: 0.875rem;
     }
 
     .form-container {

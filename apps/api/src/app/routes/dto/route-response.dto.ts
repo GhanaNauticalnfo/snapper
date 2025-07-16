@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Waypoint } from '@ghanawaters/shared-models';
+import { RouteResponse, Waypoint } from '@ghanawaters/shared-models';
 
-export class RouteResponseDto {
+export class RouteResponseDto implements RouteResponse {
   @ApiProperty({ description: 'Unique identifier for the route' })
   id: number;
 

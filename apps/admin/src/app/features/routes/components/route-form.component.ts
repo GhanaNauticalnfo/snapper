@@ -94,7 +94,7 @@ import { environment } from '../../../../environments/environment';
 
             <div class="waypoints-section">
               <div class="flex justify-between items-center mb-3">
-                <h4 class="m-0">Waypoints ({{ waypoints().length }})</h4>
+                <h4 class="m-0 text-xl">Waypoints ({{ waypoints().length }})</h4>
                 @if (mode() !== 'view') {
                   <div class="flex gap-2">
                     <button 
@@ -239,7 +239,7 @@ import { environment } from '../../../../environments/environment';
     .loading-text {
       position: absolute;
       color: var(--text-color-secondary);
-      font-size: 1.2rem;
+      /* font-size handled by Tailwind text-xl class */
     }
 
     .form-panel {

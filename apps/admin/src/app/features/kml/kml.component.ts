@@ -11,7 +11,7 @@ import { KmlListComponent } from './components/kml-list.component';
   template: `
     <div class="kml-container">
       <div class="page-header">
-        <h2>KML DataSets</h2>
+        <h2 class="text-2xl">KML DataSets</h2>
       </div>
       <app-kml-list></app-kml-list>
     </div>

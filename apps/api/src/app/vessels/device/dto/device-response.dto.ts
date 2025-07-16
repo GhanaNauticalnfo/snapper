@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DeviceState } from '../device.entity';
+import { DeviceResponse, DeviceVesselInfo as IDeviceVesselInfo, DeviceState } from '@ghanawaters/shared-models';
 
-export class DeviceVesselInfo {
+export class DeviceVesselInfo implements IDeviceVesselInfo {
   @ApiProperty({ description: 'Vessel ID', example: 1 })
   id: number;
 
@@ -9,7 +9,7 @@ export class DeviceVesselInfo {
   name: string;
 }
 
-export class DeviceResponseDto {
+export class DeviceResponseDto implements DeviceResponse {
   @ApiProperty({ description: 'Unique identifier for the device', example: 'uuid-string' })
   device_id: string;
 
@@ -30,20 +30,20 @@ export class DeviceResponseDto {
   })
   state: DeviceState;
 
-  @ApiPropertyOptional({ description: 'Timestamp when device was activated', type: Date })
-  activated_at?: Date;
+  @ApiPropertyOptional({ description: 'Timestamp when device was activated', type: String })
+  activated_at?: string;
 
-  @ApiPropertyOptional({ description: 'Timestamp when device token expires', type: Date })
-  expires_at?: Date;
+  @ApiPropertyOptional({ description: 'Timestamp when device token expires', type: String })
+  expires_at?: string;
 
   @ApiPropertyOptional({ description: 'Associated vessel information', type: DeviceVesselInfo })
   vessel?: DeviceVesselInfo;
 
-  @ApiProperty({ description: 'Timestamp when device was created', type: Date })
-  created_at: Date;
+  @ApiProperty({ description: 'Timestamp when device was created', type: String })
+  created_at: string;
 
-  @ApiProperty({ description: 'Timestamp when device was last updated', type: Date })
-  updated_at: Date;
+  @ApiProperty({ description: 'Timestamp when device was last updated', type: String })
+  updated_at: string;
 
   @ApiPropertyOptional({ description: 'Device activation URL for mobile app', example: 'ghmaritimeapp://auth?token=activation_xyz789' })
   activation_url?: string;

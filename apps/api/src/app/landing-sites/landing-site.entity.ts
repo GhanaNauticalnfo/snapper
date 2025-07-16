@@ -47,7 +47,7 @@ export class LandingSite {
       name: this.name,
       description: this.description,
       location: this.location,
-      status: this.status,
+      status: this.status as 'active' | 'inactive' | 'maintenance',
       created_at: this.created_at.toISOString(),
       updated_at: this.updated_at.toISOString(),
     };

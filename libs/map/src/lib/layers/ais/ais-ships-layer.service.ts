@@ -142,7 +142,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
             <text x="${canvasWidth/2}" y="32" 
                   text-anchor="middle" 
                   font-family="Arial, sans-serif" 
-                  font-size="11" 
+                  font-size="12" 
                   font-weight="bold"
                   fill="#000000"
                   stroke="#FFFFFF"
@@ -151,7 +151,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
             <text x="${canvasWidth/2}" y="32" 
                   text-anchor="middle" 
                   font-family="Arial, sans-serif" 
-                  font-size="11" 
+                  font-size="12" 
                   font-weight="bold"
                   fill="#000000">${vesselName}</text>
           </svg>
@@ -493,8 +493,8 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
     return `
       <div style="font-family: Arial, sans-serif; min-width: 200px;">
         <div style="background: #2c3e50; color: white; padding: 8px 12px; margin: -8px -12px 8px -12px; border-radius: 4px 4px 0 0;">
-          <h3 style="margin: 0; font-size: 16px; font-weight: bold;">${properties.name || 'Unknown Vessel'}</h3>
-          <div style="font-size: 12px; opacity: 0.9;">ID: ${properties.id || 'N/A'}</div>
+          <h3 style="margin: 0; font-weight: bold;" class="text-base">${properties.name || 'Unknown Vessel'}</h3>
+          <div style="opacity: 0.9;" class="text-xs">ID: ${properties.id || 'N/A'}</div>
         </div>
         
         <div style="margin-bottom: 8px;">
@@ -509,7 +509,7 @@ export class AisShipLayerService extends BaseLayerService implements OnDestroy {
           <strong style="color: #34495e;">Heading:</strong> ${heading}
         </div>
         
-        <div style="font-size: 11px; color: #7f8c8d; border-top: 1px solid #ecf0f1; padding-top: 6px; margin-top: 8px;">
+        <div style="color: #7f8c8d; border-top: 1px solid #ecf0f1; padding-top: 6px; margin-top: 8px;" class="text-xs">
           <strong>Last seen:</strong> ${lastUpdateAgo}
         </div>
       </div>

@@ -2,12 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Vessel } from '../vessel.entity';
 import { DeviceResponseDto } from './dto/device-response.dto';
-
-export enum DeviceState {
-  PENDING = 'pending',
-  ACTIVE = 'active', 
-  RETIRED = 'retired'
-}
+import { DeviceState } from '@ghanawaters/shared-models';
 
 @Entity('devices')
 export class Device {
@@ -71,10 +66,10 @@ export class Device {
       activation_token: this.activation_token,
       auth_token: this.auth_token || undefined,
       state: this.state,
-      activated_at: this.activated_at || undefined,
-      expires_at: this.expires_at || undefined,
-      created_at: this.created_at,
-      updated_at: this.updated_at,
+      activated_at: this.activated_at?.toISOString() || undefined,
+      expires_at: this.expires_at?.toISOString() || undefined,
+      created_at: this.created_at.toISOString(),
+      updated_at: this.updated_at.toISOString(),
     };
 
     if (this.vessel) {

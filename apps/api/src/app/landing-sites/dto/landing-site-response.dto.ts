@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { GeoPoint } from '@ghanawaters/shared-models';
+import { GeoPoint, LandingSiteResponse } from '@ghanawaters/shared-models';
 
-export class LandingSiteResponseDto {
+export class LandingSiteResponseDto implements LandingSiteResponse {
   @ApiProperty()
   id: number;
 
@@ -21,7 +21,7 @@ export class LandingSiteResponseDto {
   location: GeoPoint;
 
   @ApiProperty({ enum: ['active', 'inactive', 'maintenance'] })
-  status: string;
+  status: 'active' | 'inactive' | 'maintenance';
 
   @ApiProperty()
   created_at: string;

@@ -59,7 +59,6 @@
 
 .page-header h2 {
   margin: 0;
-  font-size: 1.5rem;
   font-weight: 600;
   color: #1f2937;
 }
@@ -277,7 +276,6 @@ body.map-fullscreen-active .map-container.fullscreen {
 .vessel-list-host .p-datatable .p-datatable-thead > tr > th {
   text-align: left;
   background-color: var(--surface-100) !important;
-  font-size: 0.85rem;
   padding: 0.6rem 0.8rem;
   white-space: nowrap;
   cursor: pointer;
@@ -297,11 +295,7 @@ body.map-fullscreen-active .map-container.fullscreen {
   color: var(--text-color);
 }
 
-.kml-list-host .p-tag,
-.tile-list-host .p-tag,
-.vessel-list-host .p-tag {
-  font-size: 0.8rem;
-}
+/* Tag font sizes handled by component Tailwind classes */
 
 .kml-list-host .p-sortable-column .p-sortable-column-icon,
 .tile-list-host .p-sortable-column .p-sortable-column-icon,
@@ -350,7 +344,6 @@ body.map-fullscreen-active .map-container.fullscreen {
 .vessel-list-host .copy-button {
   min-width: 70px;
   font-weight: 500;
-  font-size: 0.85rem;
 }
 
 .vessel-list-host .copy-button .p-button-label {
@@ -401,9 +394,22 @@ body.map-fullscreen-active .map-container.fullscreen {
 }
 
 /* Global dropdown panel styling for body-appended dropdowns */
-.p-dropdown-panel {
+.p-dropdown-panel,
+.p-select-overlay {
   z-index: 9999 !important;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1) !important;
+  max-height: 200px !important;
+  overflow-y: auto !important;
+}
+
+/* PrimeNG Select specific styles */
+.p-select-list {
+  max-height: none !important;
+}
+
+.p-select-option {
+  padding: 0.5rem 1rem;
+  white-space: nowrap;
 }
 
 .vessel-list-host .vessel-info-section {
@@ -526,7 +532,6 @@ body.map-fullscreen-active .map-container.fullscreen {
   background: transparent !important;
   border: none !important;
   color: #333 !important;
-  font-size: 18px !important;
   font-weight: bold !important;
   cursor: pointer !important;
   transition: background-color 0.2s !important;
@@ -544,7 +549,6 @@ body.map-fullscreen-active .map-container.fullscreen {
   height: 24px !important;
   background: transparent !important;
   color: #333 !important;
-  font-size: 12px !important;
   font-weight: bold !important;
   display: flex !important;
   align-items: center !important;
@@ -610,7 +614,6 @@ body.map-fullscreen-active .map-container.fullscreen {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 18px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   border: 2px solid white;
   cursor: pointer;
@@ -669,6 +672,33 @@ body.map-fullscreen-active .map-container.fullscreen {
   padding-top: 0;
 }
 
-.sync-settings-host .p-tag {
-  font-size: 0.75rem;
+/* Sync settings tag font size handled by component Tailwind classes */
+
+/* Vessel form component styling */
+.vessel-form-host .p-select-overlay {
+  max-height: 200px !important;
+  overflow-y: auto !important;
+}
+
+.vessel-form-host .p-select-list {
+  max-height: none !important;
+}
+
+.vessel-form-host .p-select-option {
+  padding: 0.5rem 1rem;
+}
+
+.vessel-form-host .form-content {
+  overflow: visible !important;
+}
+
+.vessel-form-host .field {
+  overflow: visible !important;
+}
+
+/* Ensure dropdown panels appear above other content */
+.vessel-form-host .p-select-overlay,
+.vessel-form-host .p-dropdown-panel {
+  z-index: 9999 !important;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1) !important;
 }

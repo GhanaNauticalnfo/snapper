@@ -8,8 +8,8 @@ import { MapComponent, MapConfig, OSM_STYLE, LayerManagerService, AisShipLayerSe
   providers: [AisShipLayerService],
   template: `
     <div class="map-layout">
-      <div class="header">
-        <h1>Ghana Maritime Authority - Vessel Tracking</h1>
+      <div class="header text-center">
+        <h1 class="text-2xl">Ghana Maritime Authority - Vessel Tracking</h1>
       </div>
       <div class="map-wrapper">
         <lib-map 
@@ -32,11 +32,9 @@ import { MapComponent, MapConfig, OSM_STYLE, LayerManagerService, AisShipLayerSe
       background: #1e3c72;
       color: white;
       padding: 1rem;
-      text-align: center;
     }
     h1 {
       margin: 0;
-      font-size: 1.5rem;
     }
     .map-wrapper {
       flex: 1;
@@ -45,7 +43,6 @@ import { MapComponent, MapConfig, OSM_STYLE, LayerManagerService, AisShipLayerSe
     
     @media (max-width: 768px) {
       h1 {
-        font-size: 1.2rem;
       }
     }
   `]

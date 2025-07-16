@@ -43,9 +43,9 @@ import { QRCodeComponent } from 'angularx-qrcode';
             <ng-template pTemplate="header">
               <div class="panel-header-content">
                 <div class="panel-title-section">
-                  <span class="panel-title">Active Device</span>
+                  <span class="panel-title text-base">Active Device</span>
                 </div>
-                @if (!pendingDevice()) {
+                @if (!pendingDevice() && !viewMode) {
                   <p-button 
                     label="New Device" 
                     icon="pi pi-plus" 
@@ -60,39 +60,41 @@ import { QRCodeComponent } from 'angularx-qrcode';
             @if (activeDevice()) {
               <div class="device-info">
                 <div class="device-row status-row">
-                  <span class="device-label">Status:</span>
-                  <span class="device-status active-status">
+                  <span class="device-label text-sm">Status:</span>
+                  <span class="device-status active-status text-sm">
                     <i class="pi pi-circle-fill"></i>
                     Active & Reporting
                   </span>
                 </div>
                 
                 <div class="device-row">
-                  <span class="device-label">Device ID:</span>
-                  <span class="detail-value font-mono">{{ activeDevice()!.device_id }}</span>
+                  <span class="device-label text-sm">Device ID:</span>
+                  <span class="detail-value font-mono text-sm">{{ activeDevice()!.device_id }}</span>
                 </div>
                 
                 <div class="device-row">
-                  <span class="device-label">Activated:</span>
-                  <span class="detail-value">{{ activeDevice()!.activated_at | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+                  <span class="device-label text-sm">Activated:</span>
+                  <span class="detail-value text-sm">{{ activeDevice()!.activated_at | date:'dd/MM/yyyy HH:mm:ss' }}</span>
                 </div>
                 
-                <div class="device-actions">
-                  <p-button 
-                    label="Retire Device" 
-                    icon="pi pi-ban" 
-                    styleClass="p-button-sm p-button-danger"
-                    (onClick)="retireDevice(activeDevice()!)"
-                    [disabled]="loadingDevices()"
-                    pTooltip="Retire this device (deactivates device, cannot report positions anymore)"
-                    tooltipPosition="top"
-                  ></p-button>
-                </div>
+                @if (!viewMode) {
+                  <div class="device-actions">
+                    <p-button 
+                      label="Retire Device" 
+                      icon="pi pi-ban" 
+                      styleClass="p-button-sm p-button-danger"
+                      (onClick)="retireDevice(activeDevice()!)"
+                      [disabled]="loadingDevices()"
+                      pTooltip="Retire this device (deactivates device, cannot report positions anymore)"
+                      tooltipPosition="top"
+                    ></p-button>
+                  </div>
+                }
               </div>
             } @else {
               <div class="no-device-message active-empty">
-                <i class="pi pi-mobile empty-icon"></i>
-                <p class="empty-title">No Active Device</p>
+                <i class="pi pi-mobile empty-icon text-5xl"></i>
+                <p class="empty-title text-base">No Active Device</p>
               </div>
             }
           </p-panel>
@@ -102,7 +104,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
             <p-panel styleClass="pending-device-panel">
               <ng-template pTemplate="header">
                 <div class="panel-header-content">
-                  <span class="panel-title"><i class="pi pi-clock"></i>
+                  <span class="panel-title text-base"><i class="pi pi-clock"></i>
                       Awaiting Activation</span>
                 </div>
               </ng-template>
@@ -113,12 +115,12 @@ import { QRCodeComponent } from 'angularx-qrcode';
                   
                   <div class="device-details">
                     <div class="detail-row">
-                      <span class="detail-label">Device ID:</span>
-                      <span class="detail-value font-mono">{{ pendingDevice()!.device_id }}</span>
+                      <span class="detail-label text-sm">Device ID:</span>
+                      <span class="detail-value font-mono text-sm">{{ pendingDevice()!.device_id }}</span>
                     </div>
                     <div class="detail-row">
-                      <span class="detail-label">Expires:</span>
-                      <span class="detail-value">{{ pendingDevice()!.expires_at | date:'dd/MM/yyyy HH:mm' }}</span>
+                      <span class="detail-label text-sm">Expires:</span>
+                      <span class="detail-value text-sm">{{ pendingDevice()!.expires_at | date:'dd/MM/yyyy HH:mm' }}</span>
                     </div>
                   </div>
                 </div>
@@ -129,7 +131,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
                   <p-panel styleClass="activation-panel">
                     <ng-template pTemplate="header">
                       <div class="panel-title-content">
-                        <i class="pi pi-qrcode panel-icon"></i>
+                        <i class="pi pi-qrcode panel-icon text-base"></i>
                         <span class="panel-title">Scan this Code</span>
                       </div>
                     </ng-template>
@@ -145,7 +147,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
                         [imageWidth]="40"
                         [imageHeight]="40">
                       </qrcode>
-                      <p class="activation-help-text">Install the Ghana Waters app on the vessel's device<br/>and scan this code with the camera to activate</p>
+                      <p class="activation-help-text text-sm">Install the Ghana Waters app on the vessel's device<br/>and scan this code with the camera to activate</p>
                     </div>
                   </p-panel>
 
@@ -153,7 +155,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
                   <p-panel styleClass="activation-panel">
                     <ng-template pTemplate="header">
                       <div class="panel-title-content">
-                        <i class="pi pi-link panel-icon"></i>
+                        <i class="pi pi-link panel-icon text-base"></i>
                         <span class="panel-title">Send this Code</span>
                       </div>
                     </ng-template>
@@ -161,7 +163,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
                     <div class="link-container">
                       <input 
                         type="text" 
-                        class="url-input" 
+                        class="url-input text-sm" 
                         [value]="getHttpsActivationUrl(pendingDevice()!)" 
                         readonly
                         (click)="copyToClipboard(getHttpsActivationUrl(pendingDevice()!))"
@@ -169,26 +171,28 @@ import { QRCodeComponent } from 'angularx-qrcode';
                       <p-button 
                         label="Copy Link" 
                         icon="pi pi-copy" 
-                        styleClass="p-button-sm p-button-outlined copy-button"
+                        styleClass="p-button-sm p-button-outlined copy-button text-base"
                         (onClick)="copyToClipboard(getHttpsActivationUrl(pendingDevice()!))"
                         pTooltip="Copy activation link to clipboard"
                       ></p-button>
-                      <p class="activation-help-text">If you do not have access to the device, share this link with the holder of device via SMS, WhatsApp, or email.<br/><strong>The Ghana Waters app must already be installed to use this link.</strong></p>
+                      <p class="activation-help-text text-sm">If you do not have access to the device, share this link with the holder of device via SMS, WhatsApp, or email.<br/><strong>The Ghana Waters app must already be installed to use this link.</strong></p>
                     </div>
                   </p-panel>
                 </div>
                 
-                <div class="device-actions">
-                  <p-button 
-                    label="Delete Activation Code" 
-                    icon="pi pi-trash" 
-                    styleClass="p-button-sm p-button-danger"
-                    (onClick)="deleteDevice(pendingDevice()!)"
-                    [disabled]="loadingDevices()"
-                    pTooltip="Delete this activation code"
-                    tooltipPosition="top"
-                  ></p-button>
-                </div>
+                @if (!viewMode) {
+                  <div class="device-actions">
+                    <p-button 
+                      label="Delete Activation Code" 
+                      icon="pi pi-trash" 
+                      styleClass="p-button-sm p-button-danger"
+                      (onClick)="deleteDevice(pendingDevice()!)"
+                      [disabled]="loadingDevices()"
+                      pTooltip="Delete this activation code"
+                      tooltipPosition="top"
+                    ></p-button>
+                  </div>
+                }
               </div>
             </p-panel>
           }
@@ -215,7 +219,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
     .section-title {
       margin: 0 0 1rem 0;
       color: var(--text-color);
-      font-size: 1.1rem;
       font-weight: 600;
     }
 
@@ -234,7 +237,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
     }
 
     .panel-title {
-      font-size: 1rem;
       font-weight: 600;
       margin: 0;
     }
@@ -256,7 +258,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
 
     .device-label {
       font-weight: 600;
-      font-size: 0.875rem;
       width: 130px;
       flex-shrink: 0;
       color: var(--text-color);
@@ -264,7 +265,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
 
     .detail-label {
       font-weight: 600;
-      font-size: 0.875rem;
       color: var(--text-color);
       width: 130px;
       white-space: nowrap;
@@ -272,7 +272,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
 
     .detail-value {
       color: var(--text-color);
-      font-size: 0.875rem;
       font-weight: 400;
       line-height: 1.4;
     }
@@ -281,14 +280,12 @@ import { QRCodeComponent } from 'angularx-qrcode';
     .device-status {
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
-      font-size: 0.875rem;
       font-weight: 500;
     }
 
     .pending-status {
       color: var(--orange-600);
       font-weight: 500;
-      font-size: 0.875rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -297,7 +294,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
     .active-status {
       color: var(--green-600);
       font-weight: 500;
-      font-size: 0.875rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -363,13 +359,11 @@ import { QRCodeComponent } from 'angularx-qrcode';
     }
 
     .panel-icon {
-      font-size: 1rem;
       color: var(--primary-color);
     }
 
     .panel-title {
       font-weight: 600;
-      font-size: 0.9rem;
     }
 
     /* QR Code Container */
@@ -401,7 +395,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
       border: 2px solid var(--surface-border);
       border-radius: 8px;
       font-family: monospace;
-      font-size: 0.9rem;
       background: var(--surface-ground);
       color: var(--text-color);
       text-align: center;
@@ -412,13 +405,11 @@ import { QRCodeComponent } from 'angularx-qrcode';
       align-self: stretch;
       margin: 0.5rem 0;
       padding: 0.75rem 1.5rem;
-      font-size: 1rem;
       font-weight: 600;
     }
 
     .activation-help-text {
       margin: 0;
-      font-size: 0.875rem;
       color: var(--text-color-secondary);
       text-align: center;
       line-height: 1.4;
@@ -440,21 +431,18 @@ import { QRCodeComponent } from 'angularx-qrcode';
     }
 
     .empty-icon {
-      font-size: 2.5rem;
       color: var(--surface-400);
       margin-bottom: 0.75rem;
       display: block;
     }
 
     .empty-title {
-      font-size: 1rem;
       font-weight: 600;
       color: var(--text-color);
       margin: 0 0 0.5rem 0;
     }
 
     .empty-description {
-      font-size: 0.875rem;
       color: var(--text-color-secondary);
       margin: 0;
       line-height: 1.4;
@@ -563,6 +551,8 @@ import { QRCodeComponent } from 'angularx-qrcode';
 })
 export class VesselTabDeviceComponent implements OnInit, OnChanges, OnDestroy {
   @Input() vessel: VesselDataset | null = null;
+  @Input() viewMode: boolean = false;
+  @Input() editMode: boolean = false;
   @Output() deviceUpdated = new EventEmitter<void>();
 
   // Device management signals

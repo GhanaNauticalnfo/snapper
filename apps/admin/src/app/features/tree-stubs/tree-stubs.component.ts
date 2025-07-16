@@ -35,7 +35,7 @@ import { TreeStubGroupResponseDto, TreeStubGroupInputDto } from '@ghanawaters/sh
   template: `
     <div class="tree-stubs-container">
       <div class="page-header">
-        <h2>Tree Stubs</h2>
+        <h2 class="text-2xl">Tree Stubs</h2>
       </div>
       
       <div class="flex justify-between items-center mb-4">

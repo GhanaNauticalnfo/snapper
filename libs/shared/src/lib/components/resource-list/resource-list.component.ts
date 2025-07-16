@@ -174,6 +174,8 @@ import { ResourceListConfig, ResourceAction } from './resource-list.models';
         [resizable]="false"
         [appendTo]="'body'"
         [blockScroll]="true"
+        [closeOnEscape]="true"
+        [focusTrap]="true"
         (onShow)="onDialogShow()">
         
         <ng-content select="[formContent]"></ng-content>

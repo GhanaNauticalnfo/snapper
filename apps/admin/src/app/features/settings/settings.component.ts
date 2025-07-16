@@ -25,7 +25,7 @@ import { DatabaseSettingsComponent } from './components/database-settings/databa
   template: `
     <div class="settings-container">
       <div class="page-header">
-        <h2>Settings</h2>
+        <h2 class="text-2xl">Settings</h2>
       </div>
       
       <p-tabs [value]="activeTabIndex().toString()" (onChange)="onTabChange($event)" styleClass="settings-tabs">

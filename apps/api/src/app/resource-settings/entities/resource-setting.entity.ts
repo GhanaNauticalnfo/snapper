@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Unique, Index, ManyToOne, JoinColumn } from 'typeorm';
-import { SettingType, ResourceType } from './setting-type.entity';
+import { ResourceType } from '@ghanawaters/shared-models';
+import { SettingType } from './setting-type.entity';
 
 @Entity('resource_settings')
 @Unique(['resource_type', 'resource_id', 'setting_key'])

@@ -47,7 +47,7 @@ export interface StagedUpload {
 
     <div class="volta-depth-container">
       <div class="page-header">
-        <h2>Volta Depth</h2>
+        <h2 class="text-2xl">Volta Depth</h2>
       </div>
       
       <!-- List component first -->

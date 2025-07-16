@@ -73,13 +73,13 @@ type TileDetailStatus = 'loading' | 'error' | 'success' | 'not_found' | 'deletin
              <!-- Access tile signal directly -->
              <p-card>
                  <ng-template pTemplate="title"> Tile Details: <span class="font-mono">{{ tile()!.id }}</span> </ng-template> <!-- Use non-null assertion -->
-                 <div class="p-grid p-fluid detail-grid">
-                    <div class="p-field p-col-12 p-md-6"> <span class="label">Version</span> <span>{{ tile()!.version }}</span> </div>
-                    <div class="p-field p-col-12 p-md-6"> <span class="label">Features</span> <span>{{ tile()!.numberOfFeatures | number }}</span> </div>
-                    <div class="p-field p-col-12 p-md-6"> <span class="label">Created</span> <span>{{ tile()!.created | date:'yyyy-MM-dd HH:mm:ss' }}</span> </div>
-                    <div class="p-field p-col-12 p-md-6"> <span class="label">Last Updated</span> <span>{{ tile()!.lastUpdated | date:'yyyy-MM-dd HH:mm:ss' }}</span> </div>
+                 <div class="p-grid p-fluid detail-grid text-sm">
+                    <div class="p-field p-col-12 p-md-6"> <span class="label text-sm">Version</span> <span class="text-base">{{ tile()!.version }}</span> </div>
+                    <div class="p-field p-col-12 p-md-6"> <span class="label text-sm">Features</span> <span class="text-base">{{ tile()!.numberOfFeatures | number }}</span> </div>
+                    <div class="p-field p-col-12 p-md-6"> <span class="label text-sm">Created</span> <span class="text-base">{{ tile()!.created | date:'yyyy-MM-dd HH:mm:ss' }}</span> </div>
+                    <div class="p-field p-col-12 p-md-6"> <span class="label text-sm">Last Updated</span> <span class="text-base">{{ tile()!.lastUpdated | date:'yyyy-MM-dd HH:mm:ss' }}</span> </div>
                  </div>
-                 <h5 class="p-mt-4">Tile Area Map Preview</h5>
+                 <h5 class="p-mt-4 text-base">Tile Area Map Preview</h5>
                  <div class="map-container">
                     <div #mapContainer class="map-preview-committed border border-surface-300">
                         @if (mapError()) {
@@ -118,9 +118,9 @@ type TileDetailStatus = 'loading' | 'error' | 'success' | 'not_found' | 'deletin
     .tile-detail-container { max-width: 800px; margin: 1rem auto; }
     .font-mono { font-family: monospace; background-color: var(--surface-100); padding: 0.1rem 0.3rem; border-radius: 3px; }
     .detail-grid .p-field { margin-bottom: 1rem; }
-    .detail-grid .label { font-weight: 600; min-width: 100px; display: inline-block; color: var(--text-color-secondary); margin-right: 0.5rem; font-size: 0.9em; }
-    .detail-grid span:not(.label) { font-size: 1em; color: var(--text-color); }
-    h5 { margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1rem; color: var(--text-color-secondary); }
+    .detail-grid .label { font-weight: 600; min-width: 100px; display: inline-block; color: var(--text-color-secondary); margin-right: 0.5rem; }
+    .detail-grid span:not(.label) { color: var(--text-color); }
+    h5 { margin-top: 1.5rem; margin-bottom: 0.75rem; color: var(--text-color-secondary); }
     .map-container { position: relative; }
     .map-preview-committed { height: 300px; margin-bottom: 1.5rem; border-radius: var(--border-radius); }
     .map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background-color: rgba(255, 255, 255, 0.8); z-index: 10; }

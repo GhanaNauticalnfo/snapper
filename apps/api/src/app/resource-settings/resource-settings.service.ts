@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { SettingType, ResourceType } from './entities/setting-type.entity';
+import { SettingType } from './entities/setting-type.entity';
+import { ResourceType } from '@ghanawaters/shared-models';
 import { ResourceSetting } from './entities/resource-setting.entity';
 import { SettingTypeInputDto } from './dto/setting-type-input.dto';
 import { SettingTypeResponseDto } from './dto/setting-type-response.dto';

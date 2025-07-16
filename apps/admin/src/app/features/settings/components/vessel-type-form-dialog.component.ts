@@ -62,7 +62,7 @@ import { BoatIconComponent } from '@ghanawaters/shared';
             [ngClass]="{'ng-invalid ng-dirty': vesselTypeForm.get('name')?.invalid && vesselTypeForm.get('name')?.touched}"
           />
           @if (vesselTypeForm.get('name')?.invalid && vesselTypeForm.get('name')?.touched) {
-            <small class="p-error">Vessel type name is required (max 30 characters)</small>
+            <small class="p-error text-xs">Vessel type name is required (max 30 characters)</small>
           }
         </div>
 
@@ -75,7 +75,7 @@ import { BoatIconComponent } from '@ghanawaters/shared';
                 [size]="32"
                 [title]="'Color: ' + vesselTypeForm.get('color')?.value">
               </app-boat-icon>
-              <span class="color-code">{{ vesselTypeForm.get('color')?.value }}</span>
+              <span class="color-code text-sm">{{ vesselTypeForm.get('color')?.value }}</span>
             </div>
             <p-colorPicker 
               formControlName="color"
@@ -140,7 +140,6 @@ import { BoatIconComponent } from '@ghanawaters/shared';
 
     .color-code {
       font-family: monospace;
-      font-size: 0.875rem;
       color: var(--text-color-secondary);
     }
 
@@ -158,7 +157,6 @@ import { BoatIconComponent } from '@ghanawaters/shared';
 
     .p-error {
       color: var(--red-500);
-      font-size: 0.75rem;
       margin-top: 0.25rem;
       display: block;
     }

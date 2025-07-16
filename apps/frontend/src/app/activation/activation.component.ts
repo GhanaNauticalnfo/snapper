@@ -10,21 +10,21 @@ import { QRCodeComponent } from 'angularx-qrcode';
   template: `
     <div class="activation-container">
       <div class="activation-card">
-        <div class="header">
-          <h1>🚢 Ghana Maritime Authority</h1>
-          <h2>Device Activation</h2>
+        <div class="header text-center">
+          <h1 class="text-2xl">🚢 Ghana Maritime Authority</h1>
+          <h2 class="text-lg font-normal">Device Activation</h2>
         </div>
         
         @if (activationToken()) {
           <div class="activation-content">
-            <div class="token-display">
-              <p><strong>Activation Token:</strong></p>
-              <div class="token-code">{{ activationToken() }}</div>
+            <div class="token-display text-center">
+              <p class="font-bold">Activation Token:</p>
+              <div class="token-code text-base font-bold">{{ activationToken() }}</div>
             </div>
             
             <div class="instructions">
               <h3>📱 To activate your device:</h3>
-              <ol>
+              <ol class="leading-normal">
                 <li>Make sure the Ghana Maritime app is installed on your phone</li>
                 <li>Click the button below to activate</li>
                 <li>The app will open and connect automatically</li>
@@ -34,14 +34,14 @@ import { QRCodeComponent } from 'angularx-qrcode';
             <div class="activation-actions">
               <a 
                 [href]="getActivationUrl()" 
-                class="activation-button"
+                class="activation-button text-base font-bold text-center no-underline"
                 (click)="handleActivationClick($event)"
               >
                 📲 Activate Device
               </a>
               
               <button 
-                class="copy-button" 
+                class="copy-button text-base font-bold" 
                 (click)="copyActivationUrl()"
               >
                 📋 Copy Link
@@ -49,17 +49,17 @@ import { QRCodeComponent } from 'angularx-qrcode';
             </div>
             
             <div class="manual-activation">
-              <p><strong>If the button doesn't work:</strong></p>
-              <ol>
+              <p class="font-bold">If the button doesn't work:</p>
+              <ol class="leading-normal">
                 <li>Make sure Ghana Maritime app is installed</li>
-                <li>Copy this URL: <code>{{ getActivationUrl() }}</code></li>
+                <li>Copy this URL: <code class="text-sm">{{ getActivationUrl() }}</code></li>
                 <li>Open any app that supports links (WhatsApp, Notes, etc.)</li>
                 <li>Paste and click the link</li>
               </ol>
             </div>
             
-            <div class="qr-section">
-              <p><strong>Alternative:</strong> Scan this QR code with your phone's camera</p>
+            <div class="qr-section text-center">
+              <p><span class="font-bold">Alternative:</span> Scan this QR code with your phone's camera</p>
               <div class="qr-code-container">
                 <qrcode 
                   [qrdata]="getActivationUrl()" 
@@ -72,14 +72,14 @@ import { QRCodeComponent } from 'angularx-qrcode';
             </div>
           </div>
         } @else {
-          <div class="error-content">
+          <div class="error-content text-center">
             <h3>❌ Invalid Activation Link</h3>
             <p>This activation link is missing the required token.</p>
             <p>Please contact your supervisor for a valid activation link.</p>
           </div>
         }
         
-        <div class="footer">
+        <div class="footer text-center">
           <p><small>Ghana Maritime Authority - Vessel Tracking System</small></p>
         </div>
       </div>
@@ -109,18 +109,14 @@ import { QRCodeComponent } from 'angularx-qrcode';
       background: #1e3c72;
       color: white;
       padding: 30px 20px;
-      text-align: center;
     }
     
     .header h1 {
       margin: 0 0 10px 0;
-      font-size: 24px;
     }
     
     .header h2 {
       margin: 0;
-      font-size: 18px;
-      font-weight: normal;
       opacity: 0.9;
     }
     
@@ -134,7 +130,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
       border-radius: 8px;
       padding: 15px;
       margin-bottom: 20px;
-      text-align: center;
       color: #333;
     }
     
@@ -145,8 +140,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
     
     .token-code {
       font-family: monospace;
-      font-size: 16px;
-      font-weight: bold;
       color: #1e3c72;
       background: white;
       padding: 10px;
@@ -171,7 +164,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
     
     .instructions li {
       margin-bottom: 8px;
-      line-height: 1.5;
       color: #333;
     }
     
@@ -187,10 +179,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
       color: white;
       padding: 15px 25px;
       border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 16px;
-      text-align: center;
       flex: 1;
       min-width: 200px;
       transition: background 0.3s;
@@ -206,7 +194,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
       border: none;
       padding: 15px 20px;
       border-radius: 8px;
-      font-weight: bold;
       cursor: pointer;
       transition: background 0.3s;
     }
@@ -219,7 +206,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
       background: #f8f9fa;
       border-radius: 8px;
       padding: 20px;
-      text-align: center;
       margin-bottom: 20px;
       color: #333;
     }
@@ -246,13 +232,11 @@ import { QRCodeComponent } from 'angularx-qrcode';
     .footer {
       background: #f8f9fa;
       padding: 15px 20px;
-      text-align: center;
       border-top: 1px solid #dee2e6;
       color: #666;
     }
     
     .error-content {
-      text-align: center;
     }
     
     .error-content h3 {
@@ -271,7 +255,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
     
     .manual-activation p {
       margin: 0 0 10px 0;
-      font-weight: bold;
       color: #856404;
     }
     
@@ -290,7 +273,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
       padding: 2px 4px;
       border-radius: 3px;
       font-family: monospace;
-      font-size: 0.9em;
       word-break: break-all;
     }
     
